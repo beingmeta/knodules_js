@@ -2,6 +2,7 @@ var knowlets_table={};
 var knowlet_nicknames={};
 var knowlet_prototype={};
 var knowde_prototype={};
+var default_knowlet=false;
 
 function Knowlet(id,lang) {
   var knowlet=knowlets_table[id];
@@ -92,12 +93,11 @@ function Knowde(dterm,knowlet,strict)
   knowde.prototype=knowde_prototype;
   knowde.dterm=dterm;
   knowde.dangling=true;
+  // These are words which can refer (normatively or peculiarly) to this concept
   knowde.terms=[]; knowde.hooks=[];
   // This maps langids to arrays of terms or hooks
   knwode.xterms={}; knowde.xhooks={};
-  knowde.genls=[]; knowde.specls=[];
-  knowde.roles={}; knowde.assocs=[];
-  knowde.disjoins=[];
+  knowde.genls=[]; knowde.specls=[]; knowde.roles={}; 
   return knowde;
 }
 knowde_prototype=Knowde.prototype;
@@ -115,15 +115,41 @@ knowde_prototype.getGenls() {
   while (i<genls.length) helper(genls[i++]);
   return results;}
 knowde_prototype.getDisjoins() {
-  var results=[];
-  function helper(g) {
-    if (results.indexOf(g)) return;
-    results.push(g);
-    var genls=g.genls;
-    var i=0; while (i<genls.length) helper(genls[i++]);}
-  var disjoins=this.disjoins;
-  while (i<disjoins.length) helper(disjoins[i++]);
-  return results;}
+  if (this.disjoins) {
+    var results=[];
+    function helper(g) {
+      if (results.indexOf(g)) return;
+      results.push(g);
+      var genls=g.genls;
+      var i=0; while (i<genls.length) helper(genls[i++]);}
+    var disjoins=this.disjoins;
+    while (i<disjoins.length) helper(disjoins[i++]);
+    return results;}
+  else return [];
+}
+
+knowde_prototype.getAssocs() {
+  if (this.assocs) {
+    var results=[];
+    function helper(g) {
+      if (results.indexOf(g)) return;
+      results.push(g);
+      var genls=g.genls;
+      var i=0; while (i<genls.length) helper(genls[i++]);}
+    var disjoins=this.disjoins;
+    while (i<disjoins.length) helper(disjoins[i++]);
+    return results;}
+  else return [];
+}
+
+knowde_prototype.getExtInfo(field,langid) {
+  if (!(langid)) langid=this.knowlet.language;
+  if ((this.extinfo) &&
+      (this.extinfo[field]) &&
+      (this.extinfo[field][langid]))
+    return this.extinfo[field][langid];
+  else return [];
+}
 
 /* Knowde semantic relationships (testing) */
 
@@ -233,17 +259,27 @@ knowde_prototype.addDisjoin=function (disj) {
     return knowde;}
 };
 
-knowde_prototype.addAssoc=function (assoc) {
+knowde_prototype.addAssoc=function (assoc,negative) {
   if (assoc instanceof String) assoc=this.knowlet.KnowdeRef(assoc);
   else if (!(assoc instanceof Knowde))
     throw {exception: "not a Knowde", irritant: disj;}
-  if (this.assocs.indexOf(assoc)) return this;
+  if (negative) {
+    if (!(this.nonassocs))
+      this.non_assocs=new Array(assoc);
+    else if (this.non_assocs.indexOf(assoc)) return this;
+    else {
+      this.non_assocs.push(assoc);
+      return this;}}
   else {
-    this.assocs.push(assoc);
-    return this;}
+    if (!(this.assocs))
+      this.assocs=new Array(assoc);
+    else if (this.assocs.indexOf(assoc)) return this;
+    else {
+      this.assocs.push(assoc);
+      return this;}}
 };
 
-/* Asserting rules */
+/* Asserting roles */
 
 knowde_prototype.addRole=function (role,filler) {
   if (role instanceof String) role=this.knowlet.KnowdeRef(role);
@@ -323,12 +359,66 @@ knowde_prototype.addHook=function (term,langid) {
     else terms[term]=new Array(this);}
   return this;};
 
+knowde_prototype.addExtInfo(type,value,langid)
+{
+  if (value instanceof String)
+    if (value.search(/[a-zA-Z][a-zA-Z]\$/)===0) {
+      langid=value.slice(0,2); value=value.slice(3);}
+  if (!(langid)) langid=this.knowlet.language;
+  if (!(this.ext_info)) this.ext_info={};
+  if (!(this.ext_info[type])) this.ext_info[type]={};
+  if (!(this.ext_info[type][langid]])
+    this.ext_info[type][langid]={};
+  if (this.ext_info[type][langid] instanceof Array) 
+    this.ext_info[type][langid].push(value);
+  else this.ext_info[type][langid]=new Array(value);
+  return this;
+}
+
+/* Text processing utility */
+
+knowlet_prototype.quote_char="\\";
+
+knowlet_prototype.findBreak(string,brk,start)
+{
+  var pos=string.indexOf(brk,start||0);
+  while (pos>0)
+    if (string[pos-1]!=this.quote_char)
+      return pos;
+    else pos=string.indexOf(brk,pos+1);
+  return pos;
+}
+
+knowlet_prototype.segmentString(string,brk,start)
+{
+  var result=[]; var i=0, pos=start||0;
+  var nextpos=this.findBreak(string,brk,pos);
+  while (nextpos>=0) {
+    result[i++]=string.slice(pos,nextpos);
+    pos=nextpos+1;
+    nextpos=this.findBreak(string,brk,pos);}
+  result[i++]=string.slice(pos);
+  return result;
+}
+
 /* Processing the PLAINTEXT microformat */
 
 knowlet_prototype.handleClause(clause,subject) {
   switch (clause[0]) {
-  case '^':
-    subject.addGenl(clause.slice(1)); break;
+  case '^': {
+    var pstart=this.findBreak("(");
+    if (pstart) {
+      var pend=this.findBreak(")",pstart);
+      if (pend<0) {
+	fdjtWarn("Invalid Knowlet clause '%s' for %s",
+		 clause,subject.dterm);}
+      else {
+	var role=this.KnowdeRef(clause.slice(1,pstart));
+	var arg=this.KnowdeRef(clause.slice(pstart+1,pend));
+	arg.addRole(role,subject);
+	subject.addGenl(role);}}
+    else subject.addGenl(clause.slice(1));
+    break;}
   case '_':
     this.KnowdeRef(clause.slice(1)).addGenl(subject); break;
   case '-':
@@ -338,18 +428,58 @@ knowlet_prototype.handleClause(clause,subject) {
       subject.addHook(clause.slice(4));
     else subject.addHook(clause.slice(1));
     break;
-  case 's':
-    break;
-  default:
-    if (false)
-      subject.addHook(clause.slice(3));
-    subject.addTerm(clause);}
+  case '&': {
+    var value=clause.slice((clause[1]==="-") ? (2) : (1));
+    var assoc=this.KnowdeRef(value);
+    subject.addAssoc(assoc,(clause[1]==="-"));}
+  case '@': 
+    subject.oid=clause; break;
+  case '=': {
+    if (clause[1]==="@") 
+      subject.addExtInfo("uri",clause.slice(2));
+    else if (clause[1]==="#")
+      subject.addExtInfo("tags",clause.slice(2));
+    else if (clause[1]==="*") {
+      subject.addExtInfo("gloss",clause.slice(2));
+      subject.gloss=clause.slice(2);}
+    else if (subject.gloss)
+      subject.addExtInfo("gloss",clause.slice(1),
+			 this.knowlet.language);
+    else {
+      subject.addExtInfo("gloss",clause.slice(1),
+			 this.knowlet.language);
+      subject.gloss=clause.slice(1);}
+    break;}
+  case '%': {
+    var mirror=KnowdeRef(clause.slice(1));
+    if (subject.mirror===mirror) break;
+    else {
+      var omirror=subject.mirror;
+      fdjtWarn("Inconsistent mirrors for %s: +%s and -%s",
+	       subject,mirror,omirror);
+      omirror.mirror=false;}
+    if (mirror.mirror) {
+      var oinvmirror=mirror.mirror;
+      fdjtWarn("Inconsistent mirrors for %s: +%s and -%s",
+	       mirror,subject,oinvmirror);
+      omirror.mirror=false;}
+    subject.mirror=mirror; mirror.mirror=subject;}
+  default: {
+    var eqpos=this.findBreak(clause,"=");
+    if (eqpos) {
+      var role=this.KnowdeRef(clause.slice(0,eqpos));
+      var filler=this.KnowdeRef(clause.slice(eqpos+1));
+      subject.addRbole(role,filler);
+      filler.addGenl(role);}
+    else if (false) {
+      subject.addHook(clause.slice(3));}
+    else subject.addTerm(clause);}}
   return subject;
 }
 
 knowlet_prototype.handleSubjectEntry(entry)
 {
-  var clauses=entry.slice('|');
+  var clauses=this.segmentString(entry'|');
   var subject=this.Knowde(clauses[0]);
   var i=1; while (i<clauses.length)
 	     this.handleClause(clauses[i++],subject);
@@ -364,19 +494,55 @@ knowlet_prototype.handleEntry(entry)
     if (this.key_concepts.indexOf(subject)<0)
       this.key_concepts.push(subject);
     return subject;}
+  case '-': {
+    var subentries=this.segmentString(entry.slice(1),"/");
+    var knowdes=[];
+    var i=0; while (i<subentries.length) {
+      knowdes[i]=KnowdeRef(subentries[i]); i++;}
+    var j=0; while (j<knowdes.length) {
+      var k=0; while (k<knowdes.length) {
+	if (j!=k) knowdes[j].addDisjoin(knowdes[k]);
+	k++;}
+      j++;}
+    return knowdes[0];}
+  case '/': {
+    var pos=1; var subject=false; var head=false;
+    var next=this.findBreak(entry,'/',pos);
+    while (true) {
+      var basic_level=false;
+      if (entry[pos]==='*') {basic_level=true; pos++;}
+      var next_subject=
+	((next) ? (this.handleSubjectEntry(entry.slice(pos,next))) :
+	 (this.handleSubjectEntry(entry.slice(pos))));
+      if (subject) subject.addGenl(next_subject);
+      else head=next_subject;
+      subject=next_subject;
+      if (basic_level) subject.basic=true;
+      if (next) {
+	pos=next+1; next=this.findBreak(entry,"/",pos);}
+      else break;}
+    return head;}
   default:
     return this.handleSubjectEntry(entry);
   }
 }
 
-knowlet_prototype.handleEntries(entry)
+knowlet_prototype.stripComments(string)
 {
-  if (entry instanceof Array) {
+  return string.replace(/^\s*#.*$/g,"").
+    replace(/^\s*\/\/.*$/g,"");
+  
+}
+
+knowlet_prototype.handleEntries(block)
+{
+  if (block instanceof Array) {
     var results=[];
-    var i=0; while (i<entry.length) {
-      results[i]=this.handleEntry(entry[i]); i++;}
+    var i=0; while (i<block.length) {
+      results[i]=this.handleEntry(block[i]); i++;}
     return results;}
   else if (entry instanceof String)
-    return this.handleEntries(entry.split(';'));
-  else throw {exception: 'type error', irritant: entry};
+    return this.handleEntries(this.segmentString(block.stripComments(),';'));
+  else throw {exception: 'type error', irritant: block};
 }
+
