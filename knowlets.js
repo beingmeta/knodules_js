@@ -80,6 +80,42 @@ knowlet_prototype.KnowdeRef(string,langid) {
  else return this.Knowde(string,false);
 }
 
+/* Text processing utilities */
+
+knowlet_prototype.quote_char="\\";
+
+knowlet_prototype.stdspace(string)
+{
+  return string.replace(/\w+/," ").
+    replace(/^\w/,"").replace(/\w$/,"");
+}
+
+knowlet_prototype.findBreak(string,brk,start)
+{
+  var pos=string.indexOf(brk,start||0);
+  while (pos>0)
+    if (string[pos-1]!=this.quote_char)
+      return pos;
+    else pos=string.indexOf(brk,pos+1);
+  return pos;
+}
+
+knowlet_prototype.segmentString(string,brk,start,keepspace)
+{
+  var result=[]; var i=0, pos=start||0;
+  var nextpos=this.findBreak(string,brk,pos);
+  while (nextpos>=0) {
+    if (keepspace)
+      result[i++]=string.slice(pos,nextpos);
+    else result[i++]=this.stdspace(string.slice(pos,nextpos));
+    pos=nextpos+1;
+    nextpos=this.findBreak(string,brk,pos);}
+  result[i++]=string.slice(pos);
+  return result;
+}
+
+/* Knowdes */
+
 function Knowde(dterm,knowlet,strict)
 {
   var knowde=knowlet.dterms[dterm];
@@ -114,18 +150,18 @@ knowde_prototype.getGenls() {
   var genls=this.genls;
   while (i<genls.length) helper(genls[i++]);
   return results;}
+
 knowde_prototype.getDisjoins() {
-  if (this.disjoins) {
-    var results=[];
-    function helper(g) {
-      if (results.indexOf(g)) return;
-      results.push(g);
-      var genls=g.genls;
-      var i=0; while (i<genls.length) helper(genls[i++]);}
-    var disjoins=this.disjoins;
-    while (i<disjoins.length) helper(disjoins[i++]);
-    return results;}
-  else return [];
+  var results=[]; var visits=[];
+  function helper(g) {
+    if (visits.indexOf(g)) return;
+    if (g.disjoins) results=results.concat(g.disjoins);
+    visits.push(g);
+    var genls=g.genls;
+    var i=0; while (i<genls.length) helper(genls[i++]);}
+  var genls=this.genls;
+  while (i<genls.length) helper(genls[i++]);
+  return results;
 }
 
 knowde_prototype.getAssocs() {
@@ -375,32 +411,6 @@ knowde_prototype.addExtInfo(type,value,langid)
   return this;
 }
 
-/* Text processing utility */
-
-knowlet_prototype.quote_char="\\";
-
-knowlet_prototype.findBreak(string,brk,start)
-{
-  var pos=string.indexOf(brk,start||0);
-  while (pos>0)
-    if (string[pos-1]!=this.quote_char)
-      return pos;
-    else pos=string.indexOf(brk,pos+1);
-  return pos;
-}
-
-knowlet_prototype.segmentString(string,brk,start)
-{
-  var result=[]; var i=0, pos=start||0;
-  var nextpos=this.findBreak(string,brk,pos);
-  while (nextpos>=0) {
-    result[i++]=string.slice(pos,nextpos);
-    pos=nextpos+1;
-    nextpos=this.findBreak(string,brk,pos);}
-  result[i++]=string.slice(pos);
-  return result;
-}
-
 /* Processing the PLAINTEXT microformat */
 
 knowlet_prototype.handleClause(clause,subject) {
@@ -531,7 +541,6 @@ knowlet_prototype.stripComments(string)
 {
   return string.replace(/^\s*#.*$/g,"").
     replace(/^\s*\/\/.*$/g,"");
-  
 }
 
 knowlet_prototype.handleEntries(block)
