@@ -1,8 +1,12 @@
+/* A few global variables.  Maybe we should make these fields on Knowlet. */
+
 var knowlets_table={};
 var knowlet_nicknames={};
 var knowlet_prototype={};
 var knowde_prototype={};
 var default_knowlet=false;
+
+/* Knowlets, constructor, etc. */
 
 function Knowlet(id,lang) {
   var knowlet=knowlets_table[id];
@@ -421,6 +425,41 @@ knowde_prototype.addExtInfo(type,value,langid)
   return this;
 }
 
+/* DRULEs */
+
+knowde_prototype.drule={};
+knowde_prototype.drule.prototype=Array;
+knowlet_prototype.parseDRuleElt=
+  function (elt,literal) {
+  if (elt==="")
+    throw { name: 'InvalidDRule', irritant: arguments;}
+  else if (literal) return elt;
+  else if (elt[0]==="'") return elt.slice(1);
+  else if (elt[0]==="\"")
+    if (elt[-1]==="\"")
+      return elt.slice(1,-1);
+    else return elt.slice(1);
+  else if (elt[0]===":")
+    return this.Knowde(elt.slice(1));
+  else if (this.dterms[elt]) return this.dterms[elt];
+  else return elt;
+}
+  
+  
+knowlet_prototype.KnowDRule=
+  function(head) {
+  var drule=new Array();
+  var i=0; while (i<arguments.length) {
+    var arg=arguments[i++];
+    if (arg instanceof String)
+      drule.push(this.parseDRuleElt(arg));
+    else if (arg instanceof Array) {
+      var j=0; while (j<arg.length)
+		 drule.push(this.parseDRuleElt(arg[j++]));}
+    else throw { name: "InvalidDRule", irritant: arguments;}}
+  drule.head=drule[0];
+  return drule;};
+
 /* Processing the PLAINTEXT microformat */
 
 knowlet_prototype.handleClause(clause,subject) {
@@ -444,8 +483,8 @@ knowlet_prototype.handleClause(clause,subject) {
   case '-':
     subject.addDisjoin(clause.slice(1));
   case '~':
-    if (false)
-      subject.addHook(clause.slice(4));
+    if (clause.search(/~[A-Za-z][A-Za-z]\$/)===0)
+      subject.addHook(clause.slice(4),clause.slice(1,3).toLowerCase());
     else subject.addHook(clause.slice(1));
     break;
   case '&': {
@@ -485,14 +524,23 @@ knowlet_prototype.handleClause(clause,subject) {
       omirror.mirror=false;}
     subject.mirror=mirror; mirror.mirror=subject;}
   default: {
-    var eqpos=this.findBreak(clause,"=");
-    if (eqpos) {
-      var role=this.KnowdeRef(clause.slice(0,eqpos));
-      var filler=this.KnowdeRef(clause.slice(eqpos+1));
-      subject.addRbole(role,filler);
+    var brk=this.findBreak(clause,'=');
+    if (brk>0) {
+      var role=this.KnowdeRef(clause.slice(0,brk));
+      var filler=this.KnowdeRef(clause.slice(brk+1));
+      subject.addRole(role,filler);
       filler.addGenl(role);}
-    else if (false) {
-      subject.addHook(clause.slice(3));}
+    else if ((brk=this.findBreak(clause,'\&'))>0) {
+      var drule=this.KnowDRule(this.segmentString(clause,'&'));
+      drule.knowde=subject;
+      if (subject.drules)
+	subject.drules.push(drule);
+      else subject.drules=new Array(drule);
+      if (subject.knowlet.drules[drule.head])
+	subject.knowlet.drules[drule.head].push(drule);
+      else subject.knowlet.drules[drule.head]=new Array(drule);}
+    else if (clause.search(/[A-Za-z][A-Za-z]\$/)===0) {
+      subject.addTerm(clause.slice(3),clause.slice(0,3).toLowerCase());}
     else subject.addTerm(clause);}}
   return subject;
 }
