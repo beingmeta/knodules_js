@@ -640,7 +640,8 @@ function knowletHTMLSetup(node)
       if (!(node)) {
 	node=document;
 	doing_the_whole_thing=true;}
-      else (node===document) doing_the_whole_thing=true;}
+      else if (node===document)
+	doing_the_whole_thing=true;}
   var elts=fdjtGetChildrenByTagName("META");
   var i=0; while (i<elts.length) {
     var elt=elts[i++];
@@ -653,7 +654,6 @@ function knowletHTMLSetup(node)
     if (hash>=0) url=url.slice(0,hash);
     fdjtLog("Using '%s' as the name of the default knowlet",url);
     knowlet=Knowlet(url);}
-
   i=0; while (i<elts.length) {
     var elt=elts[i++];
     if (elt.name==="KNOWDEF") knowlet.handleEntry(elt.content);}
@@ -662,7 +662,7 @@ function knowletHTMLSetup(node)
     var elt=elts[i++];
     if (elt.name==="KNOWLET") {
       knowlet.handleEntry(elt.content);}}
-  elts=fdjtgetChildrenByTagName("SCRIPT");
+  elts=fdjtGetChildrenByTagName("SCRIPT");
   i=0; while (i<elts.length) {
     var elt=elts[i++];
     if ((elt.getAttribute("language")) &&
