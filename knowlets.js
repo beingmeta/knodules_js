@@ -5,21 +5,15 @@ var knowlet_nicknames={};
 var knowlet_prototype={};
 var knowde_prototype={};
 var default_knowlet=false;
+var knowlets_debug_parsing=true;
 
 /* Knowlets, constructor, etc. */
 
-function Knowlet(id,lang) {
-  var knowlet=knowlets_table[id];
-  if (knowlet) return knowlet;
-  else knowlet=knowlet_nicknames[id];
-  if (knowlet) return knowlet;
-  // We'll ignore this, since Knowlet is often not called with 'new'
-  else knowlet={};
+function KnowletType(id,lang) {
+  var knowlet=this;
   // The name of the knowlet
   knowlet.name=id;
   knowlets_table[id]=knowlet;
-  // The prototype (which is the same as Knowlet.prototype)
-  knowlet.prototype=knowlet_prototype;
   // Whether the knowlet is indexed (e.g. keeps inverse indices for
   // relations and rules)
   knowlet.indexed=true;
@@ -33,7 +27,7 @@ function Knowlet(id,lang) {
   // Terms which are assumed unique
   knowlet.unique_terms=[];
   // The default language for this knowlet
-  knowlet.lang=(((lang) && (knowlet_langs[lang])) || (lang) || "EN");
+  knowlet.language=(((lang) && (knowlet_langs[lang])) || (lang) || "EN");
   // Mapping dterms to Knowdes (unique)
   knowlet.dterms={};
   // Mapping terms to arrays of of Knowdes (ambiguous)
@@ -46,10 +40,10 @@ function Knowlet(id,lang) {
   knowlet.xhooks={};
   // Inverted index of GENLS and GENLS*
   knowlet.byGenls={};
-  knowlet.byByAllGenls={};
+  knowlet.byAllGenls={};
   // Inverted index of antonyms, including expansion over GENLS*
   knowlet.byAntonyms={};
-  knowlet.byByAllAntonyms={};
+  knowlet.byAllAntonyms={};
   // Maps roles to inverted indices of fillers, indicates whether a role exists
   knowlet.byRole={}; knowlet.hasRoles={};
   // Key concepts
@@ -57,12 +51,23 @@ function Knowlet(id,lang) {
   // DRULES (disambiguation rules)
   knowlet.drules={};
   // It's own version of Knowde
-  knowlet.Knowde(dterm,strict) {
-    return Knowde(dterm,knowlet,(strict)||knowlet.strict);}
+  knowlet.Knowde= function (dterm,strict) {
+    return Knowde(dterm,knowlet,(strict)||knowlet.strict);};
   return knowlet;
 }
-knowlet_prototype=Knowlet.prototype;
-knowlet_prototype.KnowdeProbe(string,langid) {
+knowlet_prototype=KnowletType.prototype;
+
+function Knowlet(id,lang)
+{
+  var knowlet=knowlets_table[id];
+  if (knowlet) return knowlet;
+  else knowlet=knowlet_nicknames[id];
+  if (knowlet) return knowlet;
+  // We'll ignore this, since Knowlet is often not called with 'new'
+  else return new KnowletType(id,lang);
+}
+
+knowlet_prototype.KnowdeProbe= function (string,langid) {
   if (this.dterms[string]) return this.dterms[string];
   else if (this.strict) return false;
   else if ((!(langid)) || (langid===this.language))
@@ -75,26 +80,26 @@ knowlet_prototype.KnowdeProbe(string,langid) {
       return this.xterms[langid][string][0];
     else return false;
   else return false;
-}
-knowlet_prototype.KnowdeRef(string,langid) {
-  var knowde=KnowdeProbe(string,((langid)||(this.language)));
+};
+knowlet_prototype.KnowdeRef= function(string,langid) {
+  var knowde=this.KnowdeProbe(string,((langid)||(this.language)));
   if (knowde) return knowde;
   if (this.finished)
     throw {name: 'unknown Knowde reference', irritant: string };
  else return this.Knowde(string,false);
-}
+};
 
 /* Text processing utilities */
 
 knowlet_prototype.quote_char="\\";
 
-knowlet_prototype.stdspace(string)
+knowlet_prototype.stdspace=function(string)
 {
-  return string.replace(/\w+/," ").
-    replace(/^\w/,"").replace(/\w$/,"");
-}
+  return string.replace(/\s+/," ").
+    replace(/^\s/,"").replace(/\s$/,"");
+};
 
-knowlet_prototype.findBreak(string,brk,start)
+knowlet_prototype.findBreak=function(string,brk,start)
 {
   var pos=string.indexOf(brk,start||0);
   while (pos>0)
@@ -102,29 +107,47 @@ knowlet_prototype.findBreak(string,brk,start)
       return pos;
     else pos=string.indexOf(brk,pos+1);
   return pos;
-}
+};
 
-knowlet_prototype.segmentString(string,brk,start,keepspace)
+knowlet_prototype.segmentString=function(string,brk,start,keepspace)
 {
   var result=[]; var i=0, pos=start||0;
   var nextpos=this.findBreak(string,brk,pos);
   while (nextpos>=0) {
-    if (keepspace)
-      result[i++]=string.slice(pos,nextpos);
-    else result[i++]=this.stdspace(string.slice(pos,nextpos));
+    var item=((keepspace) ? (string.slice(pos,nextpos)) :
+	      (this.stdspace(string.slice(pos,nextpos))));
+    if ((item) && (item !== "")) result.push(item);
     pos=nextpos+1;
     nextpos=this.findBreak(string,brk,pos);}
-  result[i++]=string.slice(pos);
+  result.push(string.slice(pos));
   return result;
-}
+};
 
-knowlet_prototype.stripComments(string)
+knowlet_prototype.stripComments=function(string)
 {
   return string.replace(/^\s*#.*$/g,"").
     replace(/^\s*\/\/.*$/g,"");
-}
+};
 
 /* Knowdes */
+
+function KnowdeType(dterm,knowlet,strict)
+{
+  var knowde=this;
+  if (knowlets_debug_parsing)
+    fdjtLog('Making knowlet from %s in %o',dterm,knowlet);
+  knowde.dterm=dterm;
+  knowde.dangling=true;
+  knowlet.dterms[dterm]=knowde;
+  knowde.knowlet=knowlet;
+  // These are words which can refer (normatively or peculiarly) to this concept
+  knowde.terms=new Array(dterm); knowde.hooks=[];
+  // This maps langids to arrays of terms or hooks
+  knowde.xterms={}; knowde.xhooks={};
+  knowde.genls=[]; knowde.specls=[]; knowde.roles={}; 
+  return knowde;
+}
+knowde_prototype=KnowdeType.prototype;
 
 function Knowde(dterm,knowlet,strict)
 {
@@ -137,38 +160,26 @@ function Knowde(dterm,knowlet,strict)
 	   (knowlet.terms[dterm]) &&
 	   (knowlet.terms[dterm].length===1))
     return knowlet.terms[dterm][0];
-  // We'll ignore this, since Knowde is often not called with 'new'
-  else knowde={};
-  knowde.prototype=knowde_prototype;
-  knowde.dterm=dterm;
-  knowde.dangling=true;
-  knowlet.dterms[dterm]=knowde;
-  // These are words which can refer (normatively or peculiarly) to this concept
-  knowde.terms=new Array(dterm); knowde.hooks=[];
-  // This maps langids to arrays of terms or hooks
-  knwode.xterms={}; knowde.xhooks={};
-  knowde.genls=[]; knowde.specls=[]; knowde.roles={}; 
-  return knowde;
+  else return new KnowdeType(dterm,knowlet,strict);
 }
-knowde_prototype=Knowde.prototype;
 
 /* Knowde semantic relationships (getting) */
 
-knowde_prototype.getGenls() {
+knowde_prototype.getGenls=function() {
   var results=[];
   function helper(g) {
-    if (results.indexOf(g)) return;
+    if (results.indexOf(g)>=0) return;
     results.push(g);
     var genls=g.genls;
     var i=0; while (i<genls.length) helper(genls[i++]);}
   var genls=this.genls;
   while (i<genls.length) helper(genls[i++]);
-  return results;}
+  return results;};
 
-knowde_prototype.getDisjoins() {
+knowde_prototype.getDisjoins=function() {
   var results=[]; var visits=[];
   function helper(g) {
-    if (visits.indexOf(g)) return;
+    if (visits.indexOf(g)>=0) return;
     if (g.disjoins) results=results.concat(g.disjoins);
     visits.push(g);
     var genls=g.genls;
@@ -176,13 +187,13 @@ knowde_prototype.getDisjoins() {
   var genls=this.genls;
   while (i<genls.length) helper(genls[i++]);
   return results;
-}
+};
 
-knowde_prototype.getAssocs() {
+knowde_prototype.getAssocs=function() {
   if (this.assocs) {
     var results=[];
     function helper(g) {
-      if (results.indexOf(g)) return;
+      if (results.indexOf(g)>=0) return;
       results.push(g);
       var genls=g.genls;
       var i=0; while (i<genls.length) helper(genls[i++]);}
@@ -190,24 +201,24 @@ knowde_prototype.getAssocs() {
     while (i<disjoins.length) helper(disjoins[i++]);
     return results;}
   else return [];
-}
+};
 
-knowde_prototype.getExtInfo(field,langid) {
+knowde_prototype.getExtInfo=function(field,langid) {
   if (!(langid)) langid=this.knowlet.language;
   if ((this.extinfo) &&
       (this.extinfo[field]) &&
       (this.extinfo[field][langid]))
     return this.extinfo[field][langid];
   else return [];
-}
+};
 
 /* Knowde semantic relationships (testing) */
 
-knowde_prototype.hasGenl(genl) {
-  if (genl instanceof String) genl=this.knowlet.KnowdeRef(genl);
+knowde_prototype.hasGenl=function(genl) {
+  if (typeof genl === "string") genl=this.knowlet.KnowdeRef(genl);
   else if (!(genl instanceof Knowde))
-    throw {name: "not a Knowde", irritant: genl;}
-  if (this.genls.indexOf(genl)>=0) return true;
+    throw {name: "not a Knowde", irritant: genl};
+  else if (this.genls.indexOf(genl)>=0) return true;
   else if (this.knowlet.indexed)
     return ((this.knowlet.byAllGenls[genl]) &&
 	    (this.knowlet.byAllGenls[genl].indexOf(this)>=0));
@@ -226,13 +237,13 @@ knowde_prototype.hasGenl(genl) {
     while (i<genls.length)
       if (helper(genls[i++])) return true; else {}
     return false;}
-}
+};
 
-knowde_prototype.disjointFrom(disj) {
+knowde_prototype.disjointFrom=function(disj) {
   var visits=[];
-  if (disj instanceof String) genl=this.knowlet.KnowdeRef(disj);
+  if (typeof disj === "string") genl=this.knowlet.KnowdeRef(disj);
   else if (!(disj instanceof Knowde))
-    throw {name: "not a Knowde", irritant: genl;}
+    throw {name: "not a Knowde", irritant: genl};
   if (this.disjoins.indexOf(genl)>=0) return true;
   else if (this.knowlet.indexed)
     return ((this.knowlet.byAllDisjoins[disj]) &&
@@ -250,19 +261,21 @@ knowde_prototype.disjointFrom(disj) {
   while (i<genls.length)
     if (helper(genls[i++])) return true; else {}
   return false;
-}
+};
 
 /* Knowde semantic relationships (adding) */
 
 knowde_prototype.addGenl=function (genl) {
-  if (genl instanceof String) genl=this.knowlet.KnowdeRef(genl);
+  fdjtLog("Adding genl %o to %o in %o",genl,this,this.knowlet);
+  if (typeof genl === "string") genl=this.knowlet.KnowdeRef(genl);
   else if (!(genl instanceof Knowde))
-    throw {name: "not a Knowde", irritant: genl;}
-  if (this.genls.indexOf(genl)) return this;
+    throw {name: "not a Knowde", irritant: genl};
+  fdjtLog("Adding genl %o to %o",genl,this);
+  if (this.genls.indexOf(genl)>=0) return this;
   else {
     this.dangling=false; this.genls.push(genl); genl.specls.push(this);
-    if (knowlet.indexed) {
-      var knowde=this, knowlet=this.knowlet;
+    if (this.knowlet.indexed) {
+      var knowde=this; var knowlet=this.knowlet; var gdterm=genl.dterm;
       function indexAllGenls(g) {
 	var gdterm=g.dterm;
 	if (knowlet.byAllGenls[gdterm])
@@ -282,10 +295,10 @@ knowde_prototype.addGenl=function (genl) {
     return knowde;}
 };
 knowde_prototype.addDisjoin=function (disj) {
-  if (disj instanceof String) disj=this.knowlet.KnowdeRef(disj);
+  if (typeof disj === "string") disj=this.knowlet.KnowdeRef(disj);
   else if (!(disj instanceof Knowde))
-    throw {name: "not a Knowde", irritant: disj;}
-  if (this.disjoins.indexOf(disj)) return this;
+    throw {name: "not a Knowde", irritant: disj};
+  if (this.disjoins.indexOf(disj)>=0) return this;
   else {
     this.dangling=false; this.disjoins.push(disj); disj.disjoins.push(this);
     if (this.knowlet.indexed) {
@@ -310,20 +323,20 @@ knowde_prototype.addDisjoin=function (disj) {
 };
 
 knowde_prototype.addAssoc=function (assoc,negative) {
-  if (assoc instanceof String) assoc=this.knowlet.KnowdeRef(assoc);
+  if (typeof assoc === "string") assoc=this.knowlet.KnowdeRef(assoc);
   else if (!(assoc instanceof Knowde))
-    throw {name: "not a Knowde", irritant: assoc;}
+    throw {name: "not a Knowde", irritant: assoc};
   if (negative) {
     if (!(this.nonassocs))
       this.non_assocs=new Array(assoc);
-    else if (this.non_assocs.indexOf(assoc)) return this;
+    else if (this.non_assocs.indexOf(assoc)>=0) return this;
     else {
       this.non_assocs.push(assoc);
       return this;}}
   else {
     if (!(this.assocs))
       this.assocs=new Array(assoc);
-    else if (this.assocs.indexOf(assoc)) return this;
+    else if (this.assocs.indexOf(assoc)>=0) return this;
     else {
       this.assocs.push(assoc);
       return this;}}
@@ -332,12 +345,12 @@ knowde_prototype.addAssoc=function (assoc,negative) {
 /* Asserting roles */
 
 knowde_prototype.addRole=function (role,filler) {
-  if (role instanceof String) role=this.knowlet.KnowdeRef(role);
+  if (typeof role === "string") role=this.knowlet.KnowdeRef(role);
   else if (!(role instanceof Knowde))
-    throw {name: "not a Knowde", irritant: role;}
-  if (filler instanceof String) filler=this.knowlet.KnowdeRef(role);
+    throw {name: "not a Knowde", irritant: role};
+  if (typeof filler === "string") filler=this.knowlet.KnowdeRef(role);
   else if (!(filler instanceof Knowde))
-    throw {name: "not a Knowde", irritant: filler;}
+    throw {name: "not a Knowde", irritant: filler};
   this.dangling=false;
   var rdterm=role.dterm;
   if (this.roles[rdterm])
@@ -375,7 +388,7 @@ knowde_prototype.indexRole=function(role,filler) {
 
 knowde_prototype.addTerm=function (term,langid) {
   if (langid) langid=knowlet_langids[langid]||langid;
-  else if (this.terms.indexOf(term)) return;
+  else if (this.terms.indexOf(term)>=0) return;
   this.dangling=false;
   if ((!(langid)) || (langid===this.knowlet.language)) {
     this.terms.push(term);
@@ -393,7 +406,7 @@ knowde_prototype.addTerm=function (term,langid) {
 
 knowde_prototype.addHook=function (term,langid) {
   if (langid) langid=knowlet_langids[langid]||langid;
-  else if (this.hooks.indexOf(term)) return;
+  else if (this.hooks.indexOf(term)>=0) return;
   this.dangling=false;
   if ((!(langid)) || (langid===this.knowlet.language)) {
     this.hooks.push(term);
@@ -409,21 +422,21 @@ knowde_prototype.addHook=function (term,langid) {
     else terms[term]=new Array(this);}
   return this;};
 
-knowde_prototype.addExtInfo(type,value,langid)
+knowde_prototype.addExtInfo=function(type,value,langid)
 {
-  if (value instanceof String)
+  if (typeof value === "string")
     if (value.search(/[a-zA-Z][a-zA-Z]\$/)===0) {
       langid=value.slice(0,2); value=value.slice(3);}
   if (!(langid)) langid=this.knowlet.language;
   if (!(this.ext_info)) this.ext_info={};
   if (!(this.ext_info[type])) this.ext_info[type]={};
-  if (!(this.ext_info[type][langid]])
+  if (!(this.ext_info[type][langid]))
     this.ext_info[type][langid]={};
   if (this.ext_info[type][langid] instanceof Array) 
     this.ext_info[type][langid].push(value);
   else this.ext_info[type][langid]=new Array(value);
   return this;
-}
+};
 
 /* DRULEs */
 
@@ -432,7 +445,7 @@ knowde_prototype.drule.prototype=Array;
 knowlet_prototype.parseDRuleElt=
   function (elt,literal) {
   if (elt==="")
-    throw { name: 'InvalidDRule', irritant: arguments;}
+    throw { name: 'InvalidDRule', irritant: arguments};
   else if (literal) return elt;
   else if (elt[0]==="'") return elt.slice(1);
   else if (elt[0]==="\"")
@@ -451,26 +464,28 @@ knowlet_prototype.KnowDRule=
   var drule=new Array();
   var i=0; while (i<arguments.length) {
     var arg=arguments[i++];
-    if (arg instanceof String)
+    if (typeof arg === "string")
       drule.push(this.parseDRuleElt(arg));
     else if (arg instanceof Array) {
       var j=0; while (j<arg.length)
 		 drule.push(this.parseDRuleElt(arg[j++]));}
-    else throw { name: "InvalidDRule", irritant: arguments;}}
+    else throw { name: "InvalidDRule", irritant: arguments};}
   drule.head=drule[0];
   return drule;};
 
 /* Processing the PLAINTEXT microformat */
 
-knowlet_prototype.handleClause(clause,subject) {
+knowlet_prototype.handleClause=function(clause,subject) {
+  if (knowlets_debug_parsing)
+    fdjtLog("Handling clause '%s' for %o",clause,subject);
   switch (clause[0]) {
   case '^': {
     var pstart=this.findBreak("(");
-    if (pstart) {
+    if (pstart>0) {
       var pend=this.findBreak(")",pstart);
       if (pend<0) {
-	fdjtWarn("Invalid Knowlet clause '%s' for %s",
-		 clause,subject.dterm);}
+	fdjtWarn("Invalid Knowlet clause '%s' for %o (%s)",
+		 clause,subject,subject.dterm);}
       else {
 	var role=this.KnowdeRef(clause.slice(1,pstart));
 	var arg=this.KnowdeRef(clause.slice(pstart+1,pend));
@@ -543,18 +558,21 @@ knowlet_prototype.handleClause(clause,subject) {
       subject.addTerm(clause.slice(3),clause.slice(0,3).toLowerCase());}
     else subject.addTerm(clause);}}
   return subject;
-}
+};
 
-knowlet_prototype.handleSubjectEntry(entry)
+knowlet_prototype.handleSubjectEntry=function(entry)
 {
-  var clauses=this.segmentString(entry'|');
+  var clauses=this.segmentString(entry,"|");
   var subject=this.Knowde(clauses[0]);
+  if (knowlets_debug_parsing)
+    fdjtLog("Processing subject entry %s %o %o",entry,subject,clauses);
   var i=1; while (i<clauses.length)
 	     this.handleClause(clauses[i++],subject);
+  fdjtLog("Processed subject entry %o",subject);
   return subject;
-}
+};
 
-knowlet_prototype.handleEntry(entry)
+knowlet_prototype.handleEntry=function(entry)
 {
   switch (entry[0]) {
   case '*': {
@@ -593,19 +611,21 @@ knowlet_prototype.handleEntry(entry)
   default:
     return this.handleSubjectEntry(entry);
   }
-}
+};
 
-knowlet_prototype.handleEntries(block)
+knowlet_prototype.handleEntries=function(block)
 {
-  if (block instanceof Array) {
+  if (typeof block === "string") {
+    var nocomment=this.stripComments(block);
+    var segmented=this.segmentString(nocomment,';');
+    return this.handleEntries(segmented);}
+  else if (block instanceof Array) {
     var results=[];
     var i=0; while (i<block.length) {
       results[i]=this.handleEntry(block[i]); i++;}
     return results;}
-  else if (entry instanceof String)
-    return this.handleEntries(this.segmentString(block.stripComments(),';'));
   else throw {name: 'TypeError', irritant: block};
-}
+};
 
 function KnowDef(entry)
 {
@@ -622,7 +642,7 @@ function KnowDef(entry)
   return default_knowlet.handleEntry(entry);
 }
 
-function KnowletSetup()
+function knowletSetup()
 {
   if ((document) && (document.getElementsByName)) {
     var elts=document.getElementsByTagName("META");
@@ -640,7 +660,12 @@ function KnowletSetup()
     elts=document.getElementsByTagName("SCRIPT");
     i=0; while (i<elts.length) {
       var elt=elts[i++];
-      if (elt.language==="knowlet") {
-	default_knowlet.handleEntry(elt.content);}}}
+      if ((elt.getAttribute("language")) &&
+	  ((elt.getAttribute("language"))==="knowlets")) {
+	var children=elt.childNodes;
+	var j=0; while (i<children.length) {
+	  var child=children[j++];
+	  if (child.nodeType===Node.TEXT_NODE)
+	    default_knowlet.handleEntries(child.nodeValue);}}}}
 }
 
