@@ -31,6 +31,8 @@ function KnowletType(id,lang) {
   knowlet.language=(((lang) && (knowlet_langs[lang])) || (lang) || "EN");
   // Mapping dterms to Knowdes (unique)
   knowlet.dterms={};
+  // Mapping dterms (still unique) to Knowdes
+  knowlet.xdterms={};
   // Mapping terms to arrays of of Knowdes (ambiguous)
   knowlet.terms={};
   // Mapping hook terms to arrays of of Knowdes (ambiguous)
@@ -508,22 +510,36 @@ protoknowlet.handleClause=function(clause,subject) {
     var assoc=this.KnowdeRef(value);
     subject.addAssoc(assoc,(clause[1]==="-"));}
   case '@': 
-    subject.oid=clause; break;
-  case '=': {
-    if (clause[1]==="@") 
+    if (clause[1]==="#") 
       subject.addExtInfo("uri",clause.slice(2));
-    else if (clause[1]==="#")
+    else if (clause[1]==="$")
       subject.addExtInfo("tags",clause.slice(2));
-    else if (clause[1]==="*") {
-      subject.addExtInfo("gloss",clause.slice(2));
+    else subject.oid=clause; break;
+  case '=':
+    if (clause[1]==='@') subject.oid.clause.slice(1);
+    else if (clause.indexOf('@')>1) {
+      var atpos=clause.indexOf('@');
+      var knowlet=Knowlet(clause.slice(atpos+1));
+      var knowde=knowlet.Knowde(clause.slice(1,atpos));
+      knowlet.xdterms[subject.dterm+"@"+subject.knowlet.name];
+      if (subject.xdterms) subject.xdterms.push(clause.slice(1));
+      else subject.xdterms=new Array(clause.slice(1));
+      subject.knowlet.xdterms[clause.slice(1)]=knowde;}
+    else {
+      var dterm=clause.slice(1);
+      knowlet.xdterms[dterm]=subject;
+      if (subject.xdterms) subject.xdterms.push(dterm);
+      else subject.xdterms=new Array(dterm);}
+  case '"': {
+    var qend=((clause[-1]==='"') ? (-2) : (-1));
+    if (clause[1]==="*") {
+      subject.addExtInfo("gloss",clause.slice(2,qend));
       subject.gloss=clause.slice(2);}
     else if (subject.gloss)
-      subject.addExtInfo("gloss",clause.slice(1),
-			 this.knowlet.language);
+      subject.addExtInfo("gloss",clause.slice(1,qend));
     else {
-      subject.addExtInfo("gloss",clause.slice(1),
-			 this.knowlet.language);
-      subject.gloss=clause.slice(1);}
+      subject.addExtInfo("gloss",clause.slice(1,qend));
+      subject.gloss=clause.slice(1,qend);}
     break;}
   case '%': {
     var mirror=KnowdeRef(clause.slice(1));
