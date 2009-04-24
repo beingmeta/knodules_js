@@ -5,7 +5,8 @@ var knowlet_nicknames={};
 var protoknowlet={};
 var protoknowde={};
 var knowlet=false;
-var knowlets_debug_parsing=true;
+var knowlets_debug_parsing=false;
+var knowlets_debug_edits=false;
 
 /* Knowlets, constructor, etc. */
 
@@ -152,7 +153,7 @@ protoknowde=KnowdeType.prototype;
 function Knowde(dterm,kno,strict)
 {
   if (!(kno))
-    if (know) know=knowlet;
+    if (knowlet) kno=knowlet;
     else throw { name: "no default knowlet" };
   var knowde=kno.dterms[dterm];
   if (knowde) return knowde;
@@ -266,13 +267,13 @@ protoknowde.disjointFrom=function(disj) {
 /* Knowde semantic relationships (adding) */
 
 protoknowde.addGenl=function (genl) {
-  fdjtLog("Adding genl %o to %o in %o",genl,this,this.knowlet);
   if (typeof genl === "string") genl=this.knowlet.KnowdeRef(genl);
   else if (!(genl instanceof Knowde))
     throw {name: "not a Knowde", irritant: genl};
-  fdjtLog("Adding genl %o to %o",genl,this);
   if (this.genls.indexOf(genl)>=0) return this;
   else {
+    if (knowlets_debug_edits)
+      fdjtLog("Adding genl %o to %o in %o",genl,this,this.knowlet);
     this.dangling=false; this.genls.push(genl); genl.specls.push(this);
     if (this.knowlet.indexed) {
       var knowde=this; var knowlet=this.knowlet; var gdterm=genl.dterm;
@@ -568,7 +569,8 @@ protoknowlet.handleSubjectEntry=function(entry)
     fdjtLog("Processing subject entry %s %o %o",entry,subject,clauses);
   var i=1; while (i<clauses.length)
 	     this.handleClause(clauses[i++],subject);
-  fdjtLog("Processed subject entry %o",subject);
+  if (knowlets_debug_parsing)
+    fdjtLog("Processed subject entry %o",subject);
   return subject;
 };
 
@@ -627,6 +629,23 @@ protoknowlet.handleEntries=function(block)
   else throw {name: 'TypeError', irritant: block};
 };
 
+/* Getting knowdes into HTML */
+
+protoknowde.toHTML=function()
+{
+  if (this.dterm_base)
+    return fdjtSpan("dterm",this.dterm_base,
+		    fdjtSpan("disambig",this.dterm_disambig));
+  else {
+    var dterm=this.dterm;
+    var colonpos=dterm.indexOf(':');
+    if ((colonpos>0) && (colonpos<(dterm.length-1))) {
+      if (dterm[colonpos+1].search(/\w/)===0)
+	return fdjtSpan("dterm",dterm.slice(0,colonpos),
+			dterm.slice(colonpos));}
+    return fdjtSpan("dterm",dterm);}
+}
+
 /* Getting Knowlets out of HTML */
 
 var _knowletHTMLSetup_done=false;
@@ -634,7 +653,7 @@ var _knowletHTMLSetup_done=false;
 function knowletHTMLSetup(node)
 {
   var doing_the_whole_thing=false;
-  if ((!(node_arg)) || (node_arg===document))
+  if ((!(node)) || (node_arg===document))
     if (_knowletHTMLSetup_done) return;
     else {
       if (!(node)) {
@@ -642,10 +661,11 @@ function knowletHTMLSetup(node)
 	doing_the_whole_thing=true;}
       else if (node===document)
 	doing_the_whole_thing=true;}
-  var elts=fdjtGetChildrenByTagName("META");
+  var elts=fdjtGetChildrenByTagName(document,"META");
   var i=0; while (i<elts.length) {
     var elt=elts[i++];
-    if (elt.name==="KNOWLET") knowlet=Knowlet(elt.content);}
+    if (elt.name==="KNOWLET") {
+      knowlet=Knowlet(elt.content);}}
   if ((!(knowlet)) &&
       (document) && (document.location) &&
       (document.location.url)) {
@@ -654,15 +674,16 @@ function knowletHTMLSetup(node)
     if (hash>=0) url=url.slice(0,hash);
     fdjtLog("Using '%s' as the name of the default knowlet",url);
     knowlet=Knowlet(url);}
+  fdjtLog("KNOWLET=%o",knowlet);
   i=0; while (i<elts.length) {
     var elt=elts[i++];
     if (elt.name==="KNOWDEF") knowlet.handleEntry(elt.content);}
-  elts=fdjtGetChildrenByTagName("LINK");
+  elts=fdjtGetChildrenByTagName(document,"LINK");
   i=0; while (i<elts.length) {
     var elt=elts[i++];
     if (elt.name==="KNOWLET") {
       knowlet.handleEntry(elt.content);}}
-  elts=fdjtGetChildrenByTagName("SCRIPT");
+  elts=fdjtGetChildrenByTagName(document,"SCRIPT");
   i=0; while (i<elts.length) {
     var elt=elts[i++];
     if ((elt.getAttribute("language")) &&
