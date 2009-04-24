@@ -31,8 +31,12 @@ function KnowletType(id,lang) {
   knowlet.language=(((lang) && (knowlet_langs[lang])) || (lang) || "EN");
   // Mapping dterms to Knowdes (unique)
   knowlet.dterms={};
-  // Mapping dterms (still unique) to Knowdes
+  // A vector of all dterms local to this knowlet
+  knowlet.alldterms=[];
+  // Mapping alias dterms (still unique) to Knowdes
   knowlet.xdterms={};
+  // All xdterms
+  knowlet.allxdterms=[];
   // Mapping terms to arrays of of Knowdes (ambiguous)
   knowlet.terms={};
   // Mapping hook terms to arrays of of Knowdes (ambiguous)
@@ -72,6 +76,7 @@ function Knowlet(id,lang)
 
 protoknowlet.KnowdeProbe= function (string,langid) {
   if (this.dterms[string]) return this.dterms[string];
+  else if (this.xdterms[string]) return this.xdterms[string];
   else if (this.strict) return false;
   else if ((!(langid)) || (langid===this.language))
     if ((this.terms[string]) && (this.terms[string].length===1))
@@ -142,6 +147,7 @@ function KnowdeType(dterm,knowlet,strict)
   knowde.dterm=dterm;
   knowde.dangling=true;
   knowlet.dterms[dterm]=knowde;
+  knowlet.alldterms.push(dterm);
   knowde.knowlet=knowlet;
   // These are words which can refer (normatively or peculiarly) to this concept
   knowde.terms=new Array(dterm); knowde.hooks=[];
@@ -521,10 +527,13 @@ protoknowlet.handleClause=function(clause,subject) {
       var atpos=clause.indexOf('@');
       var knowlet=Knowlet(clause.slice(atpos+1));
       var knowde=knowlet.Knowde(clause.slice(1,atpos));
-      knowlet.xdterms[subject.dterm+"@"+subject.knowlet.name];
+      var mirror_name=subject.dterm+"@"+subject.knowlet.name;
+      knowlet.xdterms[mirror_name]=subject;
+      knowlet.allxdterms.push(mirror_name);
       if (subject.xdterms) subject.xdterms.push(clause.slice(1));
       else subject.xdterms=new Array(clause.slice(1));
-      subject.knowlet.xdterms[clause.slice(1)]=knowde;}
+      subject.knowlet.xdterms[clause.slice(1)]=knowde;
+      subject.knowlet.allxdterms.push(clause.slice(1));}
     else {
       var dterm=clause.slice(1);
       knowlet.xdterms[dterm]=subject;
@@ -690,7 +699,6 @@ function knowletHTMLSetup(node)
     if (hash>=0) url=url.slice(0,hash);
     fdjtLog("Using '%s' as the name of the default knowlet",url);
     knowlet=Knowlet(url);}
-  fdjtLog("KNOWLET=%o",knowlet);
   i=0; while (i<elts.length) {
     var elt=elts[i++];
     if (elt.name==="KNOWDEF") knowlet.handleEntry(elt.content);}
