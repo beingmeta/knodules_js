@@ -25,7 +25,8 @@ function KnowletType(id,lang) {
   knowlet.strict=false;
   // Whether the knowlet is 'finished' (all references declared)
   knowlet.finished=false;
-  // Terms which are assumed unique
+  // Terms which are assumed unique.  This is used in non-strict
+  // knowlets to catch terms that become ambiguous.
   knowlet.unique_terms=[];
   // The default language for this knowlet
   knowlet.language=(((lang) && (knowlet_langs[lang])) || (lang) || "EN");
@@ -45,14 +46,12 @@ function KnowletType(id,lang) {
   knowlet.xterms={};
   // Mapping langids to hook tables
   knowlet.xhooks={};
-  // Inverted index of GENLS and GENLS*
-  knowlet.byGenls={};
-  knowlet.byAllGenls={};
-  // Inverted index of antonyms, including expansion over GENLS*
-  knowlet.byAntonyms={};
-  knowlet.byAllAntonyms={};
-  // Maps roles to inverted indices of fillers, indicates whether a role exists
-  knowlet.byRole={}; knowlet.hasRoles={};
+  // Inverted indices
+  knowlet.byAlways={};
+  knowlet.byAllAlways={};
+  knowlet.byNever={};
+  knowlet.relIndex={};
+  knowlet.roleIndex={};
   // Key concepts
   knowlet.key_concepts=[];
   // DRULES (disambiguation rules)
@@ -153,7 +152,8 @@ function KnowdeType(dterm,knowlet,strict)
   knowde.terms=new Array(dterm); knowde.hooks=[];
   // This maps langids to arrays of terms or hooks
   knowde.xterms={}; knowde.xhooks={};
-  knowde.genls=[]; knowde.specls=[]; knowde.roles={}; 
+  // These are various relationships
+  knowde.genls=[]; knowde.specls=[]; knowde.rels={}; knowde.roles={}; 
   return knowde;
 }
 protoknowde=KnowdeType.prototype;
@@ -274,39 +274,57 @@ protoknowde.disjointFrom=function(disj) {
 
 /* Knowde semantic relationships (adding) */
 
-protoknowde.addGenl=function (genl) {
+protoknowde.addAlways=function (genl) {
   if (typeof genl === "string") genl=this.knowlet.KnowdeRef(genl);
   else if (!(genl instanceof Knowde))
     throw {name: "not a Knowde", irritant: genl};
-  if (this.genls.indexOf(genl)>=0) return this;
+  if (this.always.indexOf(genl)>=0) return this;
   else {
     if (knowlets_debug_edits)
       fdjtLog("Adding genl %o to %o in %o",genl,this,this.knowlet);
-    this.dangling=false; this.genls.push(genl); genl.specls.push(this);
+    this.dangling=false; this.always.push(genl); genl.specls.push(this);
     if (this.knowlet.indexed) {
       var knowde=this; var knowlet=this.knowlet; var gdterm=genl.dterm;
-      function indexAllGenls(g) {
+      function indexAllAlways(g) {
 	var gdterm=g.dterm;
-	if (knowlet.byAllGenls[gdterm])
-	  if (knowlet.byAllGenls[gdterm].indexOf(knowde)>=0)
+	if (knowlet.byAllAlways[gdterm])
+	  if (knowlet.byAllAlways[gdterm].indexOf(knowde)>=0)
 	    return;
-	  else knowlet.byAllGenls[gdterm].push(knowde);
-	else knowlet.byAllGenls[gdterm]=new Array(knowde);
-	var genls=g.genls; var i=0;
-	while (i<genls.length) indexAllGenls(genls[i++]);}
-      if (knowlet.byGenls[gdterm])
-	knowlet.byGenls[gdterm].push(this);
-      else knowlet.byGenls[gdterm]=new Array(this);
-      if (knowlet.byGenls[gdterm])
-	knowlet.byGenls[gdterm].push(this);
-      else knowlet.byGenls[gdterm]=new Array(this);
-      indexAllGenls(genl);}
+	  else knowlet.byAllAlways[gdterm].push(knowde);
+	else knowlet.byAllAlways[gdterm]=new Array(knowde);
+	var always=g.always; var i=0;
+	while (i<always.length) indexAllAlways(always[i++]);}
+      if (knowlet.byAlways[gdterm])
+	knowlet.byAlways[gdterm].push(this);
+      else knowlet.byAlways[gdterm]=new Array(this);
+      if (knowlet.byAlways[gdterm])
+	knowlet.byAlways[gdterm].push(this);
+      else knowlet.byAlways[gdterm]=new Array(this);
+      indexAllAlways(genl);}
     return knowde;}
 };
+protoknowde.addRel= function (rel,val) {
+  var value;
+  if (typeof val === "string") value=this.knowlet.KnowdeRef(val);
+  else value=val;
+  if (!((typeof value === "object") && (value instanceof KnowdeType)))
+    throw {name: "not a Knowde", irritant: val};
+  else {
+    fdjtAdd(this.rels,rel,value);
+    if (this.knowlet.indexed) {
+      var index=this.knowlet.relIndex(rel);
+      if (!(index)) this.knowlet.relIndex[rel]=index={};
+      fdjtAdd(index,value.dterm,this);}}
+}
+protoknowde.addNever= function (val) { this.addRel('commonly',val);
+protoknowde.addNever= function (val) { this.addRel('sometimes',val);
+protoknowde.addNever= function (val) { this.addRel('never',val);
+protoknowde.addNever= function (val) { this.addRel('rarely',val);
+protoknowde.addNever= function (val) { this.addRel('never'b,val);
 protoknowde.addDisjoin=function (disj) {
   if (typeof disj === "string") disj=this.knowlet.KnowdeRef(disj);
   else if (!(disj instanceof Knowde))
-    throw {name: "not a Knowde", irritant: disj};
+
   if (this.disjoins.indexOf(disj)>=0) return this;
   else {
     this.dangling=false; this.disjoins.push(disj); disj.disjoins.push(this);
