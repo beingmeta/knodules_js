@@ -138,7 +138,7 @@ function KnowdeType(dterm,knowlet,strict)
 {
   var knowde=this;
   if (knowlets_debug_parsing)
-    fdjtLog('Making knowlet from %s in %o',dterm,knowlet);
+    fdjtLog('Making knowde from %s in %o',dterm,knowlet);
   knowde.dterm=dterm; knowde.dangling=true;
   knowlet.dterms[dterm]=knowde;
   knowlet.alldterms.push(dterm);
@@ -204,10 +204,10 @@ protoknowde.addRel=function(rel,val) {
 	function indexAlways(g) {
 	  var gdterm=g.dterm;
 	  if (knowlet.alwaysIndex[gdterm])
-	    if (knowlet.byAllAlways[gdterm].indexOf(knowde)>=0)
+	    if (knowlet.alwaysIndex[gdterm].indexOf(g)>=0)
 	      return;
-	    else knowlet.alwaysIndex[gdterm].push(knowde);
-	  else knowlet.alwaysIndex[gdterm]=new Array(knowde);
+	    else knowlet.alwaysIndex[gdterm].push(g);
+	  else knowlet.alwaysIndex[gdterm]=new Array(g);
 	  if (g.always) {
 	    var always=g.always; var i=0;
 	    while (i<always.length) indexAlways(always[i++]);}}
@@ -528,8 +528,8 @@ function knowletHTMLSetup(node)
       knowlet=Knowlet(elt.content);}}
   if ((!(knowlet)) &&
       (document) && (document.location) &&
-      (document.location.url)) {
-    var url=document.location.url;
+      (document.location.href)) {
+    var url=document.location.href;
     var hash=url.indexOf("#");
     if (hash>=0) url=url.slice(0,hash);
     fdjtLog("Using '%s' as the name of the default knowlet",url);
