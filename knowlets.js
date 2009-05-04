@@ -43,7 +43,7 @@ function KnowletType(id,lang) {
   // Mapping hook terms to arrays of of Knowdes (ambiguous)
   knowlet.hooks={};
   // Inverted indices
-  knowlet.alwaysIndex={};
+  knowlet.genlsIndex={};
   knowlet.index={};
   knowlet.roleIndex={};
   // Key concepts
@@ -100,6 +100,11 @@ protoknowlet.stdspace=function(string)
 {
   return string.replace(/\s+/," ").
     replace(/^\s/,"").replace(/\s$/,"");
+};
+
+protoknowlet.trimspace=function(string)
+{
+  return string.replace(/^\s/,"").replace(/\s$/,"");
 };
 
 protoknowlet.findBreak=function(string,brk,start)
@@ -199,19 +204,19 @@ protoknowde.addRel=function(rel,val) {
     if (index) {
       fdjtAdd(index,rel,val);
       if (mirror) fdjtAdd(index,val.dterm,mirror,this);
-      if (rel==='always') {
-	var allindex=knowlet.alwaysIndex;
-	function indexAlways(g) {
+      if (rel==='genls') {
+	var allindex=knowlet.genlsIndex;
+	function indexGenls(g) {
 	  var gdterm=g.dterm;
-	  if (knowlet.alwaysIndex[gdterm])
-	    if (knowlet.alwaysIndex[gdterm].indexOf(g)>=0)
+	  if (knowlet.genlsIndex[gdterm])
+	    if (knowlet.genlsIndex[gdterm].indexOf(g)>=0)
 	      return;
-	    else knowlet.alwaysIndex[gdterm].push(g);
-	  else knowlet.alwaysIndex[gdterm]=new Array(g);
-	  if (g.always) {
-	    var always=g.always; var i=0;
-	    while (i<always.length) indexAlways(always[i++]);}}
-	indexAlways(val);}}}
+	    else knowlet.genlsIndex[gdterm].push(g);
+	  else knowlet.genlsIndex[gdterm]=new Array(g);
+	  if (g.genls) {
+	    var genls=g.genls; var i=0;
+	    while (i<genls.length) indexGenls(genls[i++]);}}
+	indexGenls(val);}}}
 };
 
 protoknowde.addRole=function(role,val) {
@@ -320,13 +325,13 @@ protoknowlet.handleClause=function(clause,subject) {
 	  var role=this.KnowdeRef(clause.slice(1,pstart));
 	  var arg=this.KnowdeRef(clause.slice(pstart+1,pend));
 	  arg.addRole(role,subject);
-	  subject.addRel('always',role);}}
-      else subject.addRel('always',clause.slice(1));}
+	  subject.addRel('genls',role);}}
+      else subject.addRel('genls',clause.slice(1));}
     break;
   case '_': {
     var object=this.KnowdeRef(clause.slice(1));
-    this.addRel('examples',object);
-    object.addRel('always',subject);
+    subject.addRel('examples',object);
+    subject.addRel('genls',subject);
     break;}
   case '-':
     subject.addRel('never',clause.slice(1));
@@ -351,7 +356,7 @@ protoknowlet.handleClause=function(clause,subject) {
     else if (clause.indexOf('@')>1) {
       var atpos=clause.indexOf('@');
       var knowlet=Knowlet(clause.slice(atpos+1));
-      var knowde=knowlet.Knowde(clause.slice(1,atpos));
+      var knowde=this.Knowde(clause.slice(1,atpos));
       var mirror_name=subject.dterm+"@"+subject.knowlet.name;
       knowlet.xdterms[mirror_name]=subject;
       knowlet.allxdterms.push(subject);
@@ -360,22 +365,21 @@ protoknowlet.handleClause=function(clause,subject) {
       subject.knowlet.xdterms[clause.slice(1)]=knowde;
       subject.knowlet.allxdterms.push(clause.slice(1));}
     else if (clause[1]==='*')
-      this.addRel('equiv',knowlet.KnowdeRef(clause.slice(2)));
+      subject.addRel('equiv',this.KnowdeRef(clause.slice(2)));
     else if (clause[1]==='~')
-      this.addRel('kinda',knowlet.KnowdeRef(clause.slice(2)));
+      subject.addRel('kinda',this.KnowdeRef(clause.slice(2)));
     else 
-      this.addRel('identical',knowlet.KnowdeRef(clause.slice(2)));
+      subject.addRel('identical',this.KnowdeRef(clause.slice(2)));
     break;
   case '"': {
     var qend=((clause[-1]==='"') ? (-2) : (-1));
     if (clause[1]==="*") {
-      fdjtAdd(subject,"gloss",clause.slice(2,qend));
+      fdjtAdd(subject,"glosses",clause.slice(2,qend));
       subject.gloss=clause.slice(2);}
-    else if (subject.gloss)
-      fdjtAdd(subject,"gloss",clause.slice(2,qend));
-    else {
-      fdjtAdd(subject,"gloss",clause.slice(1,qend));
+    else if (!(subject.gloss)) {
+      fdjtAdd(subject,"glosses",clause.slice(1,qend));
       subject.gloss=clause.slice(1,qend);}
+    else fdjtAdd(subject,"glosses",clause.slice(2,qend));
     break;}
   case '%': {
     var mirror=KnowdeRef(clause.slice(1));
@@ -405,7 +409,7 @@ protoknowlet.handleClause=function(clause,subject) {
       var role=this.KnowdeRef(clause.slice(0,brk));
       var filler=this.KnowdeRef(clause.slice(brk+1));
       subject.addRole(role,filler);
-      filler.addRel('always',role);}
+      filler.addRel('genls',role);}
     else if ((brk=this.findBreak(clause,'\&'))>0) {
       var drule=this.KnowDRule(this.segmentString(clause,'&'));
       drule.knowde=subject;
@@ -436,6 +440,8 @@ protoknowlet.handleSubjectEntry=function(entry)
 
 protoknowlet.handleEntry=function(entry)
 {
+  entry=this.trimspace(entry);
+  if (entry.length===0) return false;
   switch (entry[0]) {
   case '*': {
     var subject=this.handleSubjectEntry(entry.slice(1));
@@ -480,6 +486,8 @@ protoknowlet.handleEntries=function(block)
   if (typeof block === "string") {
     var nocomment=this.stripComments(block);
     var segmented=this.segmentString(nocomment,';');
+    if (knowlets_debug_parsing)
+      fdjtLog("Handling %d entries",segmented.length);
     return this.handleEntries(segmented);}
   else if (block instanceof Array) {
     var results=[];
@@ -488,71 +496,4 @@ protoknowlet.handleEntries=function(block)
     return results;}
   else throw {name: 'TypeError', irritant: block};
 };
-
-/* Getting knowdes into HTML */
-
-protoknowde.toHTML=function()
-{
-  if (this.dterm_base)
-    return fdjtSpan("dterm",this.dterm_base,
-		    fdjtSpan("disambig",this.dterm_disambig));
-  else {
-    var dterm=this.dterm;
-    var colonpos=dterm.indexOf(':');
-    if ((colonpos>0) && (colonpos<(dterm.length-1))) {
-      if (dterm[colonpos+1].search(/\w/)===0)
-	return fdjtSpan("dterm",dterm.slice(0,colonpos),
-			dterm.slice(colonpos));}
-    return fdjtSpan("dterm",dterm);}
-}
-
-/* Getting Knowlets out of HTML */
-
-var _knowletHTMLSetup_done=false;
-
-function knowletHTMLSetup(node)
-{
-  var doing_the_whole_thing=false;
-  if ((!(node)) || (node_arg===document))
-    if (_knowletHTMLSetup_done) return;
-    else {
-      if (!(node)) {
-	node=document;
-	doing_the_whole_thing=true;}
-      else if (node===document)
-	doing_the_whole_thing=true;}
-  var elts=fdjtGetChildrenByTagName(document,"META");
-  var i=0; while (i<elts.length) {
-    var elt=elts[i++];
-    if (elt.name==="KNOWLET") {
-      knowlet=Knowlet(elt.content);}}
-  if ((!(knowlet)) &&
-      (document) && (document.location) &&
-      (document.location.href)) {
-    var url=document.location.href;
-    var hash=url.indexOf("#");
-    if (hash>=0) url=url.slice(0,hash);
-    fdjtLog("Using '%s' as the name of the default knowlet",url);
-    knowlet=Knowlet(url);}
-  i=0; while (i<elts.length) {
-    var elt=elts[i++];
-    if (elt.name==="KNOWDEF") knowlet.handleEntry(elt.content);}
-  elts=fdjtGetChildrenByTagName(document,"LINK");
-  i=0; while (i<elts.length) {
-    var elt=elts[i++];
-    if (elt.name==="KNOWLET") {
-      knowlet.handleEntry(elt.content);}}
-  elts=fdjtGetChildrenByTagName(document,"SCRIPT");
-  i=0; while (i<elts.length) {
-    var elt=elts[i++];
-    if ((elt.getAttribute("language")) &&
-	((elt.getAttribute("language"))==="knowlets")) {
-      var children=elt.childNodes;
-      var j=0; while (i<children.length) {
-	var child=children[j++];
-	if (child.nodeType===Node.TEXT_NODE)
-	  knowlet.handleEntries(child.nodeValue);}}}
-  if (doing_the_whole_thing) _knowletHTMLSetup_done=true;
-}
-
 
