@@ -255,19 +255,17 @@ protoknowde.addRel=function(rel,val) {
 
 protoknowde.addRole=function(role,val) {
   var rterm=role.dterm;
-  if ((this.roles[rterm]) && (this.roles[rterm].indexOf(val)>=0))
+  if ((this.roles.hasOwnProperty(rterm)) &&
+      (this.roles[rterm].indexOf(val)>=0))
     return this;
   else {
-    var values=this.roles[rterm];
-    var mirror=(role.mirror)|false;
+    var values=((this.roles.hasOwnProperty(rterm)) && (this.roles[rterm]));
     var knowlet=this.knowlet;
     var index=knowlet.rolesIndex;
-    var mterm=((mirror) && (mirror.dterm));
     if (values) values.push(val);
     else this.roles[rterm]=values=new Array(val);
-    if (index) {
-      fdjtAdd(index,rterm,val);
-      if (mirror) fdjtAdd(index,val.dterm,mterm,this);}}
+    if (index) 
+      fdjtIndexAdd(index,this.dterm,rterm,val);}
 };
 
 /* Adding synonyms and hooks */
@@ -450,7 +448,7 @@ protoknowlet.handleClause=function(clause,subject) {
       if (subject.drules)
 	subject.drules.push(drule);
       else subject.drules=new Array(drule);
-      if (subject.knowlet.drules[drule.head])
+      if (subject.knowlet.drules.hasOwnProperty(drule.head))
 	subject.knowlet.drules[drule.head].push(drule);
       else subject.knowlet.drules[drule.head]=new Array(drule);}
     else if (clause.search(/[A-Za-z][A-Za-z]\$/)===0) {
