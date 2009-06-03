@@ -37,7 +37,10 @@
 
 protoknowde.toHTML=function()
 {
-  if (this.dterm_base)
+  if (!(this.dterm)) {
+    fdjtWarn("toHTML called on random DTerm %o",this);
+    return fdjtSpan("dterm","????");}
+  else if (this.dterm_base)
     return fdjtSpan("dterm",this.dterm_base,
 		    fdjtSpan("disambig",this.dterm_disambig));
   else {
@@ -61,6 +64,22 @@ function knoRelVal(v)
     span.setAttribute("dterm",v.dterm);
     return span;}
   else return fdjtNodify("???");
+}
+
+var kno_dterm_prefix=false;
+var kno_dterm_suffix=false;
+
+function knoDTermSpan(dterm)
+{
+  if (typeof dterm === "string") 
+    dterm=knowlet.Knowde(dterm)||dterm;
+  if (typeof dterm === "string")
+    return fdjtSpan("dterm",kno_dterm_prefix,dterm,kno_dterm_suffix);
+  else {
+    var span=fdjtSpan("dterm",kno_dterm_prefix,dterm.dterm,kno_dterm_suffix);
+    span.setAttribute("dterm",dterm.dterm); span.dterm=dterm;
+    span.title=dterm.gloss||null;
+    return span;}
 }
 
 function knoAppendRel(elt,relname,relcode,relvals)
@@ -174,3 +193,9 @@ function knoHTMLSetup(node)
       else {}}}
   if (doing_the_whole_thing) _knowletsHTML_done=true;
 }
+
+/* Emacs local variables
+;;;  Local variables: ***
+;;;  compile-command: "cd ..; make" ***
+;;;  End: ***
+*/

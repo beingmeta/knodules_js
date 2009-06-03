@@ -103,23 +103,18 @@ function Knowlet(id,lang)
 
 protoknowlet.KnowdeProbe= function (string,langid) {
   var langterm=false;
-  if (this.dterms[string]) return this.dterms[string];
-  else if (langid) {
-    langterm="$"+langid+"$"+string;
-    if (this.dterms[langterm])
-      return this.dterms[langterm];}
-  if (this.strict) return false;
-  else if ((this.terms[string]) &&
+  if ((langid) && (langid!==this.language))
+    string="$"+langid+"$"+string;
+  if (this.dterms.hasOwnProperty(string))
+    return this.dterms[string];
+  else if (this.strict) return false;
+  else if ((this.terms.hasOwnProperty(string)) &&
 	   (this.terms[string].length===1))
     return this.terms[string][0];
-  else if ((langterm) &&
-	   (this.terms[langterm]) &&
-	   (this.terms[langterm].length===1))
-    return this.terms[langterm][0];
   else return false;
 };
 protoknowlet.KnowdeRef= function(string,langid) {
-  var knowde=this.KnowdeProbe(string,((langid)||(this.language)));
+  var knowde=this.KnowdeProbe(string,((langid)||false));
   if (knowde) return knowde;
   if (this.finished)
     throw {name: 'unknown Knowde reference', irritant: string };
@@ -186,6 +181,7 @@ function KnowdeType(dterm,knowlet,strict)
   knowde.terms=new Array(dterm); knowde.hooks=[];
   // These are various relationships
   knowde.roles={}
+  knowde.allGenls=[];
   return knowde;
 }
 protoknowde=KnowdeType.prototype;
@@ -195,13 +191,13 @@ function Knowde(dterm,kno,strict)
   if (!(kno))
     if (knowlet) kno=knowlet;
     else throw { name: "no default knowlet" };
-  var knowde=kno.dterms[dterm];
-  if (knowde) return knowde;
+  if (kno.dterms.hasOwnProperty(dterm))
+    return kno.dterms[dterm];
   else if ((!(strict)) && (!(knowlet.strict)) &&
 	   (knowlet.terms[dterm]) &&
 	   (knowlet.terms[dterm].length===1))
     return knowlet.terms[dterm][0];
-  else return new KnowdeType(dterm,kno,strict);
+  else return new KnowdeType(dterm,kno);
 }
 
 /* Knowde semantic relationships (getting) */
@@ -224,34 +220,41 @@ protoknowde.addRel=function(rel,val) {
   if ((this[rel]) && (this[rel].indexOf(val)>=0))
     return this;
   else {
-    var values=this[rel]; var mirror=false;
+    var values; var mirror=false;
     var knowlet=this.knowlet;
     var index=knowlet.index;
     if (rel==='never') mirror='never';
-    if (values) values.push(val);
-    else this[rel]=values=new Array(val);
+    if (this.hasOwnProperty(rel))
+      values=this[rel];
+    else this[rel]=values=[];
+    values.push(val);
     if (mirror)
       if (!(val[mirror]))
 	val[mirror]=new Array(this);
       else val[mirror].push(this);
     else {}
+    if ((rel==='genls') && (this.allGenls.indexOf(val)<0)) {
+      // Keep allgenls updated
+      var genls=this.genls; var allgenls=[].concat(genls); 
+      var i=0; while (i<genls.length) 
+		 allgenls=allgenls.concat(genls[i++].allGenls);
+      this.allGenls=allgenls;
+      // Update genlsIndex if indexing
+      if (index) {
+	var allindex=knowlet.genlsIndex;
+	var j=0; while (j<allgenls.length) {
+	  var g=allgenls[j++];
+	  if ((g) && (g.dterm)) {
+	    var gdterm=g.dterm;
+	    if (allindex.hasOwnProperty(gdterm)) {
+	      if (allindex[gdterm].indexOf(this)<0) 
+		allindex[gdterm].push(this);}
+	    else allindex[gdterm]=new Array(this);}
+	  else fdjtWarn("Odd genl %g from allgenls %o of %o",
+			g,allgenls,this);}}}
     if (index) {
       fdjtAdd(index,rel,val);
-      if (mirror) fdjtAdd(index,val.dterm,mirror,this);
-      if (rel==='genls') {
-	var allindex=knowlet.genlsIndex;
-	function indexGenls(g) {
-	  var gdterm=g.dterm;
-	  if (knowlet.genlsIndex[gdterm])
-	    if (knowlet.genlsIndex[gdterm].indexOf(g)>=0)
-	      return;
-	    else knowlet.genlsIndex[gdterm].push(g);
-	  else knowlet.genlsIndex[gdterm]=new Array(g);
-	  if (g.genls) {
-	    var genls=g.genls; var i=0;
-	    while (i<genls.length) indexGenls(genls[i++]);}}
-	indexGenls(val);}}}
-};
+      if (mirror) fdjtAdd(index,val.dterm,mirror,this);}};}
 
 protoknowde.addRole=function(role,val) {
   var rterm=role.dterm;
@@ -272,13 +275,8 @@ protoknowde.addRole=function(role,val) {
 
 protoknowde.addTerm=function (term,langid) {
   var knowlet=this.knowlet;
-  if (langid)
-    if (langid===knowlet.language)
-      if (term.search("$"+knowlet.language+"$",4)===0)
-	term=term.slice(4);
-      else {}
-    else if (term.search("$"+langid+"$",4)===0) {}
-    else term="$"+langid+"$";
+  if ((langid) && (langid!==knowlet.language))
+    term="$"+langid+"$"+term;
   else {}
   this.dangling=false;
   if (this.terms.indexOf(term)>=0) return;
@@ -288,13 +286,8 @@ protoknowde.addTerm=function (term,langid) {
 
 protoknowde.addHook=function (term,langid) {
   var knowlet=this.knowlet;
-  if (langid)
-    if (langid===knowlet.language)
-      if (term.search("$"+knowlet.language+"$",4)===0)
-	term=term.slice(4);
-      else {}
-    else if (term.search("$"+langid+"$",4)===0) {}
-    else term="$"+langid+"$";
+  if ((langid) && (langid!==knowlet.language))
+    term="$"+langid+"$"+term;
   else {}
   this.dangling=false;
   fdjtAdd(this,"hooks",term);
@@ -358,15 +351,15 @@ protoknowlet.handleClause=function(clause,subject) {
 	  var arg=this.KnowdeRef(clause.slice(pstart+1,pend));
 	  arg.addRole(role,subject);
 	  subject.addRel('genls',role);}}
-      else subject.addRel('genls',clause.slice(1));}
+      else subject.addRel('genls',this.KnowdeRef(clause.slice(1)));}
     break;
   case '_': {
     var object=this.KnowdeRef(clause.slice(1));
     subject.addRel('examples',object);
-    subject.addRel('genls',subject);
+    object.addRel('genls',subject);
     break;}
   case '-':
-    subject.addRel('never',clause.slice(1));
+    subject.addRel('never',this.KnowdeRef(clause.slice(1)));
   case '~':
     if (clause.search(/~[A-Za-z][A-Za-z]\$/)===0)
       subject.addHook(clause.slice(4),clause.slice(1,3).toLowerCase());
@@ -529,3 +522,9 @@ protoknowlet.handleEntries=function(block)
   else throw {name: 'TypeError', irritant: block};
 };
 
+
+/* Emacs local variables
+;;;  Local variables: ***
+;;;  compile-command: "cd ..; make" ***
+;;;  End: ***
+*/
