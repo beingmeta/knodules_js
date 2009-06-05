@@ -360,6 +360,7 @@ protoknowlet.handleClause=function(clause,subject) {
     break;}
   case '-':
     subject.addRel('never',this.KnowdeRef(clause.slice(1)));
+    break;
   case '~':
     if (clause.search(/~[A-Za-z][A-Za-z]\$/)===0)
       subject.addHook(clause.slice(4),clause.slice(1,3).toLowerCase());
@@ -370,11 +371,13 @@ protoknowlet.handleClause=function(clause,subject) {
     var assoc=this.KnowdeRef(value);
     if (clause[1]==="-")
       subject.addRel('antiassocs',assoc);
-    else subject.addRel('assocs',assoc);}
+    else subject.addRel('assocs',assoc);
+    break;}
   case '@': 
     if (clause[1]==="#") 
       fdjtAdd(subject,'tags',clause.slice(2));
     else fdjtAdd(subject,'uri',clause.slice(1));
+    break;
   case '=':
     if (clause[1]==='@')
       subject.oid=clause.slice(1);
@@ -419,7 +422,8 @@ protoknowlet.handleClause=function(clause,subject) {
       fdjtWarn("Inconsistent mirrors for %s: +%s and -%s",
 	       mirror,subject,oinvmirror);
       omirror.mirror=false;}
-    subject.mirror=mirror; mirror.mirror=subject;}
+    subject.mirror=mirror; mirror.mirror=subject;
+    break;}
   case '.': {
     var brk=this.findBreak(clause,'=');
     if (!(brk))
