@@ -69,10 +69,11 @@ function knoRelVal(v)
 var kno_dterm_prefix=false;
 var kno_dterm_suffix=false;
 
-function knoDTermSpan(dterm)
+function knoDTermSpan(dterm,kno)
 {
-  if (typeof dterm === "string") 
-    dterm=knowlet.Knowde(dterm)||dterm;
+  if ((kno!==false) && (!(kno))) kno=knowlet;
+  if ((kno) && (typeof dterm === "string")) 
+    dterm=kno.Knowde(dterm)||dterm;
   if (typeof dterm === "string")
     return fdjtSpan("dterm",kno_dterm_prefix,dterm,kno_dterm_suffix);
   else {

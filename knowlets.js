@@ -526,7 +526,6 @@ protoknowlet.handleEntries=function(block)
   else throw {name: 'TypeError', irritant: block};
 };
 
-
 /* Emacs local variables
 ;;;  Local variables: ***
 ;;;  compile-command: "cd ..; make" ***
