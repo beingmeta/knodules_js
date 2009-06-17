@@ -45,6 +45,9 @@ protoknowde.toHTML=function()
 		    fdjtSpan("disambig",this.dterm_disambig));
   else {
     var dterm=this.dterm;
+    if (!(dterm.indexOf)) {
+      fdjtWarn("bad dterm %o from %o",dterm,this);
+      return fdjtSpan("dterm",this.toString());}
     var colonpos=dterm.indexOf(':');
     if ((colonpos>0) && (colonpos<(dterm.length-1))) {
       if (dterm[colonpos+1].search(/\w/)===0)

@@ -526,6 +526,37 @@ protoknowlet.handleEntries=function(block)
   else throw {name: 'TypeError', irritant: block};
 };
 
+/* Indexing with knowlets */
+
+function knoIndexTag(index,tag,indexval,nogenls,checkdup)
+{
+  var dup=false;
+  var dterm=((typeof tag === "string") ? (tag) : (tag.dterm));
+  if (index.hasOwnProperty(dterm))
+    if ((!(checkdup)) || (index[dterm].indexof(indexval)<0))
+      index[dterm].push(indexval);
+    else dup=true;
+  else {
+    if (index._all) index._all.push(dterm);
+    index[dterm]=new Array(indexval);}
+  if (dup) return false;
+  else if ((nogenls) || (typeof tag==="string")) return true;
+  else {
+    // Assume it's a Knowde
+    var genls=tag.allGenls;
+    if (genls) {
+      var i=0; while (i<genls.length) {
+	var g=genls[i++]; var gdterm=g.dterm;
+	if (index.hasOwnProperty(gdterm))
+	  index[gdterm].push(indexval);
+	else {
+	  if (index._all) index._all.push(gdterm);
+	  index[gdterm]=new Array(indexval);}}}
+    return true;}
+}
+
+
+
 /* Emacs local variables
 ;;;  Local variables: ***
 ;;;  compile-command: "cd ..; make" ***
