@@ -123,8 +123,6 @@ protoknowlet.KnowdeRef= function(string,langid) {
 
 /* Text processing utilities */
 
-protoknowlet.quote_char="\\";
-
 protoknowlet.stdspace=function(string)
 {
   return string.replace(/\s+/," ").
@@ -140,14 +138,23 @@ protoknowlet.findBreak=function(string,brk,start)
 {
   var pos=string.indexOf(brk,start||0);
   while (pos>0)
-    if (string[pos-1]!=this.quote_char)
+    if (string[pos-1]!="\\")
       return pos;
     else pos=string.indexOf(brk,pos+1);
   return pos;
 };
 
+var _knowlet_oddpat=/(\\)|(\s\s)|(\s;)|(\s;)/g;
+
 protoknowlet.segmentString=function(string,brk,start,keepspace)
 {
+  if (start)
+    if (string.slice(start).search(_knowlet_oddpat)<0)
+      return string.slice(start).split(brk);
+    else {}
+  else if (string.search(_knowlet_oddpat)<0)
+    return string.split(brk);
+  else {}
   var result=[]; var i=0, pos=start||0;
   var nextpos=this.findBreak(string,brk,pos);
   while (nextpos>=0) {
@@ -159,6 +166,7 @@ protoknowlet.segmentString=function(string,brk,start,keepspace)
   result.push(string.slice(pos));
   return result;
 };
+
 
 protoknowlet.stripComments=function(string)
 {
@@ -533,7 +541,9 @@ function knoIndexTag(index,tag,indexval,nogenls,checkdup)
   var dup=false;
   var dterm=((typeof tag === "string") ? (tag) : (tag.dterm));
   if (index.hasOwnProperty(dterm))
-    if ((!(checkdup)) || (index[dterm].indexof(indexval)<0))
+    if (!(checkdup))
+      index[dterm].push(indexval);
+    else if (index[dterm].indexof(indexval)<0)
       index[dterm].push(indexval);
     else dup=true;
   else {
@@ -554,8 +564,6 @@ function knoIndexTag(index,tag,indexval,nogenls,checkdup)
 	  index[gdterm]=new Array(indexval);}}}
     return true;}
 }
-
-
 
 /* Emacs local variables
 ;;;  Local variables: ***
