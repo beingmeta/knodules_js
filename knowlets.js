@@ -534,6 +534,26 @@ protoknowlet.handleEntries=function(block)
   else throw {name: 'TypeError', irritant: block};
 };
 
+/* KnowDef returns a knowde from an entry */
+
+function KnowDef(string,kno)
+{
+  if (typeof string === "string") {
+    // Default the knowlet (may be overriden)
+    var bar=string.search(/[^\\]\|/g);
+    var head=((bar<0) ? (string) : (string.slice(0,bar)));
+    var atsign=head.search(/[^\\]@/g);
+    var dterm;
+    if (atsign>0) {
+      kno=Knowlet(head.slice(atsign+1));
+      dterm=head.slice(0,atsign);
+      return kno.handleSubjectEntry(dterm+string.slice(bar));}
+    else {
+      if (!(kno)) kno=knowlet; dterm=head;
+      return kno.handleSubjectEntry(string);}}
+  else throw {name: 'TypeError', irritant: string};
+}
+
 /* Indexing with knowlets */
 
 function knoIndexTag(index,tag,indexval,nogenls,checkdup)

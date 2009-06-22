@@ -35,28 +35,50 @@
 
 /* Getting knowdes into HTML */
 
-protoknowde.toHTML=function()
+protoknowde.toHTML=function(kno)
 {
-  if (!(this.dterm)) {
-    fdjtWarn("toHTML called on random DTerm %o",this);
-    return fdjtSpan("dterm","????");}
+  var prefix=false;
+  if ((kno) && (kno!=this)) prefix=kno.name;
+  var result; var dterm=this.dterm;
+  if (!(dterm)) {
+    fdjtWarn("toHTML called on invalid DTerm %o",this);
+    result=fdjtSpan("dterm","????");}
   else if (this.dterm_base)
-    return fdjtSpan("dterm",this.dterm_base,
+    result=fdjtSpan("dterm",this.dterm_base,
 		    fdjtSpan("disambig",this.dterm_disambig));
   else {
-    var dterm=this.dterm;
     if (!(dterm.indexOf)) {
       fdjtWarn("bad dterm %o from %o",dterm,this);
-      return fdjtSpan("dterm",this.toString());}
+      result=fdjtSpan("dterm",this.toString());}
     var colonpos=dterm.indexOf(':');
     if ((colonpos>0) && (colonpos<(dterm.length-1))) {
-      if (dterm[colonpos+1].search(/\w/)===0)
-	return fdjtSpan("dterm",dterm.slice(0,colonpos),
-			dterm.slice(colonpos));}
-    return fdjtSpan("dterm",dterm);}
+      if (dterm.slice(colonpos+1).search(/\w/)===0)
+	result=fdjtSpan("dterm",dterm.slice(0,colonpos),
+			fdjtSpan("dismabig",dterm.slice(colonpos)));
+      else result=fdjtSpan("dterm",dterm);}
+    else result=fdjtSpan("dterm",dterm);}
+  result.knowde=this;
+  if (prefix)
+    result.setAttribute("dterm",dterm+"@"+prefix);
+  else result.setAttribute("dterm",dterm);
+  return result;
 };
 
 /* Making DTERM descriptions */
+
+function knoSpan(value,domain)
+{
+  var knowde;
+  if (typeof value === "string") 
+    knowde=KnowDef(value,(domain)||(false));
+  else if (value instanceof Knowde)
+    knowde=value;
+  else throw {};
+  var span=knowde.toHTML((domain)||(false));
+  span.setAttribute("dterm",knowde.dterm);
+  span.knowde=knowde.dterm;
+  return span;
+}
 
 function knoRelVal(v)
 {
@@ -197,6 +219,8 @@ function knoHTMLSetup(node)
       else {}}}
   if (doing_the_whole_thing) _knowletsHTML_done=true;
 }
+
+fdjtAddSetup(knoHTMLSetup);
 
 /* Emacs local variables
 ;;;  Local variables: ***
