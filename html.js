@@ -186,11 +186,17 @@ function knoHTMLSetup(node)
 	doing_the_whole_thing=true;}
       else if (node===document)
 	doing_the_whole_thing=true;}
+  var refuri=false;
   var elts=fdjtGetChildrenByTagName(document,"META");
   var i=0; while (i<elts.length) {
     var elt=elts[i++];
     if (elt.name==="KNOWLET") {
-      knowlet=Knowlet(elt.content);}}
+      knowlet=Knowlet(elt.content); break;}
+    else if (elt.name==="REFURI") {
+      refuri=elt.content;}}
+  if ((!(knowlet)) && (refuri)) {
+    fdjtLog("Using REFURI '%s' as the name of the default knowlet",refuri);
+    knowlet=Knowlet(url);}
   if ((!(knowlet)) &&
       (document) && (document.location) &&
       (document.location.href)) {
