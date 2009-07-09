@@ -133,11 +133,16 @@ var knowlet_richtips={};
 
 function KnowdeRichTip(elt) {
   // fdjtTrace("KnowdeRichTip %o",elt);
-  if (typeof elt === "string") {
-    var knowde=knowlet.KnowdeProbe(elt);
-    if (knowde)
-      return KnowdeRichTip(knowde);
-    else return false;}
+  if (typeof elt === "string")
+    if (elt.indexOf('|')>0) {
+      var knowde=knowlet.handleEntry(elt);
+      if (knowde)
+	return KnowdeRichTip(knowde);}
+    else {
+      var knowde=knowlet.KnowdeProbe(elt);
+      if (knowde)
+	return KnowdeRichTip(knowde);
+      else return false;}
   else if (elt instanceof KnowdeType) {
     var knowde=elt;
     var dterm=knowde.dterm;
@@ -154,8 +159,11 @@ function KnowdeRichTip(elt) {
     if (knowde.gloss) 
       fdjtAppend(richtip," ",fdjtSpan("gloss",knowde.gloss));
     return richtip;}
-  else if ((elt instanceof Node) && (elt.getAttribute('dterm')))
-    return KnowdeRichTip(elt.getAttribute('dterm'));
+  else if ((elt instanceof Node) && (elt.knowde))
+    return KnowdeRichTip(elt.knowde);
+  else if ((elt instanceof Node) && (elt.getAttribute('dterm'))) {
+    var dterm=elt.getAttribute('dterm');
+    return KnowdeRichTip(elt.getAttribute('dterm'));}
   else return false;
 }
 
@@ -217,7 +225,8 @@ function knoHTMLSetup(node)
   i=0; while (i<elts.length) {
     var elt=elts[i++];
     if ((elt.getAttribute("language")) &&
-	((elt.getAttribute("language"))==="knowlet")) {
+	(((elt.getAttribute("language"))==="knowlet") ||
+	 ((elt.getAttribute("language"))==="KNOWLET"))) {
       if (elt.src) KnowletLoad(elt);
       else if (elt.text) {
 	var knowdes=knowlet.handleEntries(elt.text);

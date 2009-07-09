@@ -36,6 +36,7 @@
 /* A few global variables.  Maybe we should make these fields on Knowlet. */
 var knowlets={};
 var knowlet_nicknames={};
+var knowlet_langs={};
 var protoknowlet={};
 var protoknowde={};
 var knowlet=false;
@@ -479,6 +480,15 @@ protoknowlet.handleEntry=function(entry)
 {
   entry=this.trimspace(entry);
   if (entry.length===0) return false;
+  var bar=fdjtFindSplit(entry,'|');
+  var atsign=fdjtFindSplit(entry,'@');
+  if ((atsign>0) && ((bar<0)||(atsign<bar))) {
+    var term=entry.slice(0,atsign);
+    var knostring=((bar<0) ? (entry.slice(atsign+1)) :
+		   (entry.slice(atsign+1,bar)));
+    var knowlet=Knowlet(knostring);
+    if (bar<0) return knowlet.Knowde(term);
+    else return knowlet.handleEntry(term+entry.slice(bar));}
   switch (entry[0]) {
   case '*': {
     var subject=this.handleSubjectEntry(entry.slice(1));
@@ -584,6 +594,8 @@ function knoIndexTag(index,tag,indexval,nogenls,checkdup)
 	  index[gdterm]=new Array(indexval);}}}
     return true;}
 }
+
+var brico_knowlet=Knowlet("brico","en");
 
 /* Emacs local variables
 ;;;  Local variables: ***
