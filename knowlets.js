@@ -548,23 +548,33 @@ protoknowlet.handleEntries=function(block)
 
 function KnowDef(string,kno)
 {
-  if (typeof string === "string") {
-    // Default the knowlet (may be overriden)
-    var bar=string.search(/[^\\]\|/g);
-    var head=((bar<0) ? (string) : (string.slice(0,bar)));
-    var atsign=head.search(/[^\\]@/g);
-    var dterm;
-    if (atsign>0) {
-      kno=Knowlet(head.slice(atsign+1));
-      dterm=head.slice(0,atsign);
-      return kno.handleSubjectEntry(dterm+string.slice(bar));}
-    else {
-      if (!(kno)) kno=knowlet; dterm=head;
-      return kno.handleSubjectEntry(string);}}
-  else throw {name: 'TypeError', irritant: string};
+  if ((typeof string !== "string") || (string.length<1))
+    throw {name: 'TypeError', irritant: string};
+  var termstart=-1; var oid=false; var result=false;
+  if ((string[0]==="@") && ((termstart=string.indexOf("\""))>0)) {
+    oid=string.slice(0,termstart);
+    string=string.slice(termstart+1,string.length-1);}
+  // Get the head and (possibly) the knowlet
+  var bar=string.search(/[^\\]\|/g);
+  var head=((bar<0) ? (string) : (string.slice(0,bar)));
+  var atsign=head.search(/[^\\]@/g);
+  var dterm;
+  if (atsign>0) {
+    kno=Knowlet(head.slice(atsign+1));
+    dterm=head.slice(0,atsign);
+    result=kno.handleSubjectEntry(dterm+string.slice(bar));}
+  else {
+    if (!(kno)) kno=knowlet; dterm=head;
+    result=kno.handleSubjectEntry(string);}
+  if ((oid) && (result) && (typeof result != "string"))
+    result.oid=oid;
+  return result;
 }
 
 /* Indexing with knowlets */
+
+var kno_wgenls=false;
+var kno_wogenls=true;
 
 function knoIndexTag(index,tag,indexval,nogenls,checkdup)
 {
