@@ -263,6 +263,7 @@ function knoTagTool(varname,cueinit,cues,tvinit,tagverse)
 {
   var tagpicks=fdjtDiv("tagpicks");
   tagpicks.onclick=fdjtCheckSpan_onclick;
+  tagpicks.onchange=fdjtCheckSpan_onchange;
   var input=fdjtInput("TEXT",varname,"");
   var cues_elt=fdjtNewElt(cueinit||"span.tagcues");
   var tagverse_elt=fdjtNewElt(tvinit||"span.tagverse");
