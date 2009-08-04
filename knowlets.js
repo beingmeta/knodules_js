@@ -554,21 +554,39 @@ function KnowDef(string,kno)
   if ((string[0]==="@") && ((termstart=string.indexOf("\""))>0)) {
     oid=string.slice(0,termstart);
     string=string.slice(termstart+1,string.length-1);}
-  // Get the head and (possibly) the knowlet
-  var bar=string.search(/[^\\]\|/g);
-  var head=((bar<0) ? (string) : (string.slice(0,bar)));
-  var atsign=head.search(/[^\\]@/g);
-  var dterm;
-  if (atsign>0) {
-    kno=Knowlet(head.slice(atsign+1));
-    dterm=head.slice(0,atsign);
-    result=kno.handleSubjectEntry(dterm+string.slice(bar));}
+  if ((oid) && (oid.startsWith("@1/"))) 
+    result=brico_knowlet.handleSubjectEntry(oid+"|"+string);
   else {
-    if (!(kno)) kno=knowlet; dterm=head;
-    result=kno.handleSubjectEntry(string);}
+    // Get the head and (possibly) the knowlet
+    var bar=string.search(/[^\\]\|/g);
+    var head=((bar<0) ? (string) : (string.slice(0,bar)));
+    var atsign=head.search(/[^\\]@/g);
+    var dterm;
+    if (atsign>0) {
+      kno=Knowlet(head.slice(atsign+1));
+      dterm=head.slice(0,atsign);
+      result=kno.handleSubjectEntry(dterm+string.slice(bar));}
+    else {
+      if (!(kno)) kno=knowlet; dterm=head;
+      result=kno.handleSubjectEntry(string);}}
   if ((oid) && (result) && (typeof result != "string"))
     result.oid=oid;
   return result;
+}
+
+/* Getting tag strings */
+
+function knoTagString(knowde,knowlet)
+{
+  if (typeof knowde === "string")
+    return knowde;
+  else if (knowde.oid)
+    return knowde.oid+"\""+knowde.dterm+"\"";
+  else if (knowlet)
+    if (knowlet===knowde.knowlet)
+      return knowde.dterm;
+    else return knowde.dterm+"@"+knowde.knowlet.name;
+  else return knowde.dterm;
 }
 
 /* Indexing with knowlets */
