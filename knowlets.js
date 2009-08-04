@@ -42,6 +42,7 @@ var protoknowde={};
 var knowlet=false;
 var knowlets_debug_parsing=false;
 var knowlets_debug_edits=false;
+var knowlet_oidmap={};
 
 /* Knowlets, constructor, etc. */
 
@@ -81,6 +82,8 @@ function KnowletType(id,lang) {
   knowlet.genlsIndex={};
   knowlet.index={};
   knowlet.roleIndex={};
+  // This maps external OIDs to knowdes
+  knowlet.oidmap={};
   // Key concepts
   knowlet.key_concepts=[];
   // DRULES (disambiguation rules)
@@ -102,7 +105,7 @@ function Knowlet(id,lang)
   else return new KnowletType(id,lang);
 }
 
-protoknowlet.KnowdeProbe= function (string,langid) {
+protoknowlet.KnowdeProbe=function (string,langid) {
   var langterm=false;
   if ((langid) && (langid!==this.language))
     string="$"+langid+"$"+string;
@@ -209,6 +212,30 @@ function Knowde(dterm,kno,strict)
   else return new KnowdeType(dterm,kno);
 }
 
+/* OID management */
+
+/* OIDs represent a unique server side representation of a knowde. */
+
+protoknowde.setOID=function(oid) {
+  if (this.oid)
+    if (this.oid===oid) return;
+    else if (!(oid)) {}
+    else throw {name: "OID conflict", irritant: this,
+		curoid: this.oid, newoid: oid};
+  if (!(oid)) {
+    fdjtDrop(kno_oidmap,this.oid,this);
+    this.knowlet.oidmap[oid]=false;
+    this.oid=false;
+    return false;}
+  else if (this.knowlet.oidmap[oid])
+    throw {name: "OID ambiguity", irritant: this,
+	   cur: this.knowlet.oidmap[oid], oid: oid};
+  else {
+    this.oid=oid;
+    fdjtAdd(kno_oidmap,oid,this);
+    this.knowlet.oidmap[oid]=this;
+    return oid;}
+};
 /* Knowde semantic relationships (getting) */
 
 protoknowde.getRel=function(rel,infer) {
@@ -554,7 +581,7 @@ function KnowDef(string,kno)
   if ((string[0]==="@") && ((termstart=string.indexOf("\""))>0)) {
     oid=string.slice(0,termstart);
     string=string.slice(termstart+1,string.length-1);}
-  if ((oid) && (oid.startsWith("@1/"))) 
+  if ((oid) && (oid.search("@1/")===0)) 
     result=brico_knowlet.handleSubjectEntry(oid+"|"+string);
   else {
     // Get the head and (possibly) the knowlet
@@ -575,6 +602,9 @@ function KnowDef(string,kno)
 }
 
 /* Getting tag strings */
+var kno_simple_oidpat=/@[0-9A-Fa-f]+\/[0-9A-Fa-f]+/;
+var kno_named_oidpat=/@[0-9A-Fa-f]+\/[0-9A-Fa-f]+\x22([^\x22]+)\x22/;
+var kno_atbreak=/[^\\]@/g;
 
 function knoTagString(knowde,knowlet)
 {
@@ -588,6 +618,67 @@ function knoTagString(knowde,knowlet)
     else return knowde.dterm+"@"+knowde.knowlet.name;
   else return knowde.dterm;
 }
+
+function knoTagOID(knowde)
+{
+  if (typeof knowde === "string") 
+    if (knowde.search(kno_simple_oidpat)===0) 
+      return kno_simple_oidpat.exec(knowde)[0];
+    else if (knowde.search(kno_atbreak)>0) {
+      var atpos=knowde.indexOf(kno_atbreak)+1;
+      var base=knowde.slice(0,atpos);
+      var knoid=knowde.slice(atpos+1);
+      if (knowlets[knoid]) {
+	var knowlet=Knowlet(knoid);
+	var entry=knoid.probeKnowde(base);
+	if (entry) return entry.oid;
+	else return false;}
+      else return false;}
+    else return false;
+  else if (knowde.oid) return knowde;
+  else return false;
+}
+
+function knoTagTerm(knowde,kno)
+{
+  if (typeof knowde === "string") 
+    if (knowde.search(kno_simple_oidpat)===0) {
+      var match=kno_named_oidpat.exec(knowde);
+      if ((match) && (match[1])) return match[1];
+      else {
+	var oid=kno_simple_oidpat.exec(knowde)[0];
+	var entry=((kno)?(kno.oidmap[oid]):
+		   ((knowlet.oidmap[oid])||
+		    ((kno_oidmap[oid])&&(kno_oidmap[oid][0]))));
+	if (entry) return entry.dterm;
+	else return false;}}
+  else if (knowde.oid) return knowde;
+  else return false;
+}
+
+/*
+function knoTagRef(string,kno)
+{
+  var oid; var term; var domain;
+  if (string.search(kno_simple_oidpat)===0) {
+    var match=kno_named_oidpat.exec(string);
+    oid=match[1]; term=match[2];}
+  else {oid=false; term=string;}
+  if (knowde.search(kno_atbreak)>0) {
+    var atpos=knowde.indexOf(kno_atbreak)+1;
+    var base=knowde.slice(0,atpos);
+    var knoid=knowde.slice(atpos+1);
+    if (knowlets[knoid]) {
+	var knowlet=Knowlet(noid);
+	var entry=noid.probeKnowde(base);
+	if (entry) return entry.oid;
+	else return false;}
+      else return false;}
+    else return false;
+  else if (knowde.oid) return knowde;
+  else return false;
+}
+*/
 
 /* Indexing with knowlets */
 

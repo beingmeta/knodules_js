@@ -66,20 +66,6 @@ protoknowde.toHTML=function(kno)
 
 /* Making DTERM descriptions */
 
-function knoSpan(value,domain)
-{
-  var knowde;
-  if (typeof value === "string") 
-    knowde=KnowDef(value,(domain)||(false));
-  else if (value instanceof Knowde)
-    knowde=value;
-  else throw {};
-  var span=knowde.toHTML((domain)||(false));
-  span.setAttribute("dterm",knowde.dterm);
-  span.knowde=knowde.dterm;
-  return span;
-}
-
 function knoRelVal(v)
 {
   if (typeof v === "string")
@@ -94,18 +80,28 @@ function knoRelVal(v)
 var kno_dterm_prefix=false;
 var kno_dterm_suffix=false;
 
-function knoDTermSpan(dterm,kno)
+function knoSpan(dterm,display,kno)
 {
   if ((kno!==false) && (!(kno))) kno=knowlet;
   if ((kno) && (typeof dterm === "string")) 
     dterm=kno.Knowde(dterm)||dterm;
-  if (typeof dterm === "string")
-    return fdjtSpan("dterm",kno_dterm_prefix,dterm,kno_dterm_suffix);
+  if (!(display))
+    if (typeof dterm==='string')
+      display=dterm;
+    else display=dterm.dterm;
+  var span=fdjtSpan("dterm",kno_dterm_prefix,display,kno_dterm_suffix);
+  if (typeof dterm==='string') {
+    span.setAttribute("dterm",dterm);
+    span.dterm=dterm; span.knowde=false;}
   else {
-    var span=fdjtSpan("dterm",kno_dterm_prefix,dterm.dterm,kno_dterm_suffix);
-    span.setAttribute("dterm",dterm.dterm); span.dterm=dterm;
-    span.title=dterm.gloss||null;
-    return span;}
+    span.setAttribute("dterm",dterm.dterm);
+    if (dterm.gloss) span.title=dterm.gloss;
+    span.dterm=dterm.dterm; span.knowde=dterm;}
+  return span;
+}
+function knoDTermSpan(dterm,display,kno)
+{
+  return knoSpan(dterm,kno);
 }
 
 function knoAppendRel(elt,relname,relcode,relvals)
@@ -168,6 +164,135 @@ function KnowdeRichTip(elt) {
 }
 
 fdjt_richtip_classfns["dterm"]=KnowdeRichTip;
+
+/* Extended form elements for Knowdes */
+
+function knoCheckspan(varname,value,checked)
+{
+  var tagstring=knoTagString(value);
+  var checkbox=fdjtInput("CHECKBOX",varname,tagstring);
+  var checkspan=fdjtSpan("checkspan",checkbox,knoSpan(value));
+  if (checked) {
+    checkspan.setAttribute('ischecked','true');
+    checkbox.checked=true;}
+  else {
+    checkspan.setAttribute('ischecked','false');
+    checkbox.checked=false;}
+  return checkspan;
+}
+
+function knoCompletion(value)
+{
+  var tagstring=knoTagString(value);
+  var knospan=knoSpan(value);
+  var dterm=(value.dterm)||value;
+  fdjtAddClass(knospan,"completion");
+  knospan.knowde=value; knospan.value=tagstring; knospan.key=dterm;
+  var synonyms=value.terms;
+  if (synonyms) {
+    var i=0; while (i<synonyms.length) {
+      var synonym=synonyms[i++];
+      if (synonym===dterm) continue;
+      var variant=fdjtSpan("variant",synonym,"=");
+      variant.key=synonym;
+      fdjtPrepend(knospan,variant);}}
+  return knospan;
+}
+
+/* Tag Tools */
+
+function knoTagTool_addtag(tagpicks,varname,value,checked)
+{
+  if (typeof checked==='undefined') checked=true;
+  var tagstring=((typeof value === 'string')?(value):(knoTagString(value)));
+  var inputs=fdjtGetChildrenByClassName(tagpicks,'INPUT');
+  var i=0; while (i<inputs.length) {
+    var input=inputs[i++];
+    if ((input.name===varname) &&
+	((input.type==='checkbox')||(input.type==='radio')))
+      if (input.value===tagstring) {
+	var checkspan=$P(".checkspan",input);
+	if (checkspan)
+	  if (checked) checkspan.setAttribute('ischecked','yes');
+	  else checkspan.setAttribute('ischecked','no');
+	if (checked) input.checked=true; else input.checked=false;
+	return false;}}
+  var checkspan=knoCheckspan(varname,value,true);
+  fdjtAppend(tagpicks," ",checkspan);
+  return checkspan;
+}
+
+function knoTagTool_oncomplete(completion,value)
+{
+  var tagtool=$P(".tagtool",completion);
+  var varname=((tagtool.varname)||(fdjtCacheAttrib(tagtool,'varname'))||'TAGS');
+  var tagpicks=((tagtool.tagpicks)||(fdjtCacheAttrib(tagtool,'tagpicks',$$))||
+		(fdjtGetChildrenByClassName(tagtool,'tagpicks')));
+  if (!(tagpicks)) return;
+  if (!(tagtool.tagpicks)) tagtool.tagpicks=tagpicks;
+  knoTagTool_addtag(tagpicks,varname,completion.knowde,true);
+  completion.setAttribute('suppressed','yes');
+  this.value=""; fdjtComplete(this,"");
+}
+
+function knoTagTool_onkeypress(evt)
+{
+  var kc=evt.keyCode;
+  var target=evt.target;
+  if (kc===13) {
+    evt.cancelBubble=true; evt.preventDefault();
+    var tagtool=$P(".tagtool",target);
+    var varname=
+      ((tagtool.varname)||(fdjtCacheAttrib(tagtool,'varname'))||'TAGS');
+    var tagpicks=
+      ((tagtool.tagpicks)||(fdjtCacheAttrib(tagtool,'tagpicks',$$))||
+       (fdjtGetChildrenByClassName(tagtool,'tagpicks')));
+    var completions=fdjtComplete(target); var forced=false;
+    if (completions.string==="") return false;
+    if (completions.exactheads.length)
+      forced=completions.exactheads[0];
+    if (forced) 
+      fdjtHandleCompletion(target,forced);
+    else knoTagTool_addtag(tagpicks,varname,target.value,true);
+    target.value="";
+    return false;}
+  else return fdjtComplete_onkey(evt);
+}
+
+function knoTagTool(varname,cueinit,cues,tvinit,tagverse)
+{
+  var tagpicks=fdjtDiv("tagpicks");
+  tagpicks.onclick=fdjtCheckSpan_onclick;
+  var input=fdjtInput("TEXT",varname,"");
+  var cues_elt=fdjtNewElt(cueinit||"span.tagcues");
+  var tagverse_elt=fdjtNewElt(tvinit||"span.tagverse");
+  var i=0; while (i<cues.length) 
+	     fdjtAppend(cues_elt,knoCompletion(cues[i++])," ");
+  var i=0; while (i<tagverse.length)
+	     fdjtAppend(tagverse_elt,knoCompletion(tagverse[i++])," ");
+
+  var completions=fdjtDiv("completions",cues_elt,tagverse_elt);
+  var tagtool=fdjtDiv("tagtool",tagpicks,input,completions);
+  input.completions_elt=completions;
+  completions.input_elt=input;
+
+  completions.onclick=fdjtComplete_onclick;
+
+  fdjtAddClass(input,".autoprompt.taginput");
+  input.oncomplete=knoTagTool_oncomplete;
+  input.onkeypress=knoTagTool_onkeypress;
+  input.onfocus=fdjtAutoPrompt_onfocus;
+  input.onblur=fdjtAutoPrompt_onblur;
+  input.prompt="add a tag";
+  input.completeopts=
+    FDJT_COMPLETE_OPTIONS|FDJT_COMPLETE_ANYWHERE|
+    FDJT_COMPLETE_CLOUD|FDJT_COMPLETE_SHOWEMPTY;
+
+  tagtool.tagpicks=tagpicks;
+  tagtool.varname=varname;
+  tagtool.setAttribute("VARNAME",varname);
+  return tagtool;
+}
 
 /* Getting Knowlets out of HTML */
 
