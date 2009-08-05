@@ -228,6 +228,32 @@ function Knowde(dterm,kno,strict)
   return knowde;
 }
 
+function KnowdeProbe(dterm,kno,strict)
+{
+  var oid=false; var knowde=false;
+  if ((dterm[0]==="@") && (dterm.search(kno_simple_oidpat)===0)) {
+    var match=kno_named_oidpat.exec(dterm);
+    oid=match[0]; if (match[2]) dterm=match[2];
+    if (oid.search("@1/")===0) kno=brico_knowlet;
+    if (kno.oidmap[oid]) knowde=kno.oidmap[oid];
+    var dtkno=kno.dterms[dterm];
+    if ((dtkno) && (knowde) && (dtkno!==knowde))
+      throw {name: "OID/DTerm mismatch"};};
+  if (!(kno))
+    if (knowlet) kno=knowlet;
+    else throw { name: "no default knowlet" };
+  if (knowde) {}
+  else if (kno.dterms.hasOwnProperty(dterm))
+    knowde=kno.dterms[dterm];
+  else if ((!(strict)) && (!(knowlet.strict)) &&
+	   (knowlet.terms[dterm]) &&
+	   (knowlet.terms[dterm].length===1))
+    knowde=knowlet.terms[dterm][0];
+  else return false;
+  if (oid) knowde.setOID(oid);
+  return knowde;
+}
+
 /* OID management */
 
 /* OIDs represent a unique server side representation of a knowde. */
@@ -677,7 +703,7 @@ function knoTagRef(string,kno)
     var knoid=knowde.slice(atpos+1);
     if (knowlets[knoid]) {
 	var knowlet=Knowlet(noid);
-	var entry=noid.probeKnowde(base);
+	var entry=knoid.probeKnowde(base);
 	if (entry) return entry.oid;
 	else return false;}
       else return false;}

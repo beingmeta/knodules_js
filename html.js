@@ -269,9 +269,7 @@ function knoTagTool(varname,cueinit,cues,tvinit,tagverse)
   var tagverse_elt=fdjtNewElt(tvinit||"span.tagverse");
   var i=0; while (i<cues.length) 
 	     fdjtAppend(cues_elt,knoCompletion(cues[i++])," ");
-  var i=0; while (i<tagverse.length)
-	     fdjtAppend(tagverse_elt,knoCompletion(tagverse[i++])," ");
-
+  knoAddTagverse(tagverse,tagverse_elt);
   var completions=fdjtDiv("completions",cues_elt,tagverse_elt);
   var tagtool=fdjtDiv("tagtool",tagpicks,input,completions);
   input.completions_elt=completions;
@@ -293,6 +291,53 @@ function knoTagTool(varname,cueinit,cues,tvinit,tagverse)
   tagtool.varname=varname;
   tagtool.setAttribute("VARNAME",varname);
   return tagtool;
+}
+
+function tagtool_termsort(t1,t2)
+{
+  if (typeof t1 === "string")
+    if (typeof t2 === "string") {
+      var l1=t1.toLowerCase(); var l2=t2.toLowerCase();
+      if (l1<l2) return -1;
+      else if (l1===l2)
+	if (t1<t2) return -1; else if (t1===t2) return 0; else return 1;
+      else return 1;}
+    else return 1;
+  else return -1;
+}
+
+function knoAddTagverse(tagverse,tagverse_elt)
+{
+  if (tagverse instanceof Array) {
+    var termvec=[].concat(tagverse);
+    termvec.sort();
+    var i=0; while (i<termvec.length) {
+      var term=termvec[i++]; var knowde=KnowdeProbe(term);
+      if (!(knowde)) continue;
+      fdjtAppend(tagverse_elt,knoCompletion(knowde)," ");}}
+  else if (tagverse._all) {
+    var all=tagverse._all; var termvec=[];
+    var max=1; var logmax=0; var i=0; while (i<all.length) {
+      var key=all[i++]; var val=tagverse[key];
+      var knowde=KnowdeProbe(key);
+      if (!(knowde)) continue;
+      termvec.push(key);
+      if (typeof val === "number") {
+	if (val>max) max=val;}
+      else if (val instanceof Array) {
+	if (val.length>max) max=val.length;}}
+    logmax=Math.log(max);
+    termvec.sort(tagtool_termsort);
+    i=0; while (i<termvec.length) {
+      var term=termvec[i++]; var knowde=Knowde(term);
+      var completion=knoCompletion(knowde);
+      var val=tagverse[term]; var score=0;
+      if (typeof val === "number") score=val;
+      else if (typeof val === "string") score=1;
+      else if (val.length) score=val.length;
+      else score=1;
+      completion.style.fontSize=((100)+100*(Math.sqrt(score)/logmax))+"%";
+      fdjtAppend(tagverse_elt,completion," ");}}
 }
 
 /* Getting Knowlets out of HTML */
