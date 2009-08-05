@@ -193,7 +193,7 @@ function knoCompletion(value)
     var i=0; while (i<synonyms.length) {
       var synonym=synonyms[i++];
       if (synonym===dterm) continue;
-      var variant=fdjtSpan("variant",synonym,"=");
+      var variant=fdjtSpan("variation",synonym,"=");
       variant.key=synonym;
       fdjtPrepend(knospan,variant);}}
   return knospan;

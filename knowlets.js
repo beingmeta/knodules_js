@@ -44,6 +44,10 @@ var knowlets_debug_parsing=false;
 var knowlets_debug_edits=false;
 var knowlet_oidmap={};
 
+var kno_simple_oidpat=/@[0-9A-Fa-f]+\/[0-9A-Fa-f]+/;
+var kno_named_oidpat=/@[0-9A-Fa-f]+\/[0-9A-Fa-f]+(\x22([^\x22]+)\x22)*/;
+var kno_atbreak=/[^\\]@/g;
+
 /* Knowlets, constructor, etc. */
 
 function KnowletType(id,lang) {
@@ -200,16 +204,28 @@ protoknowde=KnowdeType.prototype;
 
 function Knowde(dterm,kno,strict)
 {
+  var oid=false; var knowde=false;
+  if ((dterm[0]==="@") && (dterm.search(kno_simple_oidpat)===0)) {
+    var match=kno_named_oidpat.exec(dterm);
+    oid=match[0]; if (match[2]) dterm=match[2];
+    if (oid.search("@1/")===0) kno=brico_knowlet;
+    if (kno.oidmap[oid]) knowde=kno.oidmap[oid];
+    var dtkno=kno.dterms[dterm];
+    if ((dtkno) && (knowde) && (dtkno!==knowde))
+      throw {name: "OID/DTerm mismatch"};};
   if (!(kno))
     if (knowlet) kno=knowlet;
     else throw { name: "no default knowlet" };
-  if (kno.dterms.hasOwnProperty(dterm))
-    return kno.dterms[dterm];
+  if (knowde) {}
+  else if (kno.dterms.hasOwnProperty(dterm))
+    knowde=kno.dterms[dterm];
   else if ((!(strict)) && (!(knowlet.strict)) &&
 	   (knowlet.terms[dterm]) &&
 	   (knowlet.terms[dterm].length===1))
-    return knowlet.terms[dterm][0];
-  else return new KnowdeType(dterm,kno);
+    knowde=knowlet.terms[dterm][0];
+  else knowde=new KnowdeType(dterm,kno);
+  if (oid) knowde.setOID(oid);
+  return knowde;
 }
 
 /* OID management */
@@ -223,7 +239,7 @@ protoknowde.setOID=function(oid) {
     else throw {name: "OID conflict", irritant: this,
 		curoid: this.oid, newoid: oid};
   if (!(oid)) {
-    fdjtDrop(kno_oidmap,this.oid,this);
+    fdjtDrop(knowlet_oidmap,this.oid,this);
     this.knowlet.oidmap[oid]=false;
     this.oid=false;
     return false;}
@@ -232,7 +248,7 @@ protoknowde.setOID=function(oid) {
 	   cur: this.knowlet.oidmap[oid], oid: oid};
   else {
     this.oid=oid;
-    fdjtAdd(kno_oidmap,oid,this);
+    fdjtAdd(knowlet_oidmap,oid,this);
     this.knowlet.oidmap[oid]=this;
     return oid;}
 };
@@ -578,33 +594,24 @@ function KnowDef(string,kno)
   if ((typeof string !== "string") || (string.length<1))
     throw {name: 'TypeError', irritant: string};
   var termstart=-1; var oid=false; var result=false;
-  if ((string[0]==="@") && ((termstart=string.indexOf("\""))>0)) {
-    oid=string.slice(0,termstart);
-    string=string.slice(termstart+1,string.length-1);}
-  if ((oid) && (oid.search("@1/")===0)) 
-    result=brico_knowlet.handleSubjectEntry(oid+"|"+string);
+  // Get the head and (possibly) the knowlet
+  var bar=string.search(/[^\\]\|/g);
+  var head=((bar<0) ? (string) : (string.slice(0,bar)));
+  var atsign=head.search(/[^\\]@/g);
+  var dterm;
+  if (atsign>0) {
+    kno=Knowlet(head.slice(atsign+1));
+    dterm=head.slice(0,atsign);
+    result=kno.handleSubjectEntry(dterm+string.slice(bar));}
   else {
-    // Get the head and (possibly) the knowlet
-    var bar=string.search(/[^\\]\|/g);
-    var head=((bar<0) ? (string) : (string.slice(0,bar)));
-    var atsign=head.search(/[^\\]@/g);
-    var dterm;
-    if (atsign>0) {
-      kno=Knowlet(head.slice(atsign+1));
-      dterm=head.slice(0,atsign);
-      result=kno.handleSubjectEntry(dterm+string.slice(bar));}
-    else {
-      if (!(kno)) kno=knowlet; dterm=head;
-      result=kno.handleSubjectEntry(string);}}
+    if (!(kno)) kno=knowlet; dterm=head;
+    result=kno.handleSubjectEntry(string);}
   if ((oid) && (result) && (typeof result != "string"))
     result.oid=oid;
   return result;
 }
 
 /* Getting tag strings */
-var kno_simple_oidpat=/@[0-9A-Fa-f]+\/[0-9A-Fa-f]+/;
-var kno_named_oidpat=/@[0-9A-Fa-f]+\/[0-9A-Fa-f]+\x22([^\x22]+)\x22/;
-var kno_atbreak=/[^\\]@/g;
 
 function knoTagString(knowde,knowlet)
 {
@@ -644,12 +651,12 @@ function knoTagTerm(knowde,kno)
   if (typeof knowde === "string") 
     if (knowde.search(kno_simple_oidpat)===0) {
       var match=kno_named_oidpat.exec(knowde);
-      if ((match) && (match[1])) return match[1];
+      if ((match) && (match[2])) return match[2];
       else {
-	var oid=kno_simple_oidpat.exec(knowde)[0];
+	var oid=match[0];
 	var entry=((kno)?(kno.oidmap[oid]):
 		   ((knowlet.oidmap[oid])||
-		    ((kno_oidmap[oid])&&(kno_oidmap[oid][0]))));
+		    ((knowlet_oidmap[oid])&&(knowlet_oidmap[oid][0]))));
 	if (entry) return entry.dterm;
 	else return false;}}
   else if (knowde.oid) return knowde;
