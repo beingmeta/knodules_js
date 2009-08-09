@@ -277,7 +277,8 @@ function knoTagTool(varname,cueinit,cues,tvinit,tagverse)
 
   completions.onclick=fdjtComplete_onclick;
 
-  fdjtAddClass(input,".autoprompt.taginput");
+  fdjtAddClass(input,"autoprompt");
+  fdjtAddClass(input,"taginput");
   input.oncomplete=knoTagTool_oncomplete;
   input.onkeypress=knoTagTool_onkeypress;
   input.onfocus=fdjtAutoPrompt_onfocus;
