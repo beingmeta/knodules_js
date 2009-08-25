@@ -289,13 +289,13 @@ protoknowde.getRel=function(rel,infer) {
 protoknowde.testRel=function(rel,val,infer) {
   if (infer) {}
   else if (this[rel])
-    if (this[rel].indexOf(val)<0)
+    if (fdjtIndexOf(this[rel],val)<0)
       return false;
     else return true;
   else return false;
 };
 protoknowde.addRel=function(rel,val) {
-  if ((this[rel]) && (this[rel].indexOf(val)>=0))
+  if ((this[rel]) && (fdjtIndexOf(this[rel],val)>=0))
     return this;
   else {
     var values; var mirror=false;
@@ -311,7 +311,7 @@ protoknowde.addRel=function(rel,val) {
 	val[mirror]=new Array(this);
       else val[mirror].push(this);
     else {}
-    if ((rel==='genls') && (this.allGenls.indexOf(val)<0)) {
+    if ((rel==='genls') && (fdjtIndexOf(this.allGenls,val)<0)) {
       // Keep allgenls updated
       var genls=this.genls; var allgenls=[].concat(genls); 
       var i=0; while (i<genls.length) 
@@ -325,7 +325,7 @@ protoknowde.addRel=function(rel,val) {
 	  if ((g) && (g.dterm)) {
 	    var gdterm=g.dterm;
 	    if (allindex.hasOwnProperty(gdterm)) {
-	      if (allindex[gdterm].indexOf(this)<0) 
+	      if (fdjtIndexOf(allindex[gdterm],this)<0) 
 		allindex[gdterm].push(this);}
 	    else allindex[gdterm]=new Array(this);}
 	  else fdjtWarn("Odd genl %g from allgenls %o of %o",
@@ -337,7 +337,7 @@ protoknowde.addRel=function(rel,val) {
 protoknowde.addRole=function(role,val) {
   var rterm=role.dterm;
   if ((this.roles.hasOwnProperty(rterm)) &&
-      (this.roles[rterm].indexOf(val)>=0))
+      (this.fdjtIndexOf(roles[rterm],val)>=0))
     return this;
   else {
     var values=((this.roles.hasOwnProperty(rterm)) && (this.roles[rterm]));
@@ -357,7 +357,7 @@ protoknowde.addTerm=function (term,langid) {
     term="$"+langid+"$"+term;
   else {}
   this.dangling=false;
-  if (this.terms.indexOf(term)>=0) return;
+  if (fdjtIndexOf(this.terms,term)>=0) return;
   this.terms.push(term);
   fdjtAdd(knowlet.terms,term,this);
   return this;};
@@ -561,7 +561,7 @@ protoknowlet.handleEntry=function(entry)
   switch (entry[0]) {
   case '*': {
     var subject=this.handleSubjectEntry(entry.slice(1));
-    if (this.key_concepts.indexOf(subject)<0)
+    if (fdjtIndexOf(this.key_concepts,subject)<0)
       this.key_concepts.push(subject);
     return subject;}
   case '-': {
@@ -725,7 +725,7 @@ function knoIndexTag(index,tag,indexval,nogenls,checkdup)
   if (index.hasOwnProperty(dterm))
     if (!(checkdup))
       index[dterm].push(indexval);
-    else if (index[dterm].indexof(indexval)<0)
+    else if (fdjtIndexOf(index[dterm],indexval)<0)
       index[dterm].push(indexval);
     else dup=true;
   else {
