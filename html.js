@@ -238,7 +238,7 @@ function knoTagTool_oncomplete(completion,value)
 function knoTagTool_onkeypress(evt)
 {
   var kc=evt.keyCode;
-  var target=evt.target;
+  var target=$T(evt);
   if (kc===13) {
     evt.cancelBubble=true; evt.preventDefault();
     var tagtool=$P(".tagtool",target);
