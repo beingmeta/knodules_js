@@ -196,7 +196,7 @@ function KnowdeType(dterm,knowlet,strict)
   // These are words which can refer (normatively or peculiarly) to this concept
   knowde.terms=new Array(dterm); knowde.hooks=[];
   // These are various relationships
-  knowde.roles={}
+  knowde.roles={};
   knowde.allGenls=[];
   return knowde;
 }
@@ -337,7 +337,7 @@ protoknowde.addRel=function(rel,val) {
 protoknowde.addRole=function(role,val) {
   var rterm=role.dterm;
   if ((this.roles.hasOwnProperty(rterm)) &&
-      (this.fdjtIndexOf(roles[rterm],val)>=0))
+      (fdjtIndexOf(this.roles[rterm],val)>=0))
     return this;
   else {
     var values=((this.roles.hasOwnProperty(rterm)) && (this.roles[rterm]));
@@ -409,6 +409,7 @@ protoknowlet.KnowDRule=
 /* Processing the PLAINTEXT microformat */
 
 protoknowlet.handleClause=function(clause,subject) {
+  if (clause.indexOf('\\')>=0) clause=fdjtUnEscape(clause);
   if (knowlets_debug_parsing)
     fdjtLog("Handling clause '%s' for %o",clause,subject);
   switch (clause[0]) {
@@ -478,17 +479,19 @@ protoknowlet.handleClause=function(clause,subject) {
       subject.addRel('identical',this.KnowdeRef(clause.slice(2)));
     break;
   case '"': {
-    var qend=((clause[-1]==='"') ? (-2) : (-1));
+    var qend=((clause[-1]==='"') ? (-1) : (false));
     if (clause[1]==="*") {
-      fdjtAdd(subject,"glosses",clause.slice(2,qend));
-      subject.gloss=clause.slice(2);}
+      var gloss=((qend)?(clause.slice(2,qend)):(clause.slice(2)));
+      fdjtAdd(subject,"glosses",gloss);
+      subject.gloss=gloss;}
     else if (!(subject.gloss)) {
-      fdjtAdd(subject,"glosses",clause.slice(1,qend));
-      subject.gloss=clause.slice(1,qend);}
-    else fdjtAdd(subject,"glosses",clause.slice(2,qend));
+      var gloss=((qend)?(clause.slice(1,qend)):(clause.slice(1)));
+      fdjtAdd(subject,"glosses",gloss);
+      subject.gloss=gloss;}
+    else fdjtAdd(subject,"glosses",((qend)?(clause.slice(1,qend)):(clause.slice(1))));
     break;}
   case '%': {
-    var mirror=KnowdeRef(clause.slice(1));
+    var mirror=this.KnowdeRef(clause.slice(1));
     if (subject.mirror===mirror) break;
     else {
       var omirror=subject.mirror;
@@ -568,10 +571,10 @@ protoknowlet.handleEntry=function(entry)
     var subentries=this.segmentString(entry.slice(1),"/");
     var knowdes=[];
     var i=0; while (i<subentries.length) {
-      knowdes[i]=KnowdeRef(subentries[i]); i++;}
+      knowdes[i]=this.KnowdeRef(subentries[i]); i++;}
     var j=0; while (j<knowdes.length) {
       var k=0; while (k<knowdes.length) {
-	if (j!=k) knowdes[j].addDisjoin(knowdes[k]);
+	if (j!=k) knowdes[j].addRel('disjoin',knowdes[k]);
 	k++;}
       j++;}
     return knowdes[0];}
@@ -584,7 +587,7 @@ protoknowlet.handleEntry=function(entry)
       var next_subject=
 	((next) ? (this.handleSubjectEntry(entry.slice(pos,next))) :
 	 (this.handleSubjectEntry(entry.slice(pos))));
-      if (subject) subject.addGenl(next_subject);
+      if (subject) subject.addRel('genls',next_subject);
       else head=next_subject;
       subject=next_subject;
       if (basic_level) subject.basic=true;

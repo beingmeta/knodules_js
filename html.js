@@ -95,7 +95,7 @@ function knoSpan(dterm,display,kno)
     span.dterm=dterm; span.knowde=false;}
   else {
     span.setAttribute("dterm",dterm.dterm);
-    if (dterm.gloss) span.title=dterm.gloss;
+    if (dterm.gloss) span.title=fdjtStripMarkup(dterm.gloss);
     span.dterm=dterm.dterm; span.knowde=dterm;}
   return span;
 }
