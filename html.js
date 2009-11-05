@@ -358,6 +358,7 @@ function KnowletLoad(elt)
 function knoHTMLSetup(node)
 {
   var doing_the_whole_thing=false;
+  var start=new Date();
   if ((!(node)) || (node_arg===document))
     if (_knowletsHTML_done) return;
     else {
@@ -376,7 +377,7 @@ function knoHTMLSetup(node)
       refuri=elt.content;}}
   if ((!(knowlet)) && (refuri)) {
     fdjtLog("Using REFURI '%s' as the name of the default knowlet",refuri);
-    knowlet=Knowlet(url);}
+    knowlet=Knowlet(refuri);}
   if ((!(knowlet)) &&
       (document) && (document.location) &&
       (document.location.href)) {
@@ -404,6 +405,9 @@ function knoHTMLSetup(node)
 	var knowdes=knowlet.handleEntries(elt.text);
 	fdjtLog("Parsed %d entries from %o",knowdes.length,elt);}
       else {}}}
+  var finished=new Date();
+  fdjtLog("Processed knowlets in "+
+	  ((finished.getTime()-start.getTime())/1000)+"s");
   if (doing_the_whole_thing) _knowletsHTML_done=true;
 }
 
