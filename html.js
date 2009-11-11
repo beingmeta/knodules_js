@@ -176,7 +176,6 @@ function knoCheckspan(varname,value,checked)
     checkspan.setAttribute('ischecked','true');
     checkbox.checked=true;}
   else {
-    checkspan.setAttribute('ischecked','false');
     checkbox.checked=false;}
   return checkspan;
 }
@@ -197,6 +196,21 @@ function knoCompletion(value)
       variant.key=synonym;
       fdjtPrepend(knospan,variant);}}
   return knospan;
+}
+
+function knoCheckCompletion(varname,value,checked)
+{
+  var checkspan=knoCompletion(value);
+  var tagstring=knoTagString(value);
+  var checkbox=fdjtInput("CHECKBOX",varname,tagstring);
+  if (checked) {
+    checkspan.setAttribute('ischecked','true');
+    checkbox.checked=true;}
+  else {
+    checkbox.checked=false;}
+  fdjtAddClass(checkspan,"checkspan");
+  fdjtPrepend(checkspan,checkbox);
+  return checkspan;
 }
 
 /* Tag Tools */
