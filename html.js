@@ -82,9 +82,13 @@ var kno_dterm_suffix=false;
 
 function knoSpan(dterm,display,kno)
 {
+  if (display instanceof KnowletType) {
+    kno=display; display=false;}
   if ((kno!==false) && (!(kno))) kno=knowlet;
   if ((kno) && (typeof dterm === "string")) 
-    dterm=kno.Knowde(dterm)||dterm;
+    if (dterm.indexOf('|')<0)
+      dterm=kno.Knowde(dterm)||dterm;
+    else dterm=kno.handleSubjectEntry(dterm).dterm;
   if (!(display))
     if (typeof dterm==='string')
       display=dterm;
@@ -167,11 +171,11 @@ fdjt_richtip_classfns["dterm"]=KnowdeRichTip;
 
 /* Extended form elements for Knowdes */
 
-function knoCheckspan(varname,value,checked)
+function knoCheckspan(varname,value,checked,kno)
 {
-  var tagstring=knoTagString(value);
-  var checkbox=fdjtInput("CHECKBOX",varname,tagstring);
-  var checkspan=fdjtSpan("checkspan",checkbox,knoSpan(value));
+  var tagstring=knoTagString(value,kno||knowlet);
+  var checkbox=fdjtInput("CHECKBOX",varname,value);
+  var checkspan=fdjtSpan("checkspan",checkbox,knoSpan(value,kno||knowlet));
   if (checked) {
     checkspan.setAttribute('ischecked','true');
     checkbox.checked=true;}
@@ -180,10 +184,10 @@ function knoCheckspan(varname,value,checked)
   return checkspan;
 }
 
-function knoCompletion(value)
+function knoCompletion(value,kno)
 {
-  var tagstring=knoTagString(value);
-  var knospan=knoSpan(value);
+  var tagstring=knoTagString(value,kno||knowlet);
+  var knospan=knoSpan(value,false,kno||knowlet);
   var dterm=(value.dterm)||value;
   fdjtAddClass(knospan,"completion");
   knospan.knowde=value; knospan.value=tagstring; knospan.key=dterm;
@@ -198,11 +202,11 @@ function knoCompletion(value)
   return knospan;
 }
 
-function knoCheckCompletion(varname,value,checked)
+function knoCheckCompletion(varname,value,checked,kno)
 {
   var checkspan=knoCompletion(value);
-  var tagstring=knoTagString(value);
-  var checkbox=fdjtInput("CHECKBOX",varname,tagstring);
+  var tagstring=knoTagString(value,kno||knowlet);
+  var checkbox=fdjtInput("CHECKBOX",varname,value);
   if (checked) {
     checkspan.setAttribute('ischecked','true');
     checkbox.checked=true;}

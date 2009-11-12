@@ -642,14 +642,21 @@ function KnowDef(string,kno)
 
 /* Getting tag strings */
 
-function knoTagString(knowde,knowlet)
+function knoTagString(knowde,kno)
 {
   if (typeof knowde === "string")
-    return knowde;
+    if (knowde.indexOf('|')>=0)
+      if (kno)
+	return kno.handleSubjectEntry(knowde).dterm;
+      else if (knowlet)
+	return knowlet.handleSubjectEntry(knowde).dterm;
+  // Should this just take the head?
+      else return knowde;
+    else return knowde;
   else if (knowde.oid)
     return knowde.oid+"\""+knowde.dterm+"\"";
-  else if (knowlet)
-    if (knowlet===knowde.knowlet)
+  else if (kno)
+    if (kno===knowde.knowlet)
       return knowde.dterm;
     else return knowde.dterm+"@"+knowde.knowlet.name;
   else return knowde.dterm;
