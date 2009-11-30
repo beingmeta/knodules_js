@@ -303,7 +303,7 @@ function knoTagTool(varname,cueinit,cues,tvinit,tagverse)
   input.onblur=fdjtAutoPrompt_onblur;
   input.prompt="add a tag";
   input.completeopts=
-    FDJT_COMPLETE_OPTIONS|FDJT_COMPLETE_ANYWHERE|
+    FDJT_COMPLETE_OPTIONS|FDJT_COMPLETE_ANYWORD|
     FDJT_COMPLETE_CLOUD;
 
   tagtool.tagpicks=tagpicks;
