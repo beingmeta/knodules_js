@@ -33,7 +33,7 @@
 
 */
 
-var knowlets_debug_load=0;
+var knowlets_trace_load=0;
 
 /* Getting knowdes into HTML */
 
@@ -369,11 +369,11 @@ function KnowletLoad(elt)
 {
   var text=fdjtAjaxGetText(elt.src);
   var knowdes=knowlet.handleEntries(text);
-  if (knowlets_debug_load)
+  if (knowlets_trace_load)
     fdjtLog("[%fs] Parsed %d entries from %s",fdjtET(),knowdes.length,elt.src);
   if (elt.text) {
     var more_knowdes=knowlet.handleEntries(elt.text);
-    if (knowlets_debug_load)
+    if (knowlets_trace_load)
       fdjtLog("[%fs] Parsed %d more entries from %s",fdjtET(),knowdes.length);}
 }
 
@@ -398,7 +398,7 @@ function knoHTMLSetup(node)
     else if (elt.name==="REFURI") {
       refuri=elt.content;}}
   if ((!(knowlet)) && (refuri)) {
-    if (knowlets_debug_load)
+    if (knowlets_trace_load)
       fdjtLog("[%fs] Using REFURI '%s' as the name of the default knowlet",fdjtET(),refuri);
     knowlet=Knowlet(refuri);}
   if ((!(knowlet)) &&
@@ -407,7 +407,7 @@ function knoHTMLSetup(node)
     var url=document.location.href;
     var hash=url.indexOf("#");
     if (hash>=0) url=url.slice(0,hash);
-    if (knowlets_debug_load)
+    if (knowlets_trace_load)
       fdjtLog("[%fs] Using '%s' as the name of the default knowlet",fdjtET(),url);
     knowlet=Knowlet(url);}
   i=0; while (i<elts.length) {
@@ -427,11 +427,11 @@ function knoHTMLSetup(node)
       if (elt.src) KnowletLoad(elt);
       else if (elt.text) {
 	var knowdes=knowlet.handleEntries(elt.text);
-	if (knowlets_debug_load)
+	if (knowlets_trace_load)
 	  fdjtLog("[%fs] Parsed %d entries from %o",fdjtET(),knowdes.length,elt);}
       else {}}}
   var finished=new Date();
-  if (knowlets_debug_load)
+  if (knowlets_trace_load)
     fdjtLog("[%fs] Processed knowlets in ",
 	    ((finished.getTime()-start.getTime())/1000)+"s",
 	    fdjtET());

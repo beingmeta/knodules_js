@@ -40,8 +40,8 @@ var knowlet_langs={};
 var protoknowlet={};
 var protoknowde={};
 var knowlet=false;
-var knowlets_debug_parsing=0;
-var knowlets_debug_edits=false;
+var knowlets_trace_parsing=0;
+var knowlets_trace_edits=false;
 var knowlet_oidmap={};
 
 var kno_simple_oidpat=/@[0-9A-Fa-f]+\/[0-9A-Fa-f]+/;
@@ -187,7 +187,7 @@ protoknowlet.stripComments=function(string)
 function KnowdeType(dterm,knowlet,strict)
 {
   var knowde=this;
-  if (knowlets_debug_parsing>1)
+  if (knowlets_trace_parsing>1)
     fdjtLog('[%fs] Making knowde from %s in %o',fdjtET(),dterm,knowlet);
   knowde.dterm=dterm; knowde.dangling=true;
   knowlet.dterms[dterm]=knowde;
@@ -410,7 +410,7 @@ protoknowlet.KnowDRule=
 
 protoknowlet.handleClause=function(clause,subject) {
   if (clause.indexOf('\\')>=0) clause=fdjtUnEscape(clause);
-  if (knowlets_debug_parsing>2)
+  if (knowlets_trace_parsing>2)
     fdjtLog("[%fs] Handling clause '%s' for %o",fdjtET(),clause,subject);
   switch (clause[0]) {
   case '^':
@@ -539,11 +539,11 @@ protoknowlet.handleSubjectEntry=function(entry)
 {
   var clauses=this.segmentString(entry,"|");
   var subject=this.Knowde(clauses[0]);
-  if (knowlets_debug_parsing>2)
+  if (knowlets_trace_parsing>2)
     fdjtLog("[%fs] Processing subject entry %s %o %o",fdjtET(),entry,subject,clauses);
   var i=1; while (i<clauses.length)
 	     this.handleClause(clauses[i++],subject);
-  if (knowlets_debug_parsing>2)
+  if (knowlets_trace_parsing>2)
     fdjtLog("[%fs] Processed subject entry %o",fdjtET(),subject);
   return subject;
 };
@@ -605,7 +605,7 @@ protoknowlet.handleEntries=function(block)
   if (typeof block === "string") {
     var nocomment=this.stripComments(block);
     var segmented=this.segmentString(nocomment,';');
-    if (knowlets_debug_parsing>1)
+    if (knowlets_trace_parsing>1)
       fdjtLog("[%fs] Handling %d entries",fdjtET(),segmented.length);
     return this.handleEntries(segmented);}
   else if (block instanceof Array) {
