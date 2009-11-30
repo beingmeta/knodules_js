@@ -40,7 +40,7 @@ var knowlet_langs={};
 var protoknowlet={};
 var protoknowde={};
 var knowlet=false;
-var knowlets_debug_parsing=false;
+var knowlets_debug_parsing=0;
 var knowlets_debug_edits=false;
 var knowlet_oidmap={};
 
@@ -187,8 +187,8 @@ protoknowlet.stripComments=function(string)
 function KnowdeType(dterm,knowlet,strict)
 {
   var knowde=this;
-  if (knowlets_debug_parsing)
-    fdjtLog('Making knowde from %s in %o',dterm,knowlet);
+  if (knowlets_debug_parsing>1)
+    fdjtLog('[%fs] Making knowde from %s in %o',fdjtET(),dterm,knowlet);
   knowde.dterm=dterm; knowde.dangling=true;
   knowlet.dterms[dterm]=knowde;
   knowlet.alldterms.push(dterm);
@@ -410,8 +410,8 @@ protoknowlet.KnowDRule=
 
 protoknowlet.handleClause=function(clause,subject) {
   if (clause.indexOf('\\')>=0) clause=fdjtUnEscape(clause);
-  if (knowlets_debug_parsing)
-    fdjtLog("Handling clause '%s' for %o",clause,subject);
+  if (knowlets_debug_parsing>2)
+    fdjtLog("[%fs] Handling clause '%s' for %o",fdjtET(),clause,subject);
   switch (clause[0]) {
   case '^':
     if (clause[1]==='~') 
@@ -539,12 +539,12 @@ protoknowlet.handleSubjectEntry=function(entry)
 {
   var clauses=this.segmentString(entry,"|");
   var subject=this.Knowde(clauses[0]);
-  if (knowlets_debug_parsing)
-    fdjtLog("Processing subject entry %s %o %o",entry,subject,clauses);
+  if (knowlets_debug_parsing>2)
+    fdjtLog("[%fs] Processing subject entry %s %o %o",fdjtET(),entry,subject,clauses);
   var i=1; while (i<clauses.length)
 	     this.handleClause(clauses[i++],subject);
-  if (knowlets_debug_parsing)
-    fdjtLog("Processed subject entry %o",subject);
+  if (knowlets_debug_parsing>2)
+    fdjtLog("[%fs] Processed subject entry %o",fdjtET(),subject);
   return subject;
 };
 
@@ -605,8 +605,8 @@ protoknowlet.handleEntries=function(block)
   if (typeof block === "string") {
     var nocomment=this.stripComments(block);
     var segmented=this.segmentString(nocomment,';');
-    if (knowlets_debug_parsing)
-      fdjtLog("Handling %d entries",segmented.length);
+    if (knowlets_debug_parsing>1)
+      fdjtLog("[%fs] Handling %d entries",fdjtET(),segmented.length);
     return this.handleEntries(segmented);}
   else if (block instanceof Array) {
     var results=[];

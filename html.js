@@ -33,6 +33,8 @@
 
 */
 
+var knowlets_debug_load=0;
+
 /* Getting knowdes into HTML */
 
 protoknowde.toHTML=function(kno)
@@ -367,10 +369,12 @@ function KnowletLoad(elt)
 {
   var text=fdjtAjaxGetText(elt.src);
   var knowdes=knowlet.handleEntries(text);
-  fdjtLog("Parsed %d entries from %s",knowdes.length,elt.src);
+  if (knowlets_debug_load)
+    fdjtLog("[%fs] Parsed %d entries from %s",fdjtET(),knowdes.length,elt.src);
   if (elt.text) {
     var more_knowdes=knowlet.handleEntries(elt.text);
-    fdjtLog("Parsed %d more entries from %s",knowdes.length);}
+    if (knowlets_debug_load)
+      fdjtLog("[%fs] Parsed %d more entries from %s",fdjtET(),knowdes.length);}
 }
 
 function knoHTMLSetup(node)
@@ -394,7 +398,8 @@ function knoHTMLSetup(node)
     else if (elt.name==="REFURI") {
       refuri=elt.content;}}
   if ((!(knowlet)) && (refuri)) {
-    fdjtLog("Using REFURI '%s' as the name of the default knowlet",refuri);
+    if (knowlets_debug_load)
+      fdjtLog("[%fs] Using REFURI '%s' as the name of the default knowlet",fdjtET(),refuri);
     knowlet=Knowlet(refuri);}
   if ((!(knowlet)) &&
       (document) && (document.location) &&
@@ -402,7 +407,8 @@ function knoHTMLSetup(node)
     var url=document.location.href;
     var hash=url.indexOf("#");
     if (hash>=0) url=url.slice(0,hash);
-    fdjtLog("Using '%s' as the name of the default knowlet",url);
+    if (knowlets_debug_load)
+      fdjtLog("[%fs] Using '%s' as the name of the default knowlet",fdjtET(),url);
     knowlet=Knowlet(url);}
   i=0; while (i<elts.length) {
     var elt=elts[i++];
@@ -421,11 +427,14 @@ function knoHTMLSetup(node)
       if (elt.src) KnowletLoad(elt);
       else if (elt.text) {
 	var knowdes=knowlet.handleEntries(elt.text);
-	fdjtLog("Parsed %d entries from %o",knowdes.length,elt);}
+	if (knowlets_debug_load)
+	  fdjtLog("[%fs] Parsed %d entries from %o",fdjtET(),knowdes.length,elt);}
       else {}}}
   var finished=new Date();
-  fdjtLog("Processed knowlets in "+
-	  ((finished.getTime()-start.getTime())/1000)+"s");
+  if (knowlets_debug_load)
+    fdjtLog("[%fs] Processed knowlets in ",
+	    ((finished.getTime()-start.getTime())/1000)+"s",
+	    fdjtET());
   if (doing_the_whole_thing) _knowletsHTML_done=true;
 }
 
