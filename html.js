@@ -257,10 +257,12 @@ function knoTagTool_oncomplete(completion,value)
 
 function knoTagTool_onkeypress(evt)
 {
+  evt=evt||event||null;
   var kc=evt.keyCode;
   var target=$T(evt);
   if (kc===13) {
-    evt.cancelBubble=true; evt.preventDefault();
+    evt.cancelBubble=true;
+    if (evt.preventDefault) evt.preventDefault(); else evt.returnValue=false;
     var tagtool=$P(".tagtool",target);
     var varname=
       ((tagtool.varname)||(fdjtCacheAttrib(tagtool,'varname'))||'TAGS');
