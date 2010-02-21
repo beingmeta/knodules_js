@@ -208,14 +208,11 @@ function knoCheckCompletion(varname,value,checked,kno)
 {
   var checkspan=knoCompletion(value);
   var tagstring=knoTagString(value,kno||knowlet);
-  var checkbox=fdjtInput("CHECKBOX",varname,tagstring);
-  if (checked) {
-    checkspan.setAttribute('ischecked','true');
-    checkbox.checked=true;}
-  else {
-    checkbox.checked=false;}
+  var checkbox=fdjtInput("CHECKBOX",varname,value);
+  checkbox.checked=checked||false;
   fdjtAddClass(checkspan,"checkspan");
   fdjtPrepend(checkspan,checkbox);
+  fdjtCheckSpan_setup(checkspan);
   return checkspan;
 }
 
