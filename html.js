@@ -1,6 +1,6 @@
 /* -*- Mode: Javascript; -*- */
 
-/* Copyright (C) 2009 beingmeta, inc.
+/* Copyright (C) 2009-2010 beingmeta, inc.
    This file provides for HTML documents using KNOWLETS, including
     the extraction and processing of embedded KNOWLET definitions
     or references and interaction with interactive parts of the
