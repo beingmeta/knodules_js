@@ -228,7 +228,7 @@ function knoTagTool_addtag(tagpicks,varname,value,checked)
     if ((input.name===varname) &&
 	((input.type==='checkbox')||(input.type==='radio')))
       if (input.value===tagstring) {
-	var checkspan=$P(".checkspan",input);
+	var checkspan=FDJT$P(".checkspan",input);
 	if (checkspan)
 	  if (checked) checkspan.setAttribute('ischecked','yes');
 	  else checkspan.setAttribute('ischecked','no');
@@ -241,7 +241,7 @@ function knoTagTool_addtag(tagpicks,varname,value,checked)
 
 function knoTagTool_oncomplete(completion,value)
 {
-  var tagtool=$P(".tagtool",completion);
+  var tagtool=FDJT$P(".tagtool",completion);
   var varname=((tagtool.varname)||(fdjtCacheAttrib(tagtool,'varname'))||'TAGS');
   var tagpicks=((tagtool.tagpicks)||(fdjtCacheAttrib(tagtool,'tagpicks',$$))||
 		(fdjtGetChildrenByClassName(tagtool,'tagpicks')));
@@ -260,7 +260,7 @@ function knoTagTool_onkeypress(evt)
   if (kc===13) {
     evt.cancelBubble=true;
     if (evt.preventDefault) evt.preventDefault(); else evt.returnValue=false;
-    var tagtool=$P(".tagtool",target);
+    var tagtool=FDJT$P(".tagtool",target);
     var varname=
       ((tagtool.varname)||(fdjtCacheAttrib(tagtool,'varname'))||'TAGS');
     var tagpicks=
