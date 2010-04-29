@@ -33,731 +33,389 @@
 
 */
 
-/* A few global variables.  Maybe we should make these fields on Knowlet. */
-var knowlets={};
-var knowlet_nicknames={};
-var knowlet_langs={};
-var protoknowlet={};
-var protoknowde={};
-var knowlet=false;
-var knowlets_trace_parsing=0;
-var knowlets_trace_edits=false;
-var knowlet_oidmap={};
+var Knowlet=
+  (function(){
+    var knowlets={};
+    var all_knowlets=[];
+    var knowlet=false;
+    var trace_parsing=0;
+    var trace_edits=false;
 
-var kno_simple_oidpat=/@[0-9A-Fa-f]+\/[0-9A-Fa-f]+/;
-var kno_named_oidpat=/@[0-9A-Fa-f]+\/[0-9A-Fa-f]+(\x22([^\x22]+)\x22)*/;
-var kno_atbreak=/[^\\]@/g;
+    var kno_simple_oidpat=/@[0-9A-Fa-f]+\/[0-9A-Fa-f]+/;
+    var kno_named_oidpat=/@[0-9A-Fa-f]+\/[0-9A-Fa-f]+(\x22([^\x22]+)\x22)*/;
+    var kno_atbreak=/[^\\]@/g;
+    
+    function Knowlet(id,lang) {
+      // Raw cons
+      if (!(id)) return this;
+      // Do lookup
+      if (knowlets[id])
+	if ((lang)&&(lang!==knowlets[id].language))
+	  throw { error: "language mismatch" };
+	else return knowlets[id];
+      if (fdjtDB.Pool.probe(id))
+	throw { error: "pool/knowlet conflict"};
+      if (this instanceof Knowlet)
+	knowlet=fdjtDB.Pool.call(this,id);
+      else knowlet=fdjtDB.Pool.call((new Knowlet()),id);
+      // The name of the knowlet
+      knowlet.name=id;
+      knowlets[id]=knowlet;
+      // The default language for this knowlet
+      if (lang) knowlet.language=lang.toUpperCase();
+      else knowlet.language='EN';
+      // Mapping strings to DTerm objects (many-to-one)
+      knowlet.dterms={};
+      // A vector of all dterms local to this knowlet
+      knowlet.alldterms=[];
+      // Prime dterms
+      knowlet.prime=[];
+      // Whether the knowlet is indexed (e.g. keeps inverse indices for
+      // relations and rules)
+      knowlet.index=fdjtDB.Index();
+      // Whether to validate asserted relations
+      knowlet.validate=true;
+      // Whether the knowlet is 'strict'
+      // (requiring dterm definitions for all references)
+      knowlet.strict=false;
+      // Whether the knowlet is 'finished' (all references declared)
+      knowlet.finished=false;
+      // Terms which are assumed unique.  This is used in non-strict
+      // knowlets to catch terms that become ambiguous.
+      knowlet.assumed_dterms=[];
+      // Mapping external dterms to knowdes
+      knowlet.xdterms={};
+      // A vector of all foreign references
+      knowlet.allxdterms=[];
+      // Mapping terms to arrays of of Knowdes (ambiguous)
+      knowlet.terms={};
+      // Mapping hook terms to arrays of of Knowdes (ambiguous)
+      knowlet.hooks={};
+      // Inverted indices
+      knowlet.genlsIndex={};
+      // This maps external OIDs to knowdes
+      knowlet.oidmap={};
+      // Key concepts
+      knowlet.key_concepts=[];
+      // DRULES (disambiguation rules)
+      knowlet.drules={};
+      return knowlet;}
+    Knowlet.prototype=new fdjtDB.Pool();
 
-/* Knowlets, constructor, etc. */
+    function DTerm(knowlet,string,lang){
+      if (!(knowlet)) return this;
+      if (string.search(/[a-zA-Z]\$/)===0) {
+	lang=string.slice(0,2).toUpperCase();
+	string=string.slice(3);}
+      else if (lang) lang=lang.toUpperCase();
+      else lang=knowlet.language;
+      var term=string;
+      if (knowlet.language!==lang) term=lang+"$"+string;
+      if (knowlet.dterms.hasOwnProperty(term))
+	return knowlet.dterms[term];
+      var dterm=((this instanceof DTerm)?(knowlet.cons(this)):
+		 (knowlet.cons(new DTerm())));
+      dterm.dterm=term; knowlet.dterms[term]=dterm;
+      knowlet.alldterms.push(dterm);
+      if ((lang)&&(lang!==knowlet.language)) dterm.language=lang;
+      dterm._always=fdjtDB.Set();
+      dterm.knowlet=knowlet;
+      dterm.addTerm(string,lang);
+      return dterm;}
+    DTerm.prototype=new fdjtDB.OID();
 
-function KnowletType(id,lang) {
-  var knowlet=this;
-  // The name of the knowlet
-  knowlet.name=id;
-  knowlets[id]=knowlet;
-  // Whether the knowlet is indexed (e.g. keeps inverse indices for
-  // relations and rules)
-  knowlet.indexed=true;
-  // Whether to validate asserted relations
-  knowlet.validate=true;
-  // Whether the knowlet is 'strict' in requiring dterm references for
-  // values
-  knowlet.strict=false;
-  // Whether the knowlet is 'finished' (all references declared)
-  knowlet.finished=false;
-  // Terms which are assumed unique.  This is used in non-strict
-  // knowlets to catch terms that become ambiguous.
-  knowlet.unique_terms=[];
-  // The default language for this knowlet
-  knowlet.language=(((lang) && (knowlet_langs[lang])) || (lang) || "EN");
-  // Mapping dterms to Knowdes (unique)
-  knowlet.dterms={};
-  // A vector of all dterms local to this knowlet
-  knowlet.alldterms=[];
-  // Mapping external dterms to knowdes
-  knowlet.xdterms={};
-  // A vector of all foreign references
-  knowlet.allxdterms=[];
-  // Mapping terms to arrays of of Knowdes (ambiguous)
-  knowlet.terms={};
-  // Mapping hook terms to arrays of of Knowdes (ambiguous)
-  knowlet.hooks={};
-  // Inverted indices
-  knowlet.genlsIndex={};
-  knowlet.index={};
-  knowlet.roleIndex={};
-  // This maps external OIDs to knowdes
-  knowlet.oidmap={};
-  // Key concepts
-  knowlet.key_concepts=[];
-  // DRULES (disambiguation rules)
-  knowlet.drules={};
-  // It's own version of Knowde
-  knowlet.Knowde= function (dterm,strict) {
-    return Knowde(dterm,knowlet,(strict)||knowlet.strict);};
-  return knowlet;
-}
-protoknowlet=KnowletType.prototype;
-
-function Knowlet(id,lang)
-{
-  var knowlet=knowlets[id];
-  if (knowlet) return knowlet;
-  else knowlet=knowlet_nicknames[id];
-  if (knowlet) return knowlet;
-  // We'll ignore this, since Knowlet is often not called with 'new'
-  else return new KnowletType(id,lang);
-}
-
-protoknowlet.KnowdeProbe=function (string,langid) {
-  var langterm=false;
-  if ((langid) && (langid!==this.language))
-    string="$"+langid+"$"+string;
-  if (this.dterms.hasOwnProperty(string))
-    return this.dterms[string];
-  else if (this.strict) return false;
-  else if ((this.terms.hasOwnProperty(string)) &&
-	   (this.terms[string].length===1))
-    return this.terms[string][0];
-  else return false;
-};
-protoknowlet.KnowdeRef= function(string,langid) {
-  var knowde=this.KnowdeProbe(string,((langid)||false));
-  if (knowde) return knowde;
-  if (this.finished)
-    throw {name: 'unknown Knowde reference', irritant: string };
- else return this.Knowde(string,false);
-};
-
-/* Text processing utilities */
-
-protoknowlet.stdspace=function(string)
-{
-  return string.replace(/\s+/," ").
-    replace(/^\s/,"").replace(/\s$/,"");
-};
-
-protoknowlet.trimspace=function(string)
-{
-  return string.replace(/^\s/,"").replace(/\s$/,"");
-};
-
-protoknowlet.findBreak=function(string,brk,start)
-{
-  var pos=string.indexOf(brk,start||0);
-  while (pos>0)
-    if (string[pos-1]!="\\")
-      return pos;
-    else pos=string.indexOf(brk,pos+1);
-  return pos;
-};
-
-var _knowlet_oddpat=/(\\)|(\s\s)|(\s;)|(\s;)/g;
-
-protoknowlet.segmentString=function(string,brk,start,keepspace)
-{
-  if (start)
-    if (string.slice(start).search(_knowlet_oddpat)<0)
-      return string.slice(start).split(brk);
-    else {}
-  else if (string.search(_knowlet_oddpat)<0)
-    return string.split(brk);
-  else {}
-  var result=[]; var i=0, pos=start||0;
-  var nextpos=this.findBreak(string,brk,pos);
-  while (nextpos>=0) {
-    var item=((keepspace) ? (string.slice(pos,nextpos)) :
-	      (this.stdspace(string.slice(pos,nextpos))));
-    if ((item) && (item !== "")) result.push(item);
-    pos=nextpos+1;
-    nextpos=this.findBreak(string,brk,pos);}
-  result.push(string.slice(pos));
-  return result;
-};
-
-
-protoknowlet.stripComments=function(string)
-{
-  return string.replace(/^\s*#.*$/g,"").
-    replace(/^\s*\/\/.*$/g,"");
-};
-
-/* Knowdes */
-
-function KnowdeType(dterm,knowlet,strict)
-{
-  var knowde=this;
-  if (knowlets_trace_parsing>1)
-    fdjtLog('[%fs] Making knowde from %s in %o',fdjtET(),dterm,knowlet);
-  knowde.dterm=dterm; knowde.dangling=true;
-  knowlet.dterms[dterm]=knowde;
-  knowlet.alldterms.push(dterm);
-  knowde.knowlet=knowlet;
-  // These are words which can refer (normatively or peculiarly) to this concept
-  knowde.terms=new Array(dterm); knowde.hooks=[];
-  // These are various relationships
-  knowde.roles={};
-  knowde.allGenls=[];
-  return knowde;
-}
-protoknowde=KnowdeType.prototype;
-
-function Knowde(dterm,kno,strict)
-{
-  var oid=false; var knowde=false;
-  if ((dterm[0]==="@") && (dterm.search(kno_simple_oidpat)===0)) {
-    var match=kno_named_oidpat.exec(dterm);
-    oid=match[0]; if (match[2]) dterm=match[2];
-    if (oid.search("@1/")===0) kno=brico_knowlet;
-    if (kno.oidmap[oid]) knowde=kno.oidmap[oid];
-    var dtkno=kno.dterms[dterm];
-    if ((dtkno) && (knowde) && (dtkno!==knowde))
-      throw {name: "OID/DTerm mismatch"};};
-  if (!(kno))
-    if (knowlet) kno=knowlet;
-    else throw { name: "no default knowlet" };
-  if (knowde) {}
-  else if (kno.dterms.hasOwnProperty(dterm))
-    knowde=kno.dterms[dterm];
-  else if ((!(strict)) && (!(knowlet.strict)) &&
-	   (knowlet.terms[dterm]) &&
-	   (knowlet.terms[dterm].length===1))
-    knowde=knowlet.terms[dterm][0];
-  else knowde=new KnowdeType(dterm,kno);
-  if (oid) knowde.setOID(oid);
-  return knowde;
-}
-
-function KnowdeProbe(dterm,kno,strict)
-{
-  var oid=false; var knowde=false;
-  if ((dterm[0]==="@") && (dterm.search(kno_simple_oidpat)===0)) {
-    var match=kno_named_oidpat.exec(dterm);
-    oid=match[0]; if (match[2]) dterm=match[2];
-    if (oid.search("@1/")===0) kno=brico_knowlet;
-    if (kno.oidmap[oid]) knowde=kno.oidmap[oid];
-    var dtkno=kno.dterms[dterm];
-    if ((dtkno) && (knowde) && (dtkno!==knowde))
-      throw {name: "OID/DTerm mismatch"};};
-  if (!(kno))
-    if (knowlet) kno=knowlet;
-    else throw { name: "no default knowlet" };
-  if (knowde) {}
-  else if (kno.dterms.hasOwnProperty(dterm))
-    knowde=kno.dterms[dterm];
-  else if ((!(strict)) && (!(knowlet.strict)) &&
-	   (knowlet.terms[dterm]) &&
-	   (knowlet.terms[dterm].length===1))
-    knowde=knowlet.terms[dterm][0];
-  else return false;
-  if (oid) knowde.setOID(oid);
-  return knowde;
-}
-
-/* OID management */
-
-/* OIDs represent a unique server side representation of a knowde. */
-
-protoknowde.setOID=function(oid) {
-  if (this.oid)
-    if (this.oid===oid) return;
-    else if (!(oid)) {}
-    else throw {name: "OID conflict", irritant: this,
-		curoid: this.oid, newoid: oid};
-  if (!(oid)) {
-    fdjtDrop(knowlet_oidmap,this.oid,this);
-    this.knowlet.oidmap[oid]=false;
-    this.oid=false;
-    return false;}
-  else if (this.knowlet.oidmap[oid])
-    throw {name: "OID ambiguity", irritant: this,
-	   cur: this.knowlet.oidmap[oid], oid: oid};
-  else {
-    this.oid=oid;
-    fdjtAdd(knowlet_oidmap,oid,this);
-    this.knowlet.oidmap[oid]=this;
-    return oid;}
-};
-/* Knowde semantic relationships (getting) */
-
-protoknowde.getRel=function(rel,infer) {
-  if (infer) {}
-  else if (this[rel])
-    return this[rel];
-  else return [];
-};
-protoknowde.testRel=function(rel,val,infer) {
-  if (infer) {}
-  else if (this[rel])
-    if (fdjtIndexOf(this[rel],val)<0)
-      return false;
-    else return true;
-  else return false;
-};
-protoknowde.addRel=function(rel,val) {
-  if ((this[rel]) && (fdjtIndexOf(this[rel],val)>=0))
-    return this;
-  else {
-    var values; var mirror=false;
-    var knowlet=this.knowlet;
-    var index=knowlet.index;
-    if (rel==='never') mirror='never';
-    if (this.hasOwnProperty(rel))
-      values=this[rel];
-    else this[rel]=values=[];
-    values.push(val);
-    if (mirror)
-      if (!(val[mirror]))
-	val[mirror]=new Array(this);
-      else val[mirror].push(this);
-    else {}
-    if ((rel==='genls') && (fdjtIndexOf(this.allGenls,val)<0)) {
-      // Keep allgenls updated
-      var genls=this.genls; var allgenls=[].concat(genls); 
-      var i=0; while (i<genls.length) 
-		 allgenls=allgenls.concat(genls[i++].allGenls);
-      this.allGenls=allgenls;
-      // Update genlsIndex if indexing
-      if (index) {
-	var allindex=knowlet.genlsIndex;
-	var j=0; while (j<allgenls.length) {
-	  var g=allgenls[j++];
-	  if ((g) && (g.dterm)) {
-	    var gdterm=g.dterm;
-	    if (allindex.hasOwnProperty(gdterm)) {
-	      if (fdjtIndexOf(allindex[gdterm],this)<0) 
-		allindex[gdterm].push(this);}
-	    else allindex[gdterm]=new Array(this);}
-	  else fdjtWarn("Odd genl %g from allgenls %o of %o",
-			g,allgenls,this);}}}
-    if (index) {
-      fdjtAdd(index,rel,val);
-      if (mirror) fdjtAdd(index,val.dterm,mirror,this);}};}
-
-protoknowde.addRole=function(role,val) {
-  var rterm=role.dterm;
-  if ((this.roles.hasOwnProperty(rterm)) &&
-      (fdjtIndexOf(this.roles[rterm],val)>=0))
-    return this;
-  else {
-    var values=((this.roles.hasOwnProperty(rterm)) && (this.roles[rterm]));
-    var knowlet=this.knowlet;
-    var index=knowlet.rolesIndex;
-    if (values) values.push(val);
-    else this.roles[rterm]=values=new Array(val);
-    if (index) 
-      fdjtIndexAdd(index,this.dterm,rterm,val);}
-};
-
-/* Adding synonyms and hooks */
-
-protoknowde.addTerm=function (term,langid) {
-  var knowlet=this.knowlet;
-  if ((langid) && (langid!==knowlet.language))
-    term="$"+langid+"$"+term;
-  else {}
-  this.dangling=false;
-  if (fdjtIndexOf(this.terms,term)>=0) return;
-  this.terms.push(term);
-  fdjtAdd(knowlet.terms,term,this);
-  return this;};
-
-protoknowde.addHook=function (term,langid) {
-  var knowlet=this.knowlet;
-  if ((langid) && (langid!==knowlet.language))
-    term="$"+langid+"$"+term;
-  else {}
-  this.dangling=false;
-  fdjtAdd(this,"hooks",term);
-  fdjtAdd(knowlet.hooks,term,this);
-  return this;};
-
-/* DRULEs */
-
-protoknowde.drule={};
-protoknowde.drule.prototype=Array;
-protoknowlet.parseDRuleElt=
-  function (elt,literal) {
-  if (elt==="")
-    throw { name: 'InvalidDRule', irritant: arguments};
-  else if (literal) return elt;
-  else if (elt[0]==="'") return elt.slice(1);
-  else if (elt[0]==="\"")
-    if (elt[-1]==="\"")
-      return elt.slice(1,-1);
-    else return elt.slice(1);
-  else if (elt[0]===":")
-    return this.Knowde(elt.slice(1));
-  else if (this.dterms[elt]) return this.dterms[elt];
-  else return elt;
-}
-  
-protoknowlet.KnowDRule=
-  function(head) {
-  var drule=new Array();
-  var i=0; while (i<arguments.length) {
-    var arg=arguments[i++];
-    if (typeof arg === "string")
-      drule.push(this.parseDRuleElt(arg));
-    else if (arg instanceof Array) {
-      var j=0; while (j<arg.length)
-		 drule.push(this.parseDRuleElt(arg[j++]));}
-    else throw { name: "InvalidDRule", irritant: arguments};}
-  drule.head=drule[0];
-  return drule;};
-
-/* Processing the PLAINTEXT microformat */
-
-protoknowlet.handleClause=function(clause,subject) {
-  if (clause.indexOf('\\')>=0) clause=fdjtUnEscape(clause);
-  if (knowlets_trace_parsing>2)
-    fdjtLog("[%fs] Handling clause '%s' for %o",fdjtET(),clause,subject);
-  switch (clause[0]) {
-  case '^':
-    if (clause[1]==='~') 
-      subject.addRel('sometimes',this.KnowdeRef(clause.slice(2)));
-    else if (clause[2]==='*') 
-      subject.addRel('commonly',this.KnowdeRef(clause.slice(2)));
-    else {
-      var pstart=this.findBreak("(");
-      if (pstart>0) {
-	var pend=this.findBreak(")",pstart);
-	if (pend<0) {
-	  fdjtWarn("Invalid Knowlet clause '%s' for %o (%s)",
-		   clause,subject,subject.dterm);}
-	else {
-	  var role=this.KnowdeRef(clause.slice(1,pstart));
-	  var arg=this.KnowdeRef(clause.slice(pstart+1,pend));
-	  arg.addRole(role,subject);
-	  subject.addRel('genls',role);}}
-      else subject.addRel('genls',this.KnowdeRef(clause.slice(1)));}
-    break;
-  case '_': {
-    var object=this.KnowdeRef(clause.slice(1));
-    subject.addRel('examples',object);
-    object.addRel('genls',subject);
-    break;}
-  case '-':
-    subject.addRel('never',this.KnowdeRef(clause.slice(1)));
-    break;
-  case '~':
-    if (clause.search(/~[A-Za-z][A-Za-z]\$/)===0)
-      subject.addHook(clause.slice(4),clause.slice(1,3).toLowerCase());
-    else subject.addHook(clause.slice(1));
-    break;
-  case '&': {
-    var value=clause.slice((clause[1]==="-") ? (2) : (1));
-    var assoc=this.KnowdeRef(value);
-    if (clause[1]==="-")
-      subject.addRel('antiassocs',assoc);
-    else subject.addRel('assocs',assoc);
-    break;}
-  case '@': 
-    if (clause[1]==="#") 
-      fdjtAdd(subject,'tags',clause.slice(2));
-    else fdjtAdd(subject,'uri',clause.slice(1));
-    break;
-  case '=':
-    if (clause[1]==='@')
-      subject.oid=clause.slice(1);
-    else if (clause.indexOf('@')>1) {
-      var atpos=clause.indexOf('@');
-      var knowlet=Knowlet(clause.slice(atpos+1));
-      var knowde=this.Knowde(clause.slice(1,atpos));
-      var mirror_name=subject.dterm+"@"+subject.knowlet.name;
-      knowlet.xdterms[mirror_name]=subject;
-      knowlet.allxdterms.push(subject);
-      if (subject.xdterms) subject.xdterms.push(clause.slice(1));
-      else subject.xdterms=new Array(clause.slice(1));
-      subject.knowlet.xdterms[clause.slice(1)]=knowde;
-      subject.knowlet.allxdterms.push(clause.slice(1));}
-    else if (clause[1]==='*')
-      subject.addRel('equiv',this.KnowdeRef(clause.slice(2)));
-    else if (clause[1]==='~')
-      subject.addRel('kinda',this.KnowdeRef(clause.slice(2)));
-    else 
-      subject.addRel('identical',this.KnowdeRef(clause.slice(2)));
-    break;
-  case '"': {
-    var qend=((clause[-1]==='"') ? (-1) : (false));
-    if (clause[1]==="*") {
-      var gloss=((qend)?(clause.slice(2,qend)):(clause.slice(2)));
-      fdjtAdd(subject,"glosses",gloss);
-      subject.gloss=gloss;}
-    else if (!(subject.gloss)) {
-      var gloss=((qend)?(clause.slice(1,qend)):(clause.slice(1)));
-      fdjtAdd(subject,"glosses",gloss);
-      subject.gloss=gloss;}
-    else fdjtAdd(subject,"glosses",((qend)?(clause.slice(1,qend)):(clause.slice(1))));
-    break;}
-  case '%': {
-    var mirror=this.KnowdeRef(clause.slice(1));
-    if (subject.mirror===mirror) break;
-    else {
-      var omirror=subject.mirror;
-      fdjtWarn("Inconsistent mirrors for %s: +%s and -%s",
-	       subject,mirror,omirror);
-      omirror.mirror=false;}
-    if (mirror.mirror) {
-      var oinvmirror=mirror.mirror;
-      fdjtWarn("Inconsistent mirrors for %s: +%s and -%s",
-	       mirror,subject,oinvmirror);
-      omirror.mirror=false;}
-    subject.mirror=mirror; mirror.mirror=subject;
-    break;}
-  case '.': {
-    var brk=this.findBreak(clause,'=');
-    if (!(brk))
-      throw {name: 'InvalidClause', irritant: clause};
-    var role=this.KnowdeRef(clause.slice(1,brk));
-    var filler=this.KnowdeRef(clause.slice(brk+1));
-    this.addRole(role,filler);
-    break;}
-  default: {
-    var brk=this.findBreak(clause,'=');
-    if (brk>0) {
-      var role=this.KnowdeRef(clause.slice(0,brk));
-      var filler=this.KnowdeRef(clause.slice(brk+1));
-      subject.addRole(role,filler);
-      filler.addRel('genls',role);}
-    else if ((brk=this.findBreak(clause,'\&'))>0) {
-      var drule=this.KnowDRule(this.segmentString(clause,'&'));
-      drule.knowde=subject;
-      if (subject.drules)
-	subject.drules.push(drule);
-      else subject.drules=new Array(drule);
-      if (subject.knowlet.drules.hasOwnProperty(drule.head))
-	subject.knowlet.drules[drule.head].push(drule);
-      else subject.knowlet.drules[drule.head]=new Array(drule);}
-    else if (clause.search(/[A-Za-z][A-Za-z]\$/)===0) {
-      subject.addTerm(clause.slice(3),clause.slice(0,3).toLowerCase());}
-    else subject.addTerm(clause);}}
-  return subject;
-};
-
-protoknowlet.handleSubjectEntry=function(entry)
-{
-  var clauses=this.segmentString(entry,"|");
-  var subject=this.Knowde(clauses[0]);
-  if (knowlets_trace_parsing>2)
-    fdjtLog("[%fs] Processing subject entry %s %o %o",fdjtET(),entry,subject,clauses);
-  var i=1; while (i<clauses.length)
-	     this.handleClause(clauses[i++],subject);
-  if (knowlets_trace_parsing>2)
-    fdjtLog("[%fs] Processed subject entry %o",fdjtET(),subject);
-  return subject;
-};
-
-protoknowlet.handleEntry=function(entry)
-{
-  entry=this.trimspace(entry);
-  if (entry.length===0) return false;
-  var bar=fdjtFindSplit(entry,'|');
-  var atsign=fdjtFindSplit(entry,'@');
-  if ((atsign>0) && ((bar<0)||(atsign<bar))) {
-    var term=entry.slice(0,atsign);
-    var knostring=((bar<0) ? (entry.slice(atsign+1)) :
-		   (entry.slice(atsign+1,bar)));
-    var knowlet=Knowlet(knostring);
-    if (bar<0) return knowlet.Knowde(term);
-    else return knowlet.handleEntry(term+entry.slice(bar));}
-  switch (entry[0]) {
-  case '*': {
-    var subject=this.handleSubjectEntry(entry.slice(1));
-    if (fdjtIndexOf(this.key_concepts,subject)<0)
-      this.key_concepts.push(subject);
-    return subject;}
-  case '-': {
-    var subentries=this.segmentString(entry.slice(1),"/");
-    var knowdes=[];
-    var i=0; while (i<subentries.length) {
-      knowdes[i]=this.KnowdeRef(subentries[i]); i++;}
-    var j=0; while (j<knowdes.length) {
-      var k=0; while (k<knowdes.length) {
-	if (j!=k) knowdes[j].addRel('disjoin',knowdes[k]);
-	k++;}
-      j++;}
-    return knowdes[0];}
-  case '/': {
-    var pos=1; var subject=false; var head=false;
-    var next=this.findBreak(entry,'/',pos);
-    while (true) {
-      var basic_level=false;
-      if (entry[pos]==='*') {basic_level=true; pos++;}
-      var next_subject=
-	((next) ? (this.handleSubjectEntry(entry.slice(pos,next))) :
-	 (this.handleSubjectEntry(entry.slice(pos))));
-      if (subject) subject.addRel('genls',next_subject);
-      else head=next_subject;
-      subject=next_subject;
-      if (basic_level) subject.basic=true;
-      if (next) {
-	pos=next+1; next=this.findBreak(entry,"/",pos);}
-      else break;}
-    return head;}
-  default:
-    return this.handleSubjectEntry(entry);
-  }
-};
-
-protoknowlet.handleEntries=function(block)
-{
-  if (typeof block === "string") {
-    var nocomment=this.stripComments(block);
-    var segmented=this.segmentString(nocomment,';');
-    if (knowlets_trace_parsing>1)
-      fdjtLog("[%fs] Handling %d entries",fdjtET(),segmented.length);
-    return this.handleEntries(segmented);}
-  else if (block instanceof Array) {
-    var results=[];
-    var i=0; while (i<block.length) {
-      results[i]=this.handleEntry(block[i]); i++;}
-    return results;}
-  else throw {name: 'TypeError', irritant: block};
-};
-
-/* KnowDef returns a knowde from an entry */
-
-function KnowDef(string,kno)
-{
-  if ((typeof string !== "string") || (string.length<1))
-    throw {name: 'TypeError', irritant: string};
-  var termstart=-1; var oid=false; var result=false;
-  // Get the head and (possibly) the knowlet
-  var bar=string.search(/[^\\]\|/g);
-  var head=((bar<0) ? (string) : (string.slice(0,bar)));
-  var atsign=head.search(/[^\\]@/g);
-  var dterm;
-  if (atsign>0) {
-    kno=Knowlet(head.slice(atsign+1));
-    dterm=head.slice(0,atsign);
-    result=kno.handleSubjectEntry(dterm+string.slice(bar));}
-  else {
-    if (!(kno)) kno=knowlet; dterm=head;
-    result=kno.handleSubjectEntry(string);}
-  if ((oid) && (result) && (typeof result != "string"))
-    result.oid=oid;
-  return result;
-}
-
-/* Getting tag strings */
-
-function knoTagString(knowde,kno)
-{
-  if (typeof knowde === "string")
-    if (knowde.indexOf('|')>=0)
-      if (kno)
-	return kno.handleSubjectEntry(knowde).dterm;
-      else if (knowlet)
-	return knowlet.handleSubjectEntry(knowde).dterm;
-  // Should this just take the head?
-      else return knowde;
-    else return knowde;
-  else if (knowde.oid)
-    return knowde.oid+"\""+knowde.dterm+"\"";
-  else if (kno)
-    if (kno===knowde.knowlet)
-      return knowde.dterm;
-    else return knowde.dterm+"@"+knowde.knowlet.name;
-  else return knowde.dterm;
-}
-
-function knoTagOID(knowde)
-{
-  if (typeof knowde === "string") 
-    if (knowde.search(kno_simple_oidpat)===0) 
-      return kno_simple_oidpat.exec(knowde)[0];
-    else if (knowde.search(kno_atbreak)>0) {
-      var atpos=knowde.indexOf(kno_atbreak)+1;
-      var base=knowde.slice(0,atpos);
-      var knoid=knowde.slice(atpos+1);
-      if (knowlets[knoid]) {
-	var knowlet=Knowlet(knoid);
-	var entry=knoid.probeKnowde(base);
-	if (entry) return entry.oid;
-	else return false;}
+    Knowlet.DTerm=DTerm;
+    Knowlet.prototype.DTerm=function(string,lang) {
+      return DTerm(this,string,lang);};
+    Knowlet.prototype.probe=function(string,langid) {
+      if (this.language===langid)
+	return this.dterms[string]||false;
+      else return this.dterms[langid+"$"+string]||false;};
+    
+    DTerm.prototype.add=function(prop,val){
+      if ((fdjtDB.OID.prototype.add.call(this,prop,val))&&(prop==='genls')) {
+	this._always.add(val);
+	this._always.add(val._always);
+	return true;}
       else return false;}
-    else return false;
-  else if (knowde.oid) return knowde;
-  else return false;
-}
+    DTerm.prototype.addTerm=function(val,field){
+      if (val.search(/[a-zA-Z]\$/)===0)
+	if (field)
+	  this.add(val.slice(0,2)+'$'+field,val.slice(3));
+	else this.add(val.slice(0,2),val.slice(3));
+      else if (field) this.add(field,val);
+      else this.add(this.knowlet.language,val);};
+    DTerm.prototype.tagString=function(kno) {
+      if ((kno===this.knowlet)||(!(kno))) return this.dterm;
+      else return this.dterm+"@"+this.knowlet.name;};
+    /* Text processing utilities */
+    function stdspace(string) {
+      return string.replace(/\s+/," ").
+	replace(/^\s/,"").replace(/\s$/,"");}
+    
+    function trimspace(string) {
+      return string.replace(/^\s/,"").replace(/\s$/,"");}
 
-function knoTagTerm(knowde,kno)
-{
-  if (typeof knowde === "string") 
-    if (knowde.search(kno_simple_oidpat)===0) {
-      var match=kno_named_oidpat.exec(knowde);
-      if ((match) && (match[2])) return match[2];
-      else {
-	var oid=match[0];
-	var entry=((kno)?(kno.oidmap[oid]):
-		   ((knowlet.oidmap[oid])||
-		    ((knowlet_oidmap[oid])&&(knowlet_oidmap[oid][0]))));
-	if (entry) return entry.dterm;
-	else return false;}}
-  else if (knowde.oid) return knowde;
-  else return false;
-}
+    function findBreak(string,brk,start) {
+      var pos=string.indexOf(brk,start||0);
+      while (pos>0)
+	if (string[pos-1]!="\\")
+	  return pos;
+	else pos=string.indexOf(brk,pos+1);
+      return pos;}
 
-/*
-function knoTagRef(string,kno)
-{
-  var oid; var term; var domain;
-  if (string.search(kno_simple_oidpat)===0) {
-    var match=kno_named_oidpat.exec(string);
-    oid=match[1]; term=match[2];}
-  else {oid=false; term=string;}
-  if (knowde.search(kno_atbreak)>0) {
-    var atpos=knowde.indexOf(kno_atbreak)+1;
-    var base=knowde.slice(0,atpos);
-    var knoid=knowde.slice(atpos+1);
-    if (knowlets[knoid]) {
-	var knowlet=Knowlet(noid);
-	var entry=knoid.probeKnowde(base);
-	if (entry) return entry.oid;
-	else return false;}
-      else return false;}
-    else return false;
-  else if (knowde.oid) return knowde;
-  else return false;
-}
-*/
+    var _knowlet_oddpat=/(\\)|(\s\s)|(\s;)|(\s;)/g;
+    
+    function segmentString(string,brk,start,keepspace) {
+      if (start)
+	if (string.slice(start).search(_knowlet_oddpat)<0)
+	  return string.slice(start).split(brk);
+	else {}
+      else if (string.search(_knowlet_oddpat)<0)
+	return string.split(brk);
+      else {}
+      var result=[]; var i=0, pos=start||0;
+      var nextpos=this.findBreak(string,brk,pos);
+      while (nextpos>=0) {
+	var item=((keepspace) ? (string.slice(pos,nextpos)) :
+		  (this.stdspace(string.slice(pos,nextpos))));
+	if ((item) && (item !== "")) result.push(item);
+	pos=nextpos+1;
+	nextpos=this.findBreak(string,brk,pos);}
+      result.push(string.slice(pos));
+      return result;}
+    function stripComments(string) {
+      return string.replace(/^\s*#.*$/g,"").
+	replace(/^\s*\/\/.*$/g,"");}
 
-/* Indexing with knowlets */
-
-var kno_wgenls=false;
-var kno_wogenls=true;
-
-function knoIndexTag(index,tag,indexval,nogenls,checkdup)
-{
-  var dup=false;
-  var dterm=((typeof tag === "string") ? (tag) : (tag.dterm));
-  if (index.hasOwnProperty(dterm))
-    if (!(checkdup))
-      index[dterm].push(indexval);
-    else if (fdjtIndexOf(index[dterm],indexval)<0)
-      index[dterm].push(indexval);
-    else dup=true;
-  else {
-    if (index._all) index._all.push(dterm);
-    index[dterm]=new Array(indexval);}
-  if (dup) return false;
-  else if ((nogenls) || (typeof tag==="string")) return true;
-  else {
-    // Assume it's a Knowde
-    var genls=tag.allGenls;
-    if (genls) {
-      var i=0; while (i<genls.length) {
-	var g=genls[i++]; var gdterm=g.dterm;
-	if (index.hasOwnProperty(gdterm))
-	  index[gdterm].push(indexval);
+    /* Processing the PLAINTEXT microformat */
+    function handleClause(clause,subject) {
+      if (clause.indexOf('\\')>=0) clause=fdjtString.unescape(clause);
+      if (trace_parsing>2)
+	fdjtLog("[%fs] Handling clause '%s' for %o",fdjt.ET(),clause,subject);
+      switch (clause[0]) {
+      case '^':
+	if (clause[1]==='~') 
+	  subject.add('sometimes',this.DTerm(clause.slice(2)));
+	else if (clause[2]==='*') 
+	  subject.add('commonly',this.DTerm(clause.slice(2)));
 	else {
-	  if (index._all) index._all.push(gdterm);
-	  index[gdterm]=new Array(indexval);}}}
-    return true;}
-}
+	  var pstart=this.findBreak("(");
+	  if (pstart>0) {
+	    var pend=this.findBreak(")",pstart);
+	    if (pend<0) {
+	      fdjtWarn("Invalid Knowlet clause '%s' for %o (%s)",
+		       clause,subject,subject.dterm);}
+	    else {
+	      var role=this.DTerm(clause.slice(1,pstart));
+	      var object=this.DTerm(clause.slice(pstart+1,pend));
+	      object.add(role.dterm,subject);
+	      subject.add('genls',role);}}
+	  else subject.add('genls',this.DTerm(clause.slice(1)));}
+	break;
+      case '_': {
+	var object=this.DTerm(clause.slice(1));
+	subject.add('examples',object);
+	object.add('genls',subject);
+	break;}
+      case '-':
+	subject.add('never',this.DTerm(clause.slice(1)));
+	break;
+      case '&': {
+	var value=clause.slice((clause[1]==="-") ? (2) : (1));
+	var assoc=this.DTerm(value);
+	if (clause[1]==="-")
+	  subject.add('antiassocs',assoc);
+	else subject.add('assocs',assoc);
+	break;}
+      case '@': 
+	if (clause[1]==="#") 
+	  subject.add('tags',clause.slice(2));
+	else subject.add('uri',clause.slice(1));
+	break;
+      case '=':
+	if (clause[1]==='@')
+	  subject.oid=clause.slice(1);
+	else if (clause[1]==='*')
+	  subject.add('equiv',this.DTerm(clause.slice(2)));
+	else if (clause[1]==='~')
+	  subject.add('kinda',this.DTerm(clause.slice(2)));
+	else 
+	  subject.add('identical',this.DTerm(clause.slice(1)));
+	break;
+      case '"': {
+	var qend=((clause[-1]==='"') ? (-1) : (false));
+	var gloss=((qend)?(clause.slice(2,qend)):(clause.slice(2)));
+	if (clause[1]==="*") {
+	  subject.gloss=gloss.slice(1);
+	  subject.addTerm(subject.gloss,'glosses');}
+	else {
+	  subject.addTerm(gloss,"glosses");}
+	break;}
+      case '%': {
+	var mirror=this.DTerm(clause.slice(1));
+	if (subject.mirror===mirror) break;
+	else {
+	  var omirror=subject.mirror;
+	  fdjtWarn("Inconsistent mirrors for %s: +%s and -%s",
+		   subject,mirror,omirror);
+	  omirror.mirror=false;}
+	if (mirror.mirror) {
+	  var oinvmirror=mirror.mirror;
+	  fdjtWarn("Inconsistent mirrors for %s: +%s and -%s",
+		   mirror,subject,oinvmirror);
+	  omirror.mirror=false;}
+	subject.mirror=mirror; mirror.mirror=subject;
+	break;}
+      case '.': {
+	var brk=this.findBreak(clause,'=');
+	if (!(brk))
+	  throw {name: 'InvalidClause', irritant: clause};
+	var role=this.DTerm(clause.slice(1,brk));
+	var object=this.DTerm(clause.slice(brk+1));
+	this.add(role.dterm,object);
+	object.add('genls',role);
+	break;}
+      default: {
+	var brk=this.findBreak(clause,'=');
+	if (brk>0) {
+	  var role=this.DTerm(clause.slice(0,brk));
+	  var object=this.DTerm(clause.slice(brk+1));
+	  subject.add(role.dterm,object);
+	  object.add('genls',role);}
+	else subject.addTerm(clause);}}
+      return subject;}
+    Knowlet.prototype.handleClause=handleClause;
 
-var brico_knowlet=Knowlet("brico","en");
+    function handleSubjectEntry(entry){
+      var clauses=this.segmentString(entry,"|");
+      var subject=this.Knowde(clauses[0]);
+      if (knowlets_trace_parsing>2)
+	fdjtLog("[%fs] Processing subject entry %s %o %o",
+		fdjtET(),entry,subject,clauses);
+      var i=1; while (i<clauses.length)
+		 this.handleClause(clauses[i++],subject);
+      if (knowlets_trace_parsing>2)
+	fdjtLog("[%fs] Processed subject entry %o",fdjtET(),subject);
+      return subject;}
+    Knowlet.prototype.handleSubjectEntry=handleSubjectEntry;
+
+    function handleEntry(entry){
+      entry=this.trimspace(entry);
+      if (entry.length===0) return false;
+      var bar=fdjtFindSplit(entry,'|');
+      var atsign=fdjtFindSplit(entry,'@');
+      if ((atsign>0) && ((bar<0)||(atsign<bar))) {
+	var term=entry.slice(0,atsign);
+	var knostring=((bar<0) ? (entry.slice(atsign+1)) :
+		       (entry.slice(atsign+1,bar)));
+	var knowlet=Knowlet(knostring);
+	if (bar<0) return knowlet.Knowde(term);
+	else return knowlet.handleEntry(term+entry.slice(bar));}
+      switch (entry[0]) {
+      case '*': {
+	var subject=this.handleSubjectEntry(entry.slice(1));
+	if (fdjtIndexOf(this.key_concepts,subject)<0)
+	  this.key_concepts.push(subject);
+	return subject;}
+      case '-': {
+	var subentries=this.segmentString(entry.slice(1),"/");
+	var knowdes=[];
+	var i=0; while (i<subentries.length) {
+	  knowdes[i]=this.KnowdeRef(subentries[i]); i++;}
+	var j=0; while (j<knowdes.length) {
+	  var k=0; while (k<knowdes.length) {
+	    if (j!=k) knowdes[j].addRel('disjoin',knowdes[k]);
+	    k++;}
+	  j++;}
+	return knowdes[0];}
+      case '/': {
+	var pos=1; var subject=false; var head=false;
+	var next=this.findBreak(entry,'/',pos);
+	while (true) {
+	  var basic_level=false;
+	  if (entry[pos]==='*') {basic_level=true; pos++;}
+	  var next_subject=
+	    ((next) ? (this.handleSubjectEntry(entry.slice(pos,next))) :
+	     (this.handleSubjectEntry(entry.slice(pos))));
+	  if (subject) subject.addRel('genls',next_subject);
+	  else head=next_subject;
+	  subject=next_subject;
+	  if (basic_level) subject.basic=true;
+	  if (next) {
+	    pos=next+1; next=this.findBreak(entry,"/",pos);}
+	  else break;}
+	return head;}
+      default:
+	return this.handleSubjectEntry(entry);}}
+    Knowlet.prototype.handleEntry=handleEntry;
+
+    function handleEntries(block){
+      if (typeof block === "string") {
+	var nocomment=this.stripComments(block);
+	var segmented=this.segmentString(nocomment,';');
+	if (knowlets_trace_parsing>1)
+	  fdjtLog("[%fs] Handling %d entries",fdjtET(),segmented.length);
+	return this.handleEntries(segmented);}
+      else if (block instanceof Array) {
+	var results=[];
+	var i=0; while (i<block.length) {
+	  results[i]=this.handleEntry(block[i]); i++;}
+	return results;}
+      else throw {name: 'TypeError', irritant: block};}
+    Knowlet.prototype.handleEntries=handleEntries;
+
+    Knowlet.prototype.def=handleSubjectEntry;
+
+    Knowlet.def=function(string,kno){
+      if (!(kno)) kno=Knowlet.knowlet;
+      return kno.def(string);};
+    return Knowlet;})();
+
+var DTerm=Knowlet.DTerm;
+
+function KnowletIndex(knowlet) {
+  if (knowlet) this.knowlet=knowlet;
+  this.byweight={}; this.bykey={}; this.tagweights={};
+  return this;}
+
+KnowletIndex.prototype.add=function(item,key,weight,kno){
+  if ((weight)&&(!(this.byweight[weight])))
+    this.byweight[weight]={};
+  if (this.bykey[key]) this.bykey[key].add(item);
+  else this.bykey[key]=new fdjtDB.Set(item);
+  if (weight) {
+    var byweight=this.byweight[weight];
+    if (byweight[key]) byweight[key].add(item);
+    else byweight[key]=new fdjtDB.Set(item);
+    (this.tagweights[key])=((this.tagweights[key])||0)+weight;}
+  if (kno) {
+    var dterm=kno.probe(key);
+    if ((dterm)&&(dterm._always)) {
+      var always=dterm._always.get();
+      var i=0; var len=always.length;
+      while (i<len) this.add(item,always[i++].dterm,((weight)&&(weight-1)));}}};
+KnowletIndex.prototype.freq=function(key){
+  if (this.bykey[key])
+    return this.bykey[key].elements.length;
+  else return 0;};
+KnowletIndex.prototype.find=function(key){
+  if (this.bykey[key]) return this.bykey[key];
+  else return new fdjtDB.Set();};
+KnowletIndex.prototype.score=function(key,scores){
+  var byweight=this.byweight;
+  if (!(scores)) scores={};
+  for (weight in byweight)
+    if (byweight[weight][key]) {
+      var hits=byweight[weight][key].get();
+      var i=0; var len=hits.length;
+      while (i<len) {
+	var item=hits[i++]; var cur;
+	if (cur=scores[item]) scores[item]=cur+weight;
+	else scores[item]=weight;}}
+  return scores;};
+
+
 
 /* Emacs local variables
 ;;;  Local variables: ***
