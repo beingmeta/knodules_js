@@ -53,11 +53,11 @@ var Knowlet=
 	if ((lang)&&(lang!==knowlets[id].language))
 	  throw { error: "language mismatch" };
 	else return knowlets[id];
-      if (fdjtDB.Pool.probe(id))
+      if (fdjtKB.Pool.probe(id))
 	throw { error: "pool/knowlet conflict"};
       if (this instanceof Knowlet)
-	knowlet=fdjtDB.Pool.call(this,id);
-      else knowlet=fdjtDB.Pool.call((new Knowlet()),id);
+	knowlet=fdjtKB.Pool.call(this,id);
+      else knowlet=fdjtKB.Pool.call((new Knowlet()),id);
       // The name of the knowlet
       knowlet.name=id;
       knowlets[id]=knowlet;
@@ -72,7 +72,7 @@ var Knowlet=
       knowlet.prime=[];
       // Whether the knowlet is indexed (e.g. keeps inverse indices for
       // relations and rules)
-      knowlet.index=fdjtDB.Index();
+      knowlet.index=fdjtKB.Index();
       // Whether to validate asserted relations
       knowlet.validate=true;
       // Whether the knowlet is 'strict'
@@ -100,7 +100,7 @@ var Knowlet=
       // DRULES (disambiguation rules)
       knowlet.drules={};
       return knowlet;}
-    Knowlet.prototype=new fdjtDB.Pool();
+    Knowlet.prototype=new fdjtKB.Pool();
 
     function DTerm(knowlet,string,lang){
       if (!(knowlet)) return this;
@@ -119,11 +119,11 @@ var Knowlet=
       dterm.dterm=term; knowlet.dterms[term]=dterm;
       knowlet.alldterms.push(dterm);
       if ((lang)&&(lang!==knowlet.language)) dterm.language=lang;
-      dterm._always=fdjtDB.Set();
+      dterm._always=fdjtKB.Set();
       dterm.knowlet=knowlet;
       dterm.addTerm(string,lang);
       return dterm;}
-    DTerm.prototype=new fdjtDB.KNode();
+    DTerm.prototype=new fdjtKB.KNode();
 
     Knowlet.DTerm=DTerm;
     Knowlet.prototype.cons=DTerm;
@@ -135,7 +135,7 @@ var Knowlet=
       else return this.dterms[langid+"$"+string]||false;};
     
     DTerm.prototype.add=function(prop,val){
-      if ((fdjtDB.KNode.prototype.add.call(this,prop,val))&&
+      if ((fdjtKB.KNode.prototype.add.call(this,prop,val))&&
 	  (prop==='genls')) {
 	this._always.add(val);
 	this._always.add(val._always);
@@ -386,11 +386,11 @@ KnowletIndex.prototype.add=function(item,key,weight,kno){
   if ((weight)&&(!(this.byweight[weight])))
     this.byweight[weight]={};
   if (this.bykey[key]) this.bykey[key].add(item);
-  else this.bykey[key]=new fdjtDB.Set(item);
+  else this.bykey[key]=new fdjtKB.Set(item);
   if (weight) {
     var byweight=this.byweight[weight];
     if (byweight[key]) byweight[key].add(item);
-    else byweight[key]=new fdjtDB.Set(item);
+    else byweight[key]=new fdjtKB.Set(item);
     (this.tagweights[key])=((this.tagweights[key])||0)+weight;}
   if (kno) {
     var dterm=kno.probe(key);
@@ -404,7 +404,7 @@ KnowletIndex.prototype.freq=function(key){
   else return 0;};
 KnowletIndex.prototype.find=function(key){
   if (this.bykey[key]) return this.bykey[key];
-  else return new fdjtDB.Set();};
+  else return new fdjtKB.Set();};
 KnowletIndex.prototype.score=function(key,scores){
   var byweight=this.byweight;
   if (!(scores)) scores={};
