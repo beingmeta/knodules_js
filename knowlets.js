@@ -113,8 +113,9 @@ var Knowlet=
       if (knowlet.language!==lang) term=lang+"$"+string;
       if (knowlet.dterms.hasOwnProperty(term))
 	return knowlet.dterms[term];
-      var dterm=((this instanceof DTerm)?(knowlet.cons(this)):
-		 (knowlet.cons(new DTerm())));
+      var dterm=((this instanceof DTerm)?
+		 (knowlet.ref(string+"@"+knowlet.name,this)):
+		 (knowlet.ref(string+"@"+knowlet.name,new DTerm())));
       dterm.dterm=term; knowlet.dterms[term]=dterm;
       knowlet.alldterms.push(dterm);
       if ((lang)&&(lang!==knowlet.language)) dterm.language=lang;
@@ -122,9 +123,10 @@ var Knowlet=
       dterm.knowlet=knowlet;
       dterm.addTerm(string,lang);
       return dterm;}
-    DTerm.prototype=new fdjtDB.OID();
+    DTerm.prototype=new fdjtDB.KNode();
 
     Knowlet.DTerm=DTerm;
+    Knowlet.prototype.cons=DTerm;
     Knowlet.prototype.DTerm=function(string,lang) {
       return DTerm(this,string,lang);};
     Knowlet.prototype.probe=function(string,langid) {
@@ -133,7 +135,8 @@ var Knowlet=
       else return this.dterms[langid+"$"+string]||false;};
     
     DTerm.prototype.add=function(prop,val){
-      if ((fdjtDB.OID.prototype.add.call(this,prop,val))&&(prop==='genls')) {
+      if ((fdjtDB.KNode.prototype.add.call(this,prop,val))&&
+	  (prop==='genls')) {
 	this._always.add(val);
 	this._always.add(val._always);
 	return true;}
