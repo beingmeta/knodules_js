@@ -207,8 +207,8 @@ var Knowlet=
 	  if (pstart>0) {
 	    var pend=findBreak(")",pstart);
 	    if (pend<0) {
-	      fdjtWarn("Invalid Knowlet clause '%s' for %o (%s)",
-		       clause,subject,subject.dterm);}
+	      fdjtLog.warn("Invalid Knowlet clause '%s' for %o (%s)",
+			   clause,subject,subject.dterm);}
 	    else {
 	      var role=this.DTerm(clause.slice(1,pstart));
 	      var object=this.DTerm(clause.slice(pstart+1,pend));
@@ -260,13 +260,13 @@ var Knowlet=
 	if (subject.mirror===mirror) break;
 	else {
 	  var omirror=subject.mirror;
-	  fdjtWarn("Inconsistent mirrors for %s: +%s and -%s",
-		   subject,mirror,omirror);
+	  fdjtLog.warn("Inconsistent mirrors for %s: +%s and -%s",
+		       subject,mirror,omirror);
 	  omirror.mirror=false;}
 	if (mirror.mirror) {
 	  var oinvmirror=mirror.mirror;
-	  fdjtWarn("Inconsistent mirrors for %s: +%s and -%s",
-		   mirror,subject,oinvmirror);
+	  fdjtLog.warn("Inconsistent mirrors for %s: +%s and -%s",
+		       mirror,subject,oinvmirror);
 	  omirror.mirror=false;}
 	subject.mirror=mirror; mirror.mirror=subject;
 	break;}
@@ -306,8 +306,8 @@ var Knowlet=
     function handleEntry(entry){
       entry=trimspace(entry);
       if (entry.length===0) return false;
-      var bar=fdjtFindSplit(entry,'|');
-      var atsign=fdjtFindSplit(entry,'@');
+      var bar=fdjtString.findSplit(entry,'|');
+      var atsign=fdjtString.findSplit(entry,'@');
       if ((atsign>0) && ((bar<0)||(atsign<bar))) {
 	var term=entry.slice(0,atsign);
 	var knostring=((bar<0) ? (entry.slice(atsign+1)) :
@@ -318,7 +318,7 @@ var Knowlet=
       switch (entry[0]) {
       case '*': {
 	var subject=this.handleSubjectEntry(entry.slice(1));
-	if (fdjtIndexOf(this.key_concepts,subject)<0)
+	if (!(fdjtKB.contains(this.key_concepts,subject)))
 	  this.key_concepts.push(subject);
 	return subject;}
       case '-': {

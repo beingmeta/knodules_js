@@ -102,9 +102,9 @@ function knoCompletion(value,kno,lang)
     var i=0; while (i<synonyms.length) {
       var synonym=synonyms[i++];
       if (synonym===dterm) continue;
-      var variant=fdjtSpan("variation",synonym,"=");
+      var variant=fdjtDOM("span.variation",synonym,"=");
       variant.key=synonym;
-      fdjtPrepend(knospan,variant);}}
+      fdjtDOM.prepend(knospan,variant);}}
   return knospan;
 }
 
@@ -112,10 +112,10 @@ function knoCheckCompletion(varname,value,checked,kno)
 {
   var checkspan=knoCompletion(value);
   var tagstring=((typeof value ==='string')?(value):(value.tagString()));
-  var checkbox=fdjtInput("CHECKBOX",varname,tagstring);
+  var checkbox=fdjtDOM.Input("[type=checkbox]",varname,tagstring);
   checkbox.checked=checked||false;
-  fdjtAddClass(checkspan,"checkspan");
-  fdjtPrepend(checkspan,checkbox);
+  fdjtDOM.addClass(checkspan,"checkspan");
+  fdjtDOM.prepend(checkspan,checkbox);
   fdjtCheckSpan_setup(checkspan);
   return checkspan;
 }
