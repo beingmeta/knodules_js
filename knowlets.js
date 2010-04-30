@@ -328,7 +328,7 @@ var Knowlet=
 	  knowdes[i]=this.KnowdeRef(subentries[i]); i++;}
 	var j=0; while (j<knowdes.length) {
 	  var k=0; while (k<knowdes.length) {
-	    if (j!=k) knowdes[j].addRel('disjoin',knowdes[k]);
+	    if (j!=k) knowdes[j].add('disjoin',knowdes[k]);
 	    k++;}
 	  j++;}
 	return knowdes[0];}
@@ -341,7 +341,7 @@ var Knowlet=
 	  var next_subject=
 	    ((next) ? (this.handleSubjectEntry(entry.slice(pos,next))) :
 	     (this.handleSubjectEntry(entry.slice(pos))));
-	  if (subject) subject.addRel('genls',next_subject);
+	  if (subject) subject.add('genls',next_subject);
 	  else head=next_subject;
 	  subject=next_subject;
 	  if (basic_level) subject.basic=true;
@@ -385,32 +385,32 @@ function KnowletIndex(knowlet) {
 KnowletIndex.prototype.add=function(item,key,weight,kno){
   if ((weight)&&(!(this.byweight[weight])))
     this.byweight[weight]={};
-  if (this.bykey[key]) this.bykey[key].add(item);
-  else this.bykey[key]=new fdjtKB.Set(item);
+  if (this.bykey[key]) fdjtKB.add(this.bykey[key],item);
+  else this.bykey[key]=fdjtKB.Set(item);
   if (weight) {
     var byweight=this.byweight[weight];
-    if (byweight[key]) byweight[key].add(item);
-    else byweight[key]=new fdjtKB.Set(item);
+    if (byweight[key]) fdjtKB.add(byweight[key],item);
+    else byweight[key]=fdjtKB.Set(item);
     (this.tagweights[key])=((this.tagweights[key])||0)+weight;}
   if (kno) {
     var dterm=kno.probe(key);
     if ((dterm)&&(dterm._always)) {
-      var always=dterm._always.get();
+      var always=dterm._always;
       var i=0; var len=always.length;
       while (i<len) this.add(item,always[i++].dterm,((weight)&&(weight-1)));}}};
 KnowletIndex.prototype.freq=function(key){
   if (this.bykey[key])
-    return this.bykey[key].elements.length;
+    return this.bykey[key].length;
   else return 0;};
 KnowletIndex.prototype.find=function(key){
   if (this.bykey[key]) return this.bykey[key];
-  else return new fdjtKB.Set();};
+  else return [];};
 KnowletIndex.prototype.score=function(key,scores){
   var byweight=this.byweight;
   if (!(scores)) scores={};
   for (weight in byweight)
     if (byweight[weight][key]) {
-      var hits=byweight[weight][key].get();
+      var hits=byweight[weight][key];
       var i=0; var len=hits.length;
       while (i<len) {
 	var item=hits[i++]; var cur;
