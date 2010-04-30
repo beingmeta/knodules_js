@@ -33,7 +33,7 @@
 
 */
 
-var knowlets_trace_load=0;
+var knowlets_trace_load=1;
 
 /* Getting knowdes into HTML */
 
@@ -124,7 +124,7 @@ function knoCheckCompletion(varname,value,checked,kno)
 
 var _knowletsHTML_done=false;
 
-function KnowletLoad(elt)
+function KnowletLoad(elt,knowlet)
 {
   var text=fdjtAjaxGetText(elt.src);
   var knowdes=knowlet.handleEntries(text);
@@ -147,24 +147,23 @@ function knowletSetupHTML(knowlet)
   var i=0; while (i<elts.length) {
     var elt=elts[i++];
     if (elt.name==="KNOWDEF") knowlet.handleEntry(elt.content);}
-  elts=document.getElementsByTagName(document,"SCRIPT");
+  elts=document.getElementsByTagName("SCRIPT");
   i=0; while (i<elts.length) {
     var elt=elts[i++];
     if ((elt.getAttribute("language")) &&
 	(((elt.getAttribute("language"))==="knowlet") ||
 	 ((elt.getAttribute("language"))==="KNOWLET"))) {
-      if (elt.src) KnowletLoad(elt);
+      if (elt.src) KnowletLoad(elt,knowlet);
       else if (elt.text) {
 	var dterms=knowlet.handleEntries(elt.text);
 	if (knowlets_trace_load)
 	  fdjtLog("[%fs] Parsed %d entries from %o",
-		  fdjt.ET(),dterms.length,elt);}
+		  fdjtET(),dterms.length,elt);}
       else {}}}
   var finished=new Date();
   if (knowlets_trace_load)
-    fdjtLog("[%fs] Processed knowlets in ",
-	    ((finished.getTime()-start.getTime())/1000)+"s",
-	    fdjt.ET());
+    fdjtLog("[%fs] Processed knowlets in ",fdjtET(),
+	    ((finished.getTime()-start.getTime())/1000)+"s");
 }
 
 /* Emacs local variables

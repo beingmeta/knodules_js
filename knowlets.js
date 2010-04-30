@@ -87,9 +87,9 @@ var Knowlet=
       knowlet.xdterms={};
       // A vector of all foreign references
       knowlet.allxdterms=[];
-      // Mapping terms to arrays of of Knowdes (ambiguous)
+      // Mapping terms to arrays of of DTerms (ambiguous)
       knowlet.terms={};
-      // Mapping hook terms to arrays of of Knowdes (ambiguous)
+      // Mapping hook terms to arrays of of DTerms (ambiguous)
       knowlet.hooks={};
       // Inverted indices
       knowlet.genlsIndex={};
@@ -137,8 +137,8 @@ var Knowlet=
     DTerm.prototype.add=function(prop,val){
       if ((fdjtKB.KNode.prototype.add.call(this,prop,val))&&
 	  (prop==='genls')) {
-	this._always.add(val);
-	this._always.add(val._always);
+	fdjtKB.add(this._always,val);
+	fdjtKB.merge(this._always,val._always);
 	return true;}
       else return false;}
     DTerm.prototype.addTerm=function(val,field){
@@ -178,13 +178,13 @@ var Knowlet=
 	return string.split(brk);
       else {}
       var result=[]; var i=0, pos=start||0;
-      var nextpos=this.findBreak(string,brk,pos);
+      var nextpos=findBreak(string,brk,pos);
       while (nextpos>=0) {
 	var item=((keepspace) ? (string.slice(pos,nextpos)) :
-		  (this.stdspace(string.slice(pos,nextpos))));
+		  (stdspace(string.slice(pos,nextpos))));
 	if ((item) && (item !== "")) result.push(item);
 	pos=nextpos+1;
-	nextpos=this.findBreak(string,brk,pos);}
+	nextpos=findBreak(string,brk,pos);}
       result.push(string.slice(pos));
       return result;}
     function stripComments(string) {
@@ -193,9 +193,9 @@ var Knowlet=
 
     /* Processing the PLAINTEXT microformat */
     function handleClause(clause,subject) {
-      if (clause.indexOf('\\')>=0) clause=fdjtString.unescape(clause);
+      if (clause.indexOf('\\')>=0) clause=fdjtString.unEscape(clause);
       if (trace_parsing>2)
-	fdjtLog("[%fs] Handling clause '%s' for %o",fdjt.ET(),clause,subject);
+	fdjtLog("[%fs] Handling clause '%s' for %o",fdjtET(),clause,subject);
       switch (clause[0]) {
       case '^':
 	if (clause[1]==='~') 
@@ -203,9 +203,9 @@ var Knowlet=
 	else if (clause[2]==='*') 
 	  subject.add('commonly',this.DTerm(clause.slice(2)));
 	else {
-	  var pstart=this.findBreak("(");
+	  var pstart=findBreak("(");
 	  if (pstart>0) {
-	    var pend=this.findBreak(")",pstart);
+	    var pend=findBreak(")",pstart);
 	    if (pend<0) {
 	      fdjtWarn("Invalid Knowlet clause '%s' for %o (%s)",
 		       clause,subject,subject.dterm);}
@@ -271,7 +271,7 @@ var Knowlet=
 	subject.mirror=mirror; mirror.mirror=subject;
 	break;}
       case '.': {
-	var brk=this.findBreak(clause,'=');
+	var brk=findBreak(clause,'=');
 	if (!(brk))
 	  throw {name: 'InvalidClause', irritant: clause};
 	var role=this.DTerm(clause.slice(1,brk));
@@ -280,7 +280,7 @@ var Knowlet=
 	object.add('genls',role);
 	break;}
       default: {
-	var brk=this.findBreak(clause,'=');
+	var brk=findBreak(clause,'=');
 	if (brk>0) {
 	  var role=this.DTerm(clause.slice(0,brk));
 	  var object=this.DTerm(clause.slice(brk+1));
@@ -291,20 +291,20 @@ var Knowlet=
     Knowlet.prototype.handleClause=handleClause;
 
     function handleSubjectEntry(entry){
-      var clauses=this.segmentString(entry,"|");
-      var subject=this.Knowde(clauses[0]);
-      if (knowlets_trace_parsing>2)
+      var clauses=segmentString(entry,"|");
+      var subject=this.DTerm(clauses[0]);
+      if (Knowlet.trace_parsing>2)
 	fdjtLog("[%fs] Processing subject entry %s %o %o",
 		fdjtET(),entry,subject,clauses);
       var i=1; while (i<clauses.length)
 		 this.handleClause(clauses[i++],subject);
-      if (knowlets_trace_parsing>2)
+      if (Knowlet.trace_parsing>2)
 	fdjtLog("[%fs] Processed subject entry %o",fdjtET(),subject);
       return subject;}
     Knowlet.prototype.handleSubjectEntry=handleSubjectEntry;
 
     function handleEntry(entry){
-      entry=this.trimspace(entry);
+      entry=trimspace(entry);
       if (entry.length===0) return false;
       var bar=fdjtFindSplit(entry,'|');
       var atsign=fdjtFindSplit(entry,'@');
@@ -313,7 +313,7 @@ var Knowlet=
 	var knostring=((bar<0) ? (entry.slice(atsign+1)) :
 		       (entry.slice(atsign+1,bar)));
 	var knowlet=Knowlet(knostring);
-	if (bar<0) return knowlet.Knowde(term);
+	if (bar<0) return knowlet.DTerm(term);
 	else return knowlet.handleEntry(term+entry.slice(bar));}
       switch (entry[0]) {
       case '*': {
@@ -322,10 +322,10 @@ var Knowlet=
 	  this.key_concepts.push(subject);
 	return subject;}
       case '-': {
-	var subentries=this.segmentString(entry.slice(1),"/");
+	var subentries=segmentString(entry.slice(1),"/");
 	var knowdes=[];
 	var i=0; while (i<subentries.length) {
-	  knowdes[i]=this.KnowdeRef(subentries[i]); i++;}
+	  knowdes[i]=this.DTerm(subentries[i]); i++;}
 	var j=0; while (j<knowdes.length) {
 	  var k=0; while (k<knowdes.length) {
 	    if (j!=k) knowdes[j].add('disjoin',knowdes[k]);
@@ -334,7 +334,7 @@ var Knowlet=
 	return knowdes[0];}
       case '/': {
 	var pos=1; var subject=false; var head=false;
-	var next=this.findBreak(entry,'/',pos);
+	var next=findBreak(entry,'/',pos);
 	while (true) {
 	  var basic_level=false;
 	  if (entry[pos]==='*') {basic_level=true; pos++;}
@@ -346,7 +346,7 @@ var Knowlet=
 	  subject=next_subject;
 	  if (basic_level) subject.basic=true;
 	  if (next) {
-	    pos=next+1; next=this.findBreak(entry,"/",pos);}
+	    pos=next+1; next=findBreak(entry,"/",pos);}
 	  else break;}
 	return head;}
       default:
@@ -355,9 +355,9 @@ var Knowlet=
 
     function handleEntries(block){
       if (typeof block === "string") {
-	var nocomment=this.stripComments(block);
-	var segmented=this.segmentString(nocomment,';');
-	if (knowlets_trace_parsing>1)
+	var nocomment=stripComments(block);
+	var segmented=segmentString(nocomment,';');
+	if (Knowlet.trace_parsing>1)
 	  fdjtLog("[%fs] Handling %d entries",fdjtET(),segmented.length);
 	return this.handleEntries(segmented);}
       else if (block instanceof Array) {
@@ -373,6 +373,9 @@ var Knowlet=
     Knowlet.def=function(string,kno){
       if (!(kno)) kno=Knowlet.knowlet;
       return kno.def(string);};
+
+    Knowlet.trace_parsing=0;
+
     return Knowlet;})();
 
 var DTerm=Knowlet.DTerm;
