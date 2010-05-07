@@ -116,7 +116,7 @@ function knoCheckCompletion(varname,value,checked,kno)
   checkbox.checked=checked||false;
   fdjtDOM.addClass(checkspan,"checkspan");
   fdjtDOM.prepend(checkspan,checkbox);
-  fdjtCheckSpan_setup(checkspan);
+  fdjtUI.CheckSpan.setup(checkspan);
   return checkspan;
 }
 
