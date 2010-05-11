@@ -33,138 +33,119 @@
 
 */
 
-var knowlets_trace_load=1;
+(function(){
 
-/* Getting knowdes into HTML */
+  var knowlets_trace_load=1;
 
-DTerm.prototype.toHTML=function()
-{
-  if (this.gloss) {
-    var span=fdjtDOM("span.dterm",this.dterm);
-    span.title=fdjtString.strip_markup(this.gloss);
-    span.dterm=this.dterm;
-    return span;}
-  else return fdjtDOM("span.dterm",this.dterm);
-};
+  /* Getting knowdes into HTML */
 
-/* Making DTERM descriptions */
+  var DTerm=Knowlet.DTerm;
+  Knowlet.DTerm.prototype.toHTML=function(lang){
+    if (this.gloss) {
+      var span=fdjtDOM("span.dterm",this.dterm);
+      span.title=fdjtString.strip_markup(this.gloss);
+      span.dterm=this.dterm;
+      return span;}
+    else return fdjtDOM("span.dterm",this.dterm);
+  };
 
-var kno_dterm_prefix=false;
-var kno_dterm_suffix=false;
+  /* Making DTERM descriptions */
 
-function knoSpan(dterm,kno)
-{
-  if (dterm instanceof DTerm)
-    return dterm.toHTML();
-  else if (!(typeof dterm === 'string')) return false;
-  else if ((kno)&&(kno.probe(dterm)))
-    return (kno.probe(dterm)).toHTML();
-  else if ((kno)&&(dterm.indexof('|')>0))
-    return kno.DTerm(dterm).toHTML();
-  else return fdjtDOM("span.dterm.raw",dterm);
-}
-function knoDTermSpan(dterm,display,kno)
-{
-  return knoSpan(dterm,kno);
-}
+  function knowletHTML(dterm,kno,varname,lang){
+    var checkbox=false; var variations=[];
+    var text=dterm; var def=false;
+    // A non-false language arg generates a completion, and a
+    // non-string language arg just uses the knowlets default language
+    if ((lang)&&(typeof lang !== 'string')) {
+      if (kno) lang=kno.language; else lang='EN';}
+    // Resolve the DTerm if you can
+    if ((kno)&&(typeof dterm === 'string'))
+      if (kno.probe(dterm)) {
+	dterm=kno.probe(dterm);
+	text=dterm.dterm;}
+      else if (dterm.indexOf('|')>=0) {
+	var pos=dterm.indexOf('|');
+	def=dterm.slice(pos);
+	dterm=kno.handleSubjectEntry(dterm);
+	text=dterm.dterm;}
+      else dterm=dterm;
+    var tagstring=false;
+    if ((varname)||(lang)) {
+      tagstring=((dterm.tagString)?(dterm.tagString()):(dterm));
+      if (def) tagstring=tagstring+def;}
+    if (varname) 
+      checkbox=fdjtDOM
+	({tagName: "INPUT",type: "CHECKBOX",name: varname,value: tagstring});
+    if ((lang)&&(dterm instanceof DTerm)) {
+      var synonyms=dterm[lang];
+      if (synonyms) {
+	var i=0; while (i<synonyms.length) {
+	  var synonym=synonyms[i++];
+	  if (synonym===dterm) continue;
+	  var variation=fdjtDOM("span.variation",synonym,"=");
+	  variation.key=synonym;
+	  variations.push(variation);}}}
+    var span=fdjtDOM("span.dterm",checkbox,variations,text);
+    if (varname) fdjtDOM.addClass(span,"checkspan");
+    if (lang) {
+      fdjtDOM.addClass(span,"completion");
+      span.key=text;
+      span.value=tagstring;}
+    if (!(dterm instanceof DTerm)) fdjtDOM.addClass(dterm,"raw");
+    if (dterm.gloss) span.title=dterm.gloss;
+    return span;};
+  Knowlet.HTML=knowletHTML;
+  Knowlet.prototype.HTML=function(dterm){
+    var args=new Array(arguments.length+1);
+    args[0]=arguments[0]; args[1]=this;
+    var i=1; var lim=arguments.length; while (i<lim) {
+      args[i+1]=arguments[i]; i++;}
+    return knowletHTML.apply(this,args);};
 
-/* Extended form elements for Knowdes */
+  /* Getting Knowlets out of HTML */
 
-function knoCheckspan(varname,value,checked,kno)
-{
-  if (!(kno)) kno=window.knowlet||false;
-  var checkbox=
-    fdjtDOM
-    ({tagName: "INPUT",
-	type: "CHECKBOX",
-	name: name,value: value.tagString(kno)});
-  var checkspan=fdjtDOM("span.checkspan",checkbox,knoSpan(value,kno));
-  if (checked) {
-    checkspan.setAttribute('ischecked','true');
-    checkbox.checked=true;}
-  else {
-    checkbox.checked=false;}
-  return checkspan;
-}
+  var _knowletsHTML_done=false;
 
-function knoCompletion(value,kno,lang)
-{
-  if (!(kno)) kno=window.knowlet||false;
-  if (!(lang)) lang=((kno)?(kno.language):('EN'));
-  var knospan=knoSpan(value,false,kno||false);
-  fdjtDOM.addClass(knospan,"completion");
-  if (typeof value === 'string') {
-    knospan.value=value; knospan.key=value;
-    return knospan;}
-  knospan.value=value.tagString(); knospan.key=value.dterm;
-  var synonyms=value[lang];
-  if (synonyms) {
-    var i=0; while (i<synonyms.length) {
-      var synonym=synonyms[i++];
-      if (synonym===dterm) continue;
-      var variant=fdjtDOM("span.variation",synonym,"=");
-      variant.key=synonym;
-      fdjtDOM.prepend(knospan,variant);}}
-  return knospan;
-}
-
-function knoCheckCompletion(varname,value,checked,kno)
-{
-  var checkspan=knoCompletion(value);
-  var tagstring=((typeof value ==='string')?(value):(value.tagString()));
-  var checkbox=fdjtDOM.Input("[type=checkbox]",varname,tagstring);
-  checkbox.checked=checked||false;
-  fdjtDOM.addClass(checkspan,"checkspan");
-  fdjtDOM.prepend(checkspan,checkbox);
-  fdjtUI.CheckSpan.setup(checkspan);
-  return checkspan;
-}
-
-/* Getting Knowlets out of HTML */
-
-var _knowletsHTML_done=false;
-
-function KnowletLoad(elt,knowlet)
-{
-  var text=fdjtAjaxGetText(elt.src);
-  var knowdes=knowlet.handleEntries(text);
-  if (knowlets_trace_load)
-    fdjtLog("[%fs] Parsed %d entries from %s",fdjtET(),knowdes.length,elt.src);
-  if (elt.text) {
-    var more_knowdes=knowlet.handleEntries(elt.text);
+  function KnowletLoad(elt,knowlet){
+    var text=fdjtAjaxGetText(elt.src);
+    var knowdes=knowlet.handleEntries(text);
     if (knowlets_trace_load)
-      fdjtLog("[%fs] Parsed %d more entries from %s",fdjtET(),knowdes.length);}
-}
+      fdjtLog("[%fs] Parsed %d entries from %s",fdjtET(),knowdes.length,elt.src);
+    if (elt.text) {
+      var more_knowdes=knowlet.handleEntries(elt.text);
+      if (knowlets_trace_load)
+	fdjtLog("[%fs] Parsed %d more entries from %s",fdjtET(),knowdes.length);}}
 
-function knowletSetupHTML(knowlet)
-{
-  if (!(knowlet))
-    knowlet=document.knowlet||
-      Knowlet(document.location.href);
-  var doing_the_whole_thing=false;
-  var start=new Date();
-  var elts=document.getElementsByTagName("META");
-  var i=0; while (i<elts.length) {
-    var elt=elts[i++];
-    if (elt.name==="KNOWDEF") knowlet.handleEntry(elt.content);}
-  elts=document.getElementsByTagName("SCRIPT");
-  i=0; while (i<elts.length) {
-    var elt=elts[i++];
-    if ((elt.getAttribute("language")) &&
-	(((elt.getAttribute("language"))==="knowlet") ||
-	 ((elt.getAttribute("language"))==="KNOWLET"))) {
-      if (elt.src) KnowletLoad(elt,knowlet);
-      else if (elt.text) {
-	var dterms=knowlet.handleEntries(elt.text);
-	if (knowlets_trace_load)
-	  fdjtLog("[%fs] Parsed %d entries from %o",
-		  fdjtET(),dterms.length,elt);}
-      else {}}}
-  var finished=new Date();
-  if (knowlets_trace_load)
-    fdjtLog("[%fs] Processed knowlets in ",fdjtET(),
-	    ((finished.getTime()-start.getTime())/1000)+"s");
-}
+  function knowletSetupHTML(knowlet){
+    if (!(knowlet))
+      knowlet=document.knowlet||
+	Knowlet(document.location.href);
+    var doing_the_whole_thing=false;
+    var start=new Date();
+    var elts=document.getElementsByTagName("META");
+    var i=0; while (i<elts.length) {
+      var elt=elts[i++];
+      if (elt.name==="KNOWDEF") knowlet.handleEntry(elt.content);}
+    elts=document.getElementsByTagName("SCRIPT");
+    i=0; while (i<elts.length) {
+      var elt=elts[i++];
+      if ((elt.getAttribute("language")) &&
+	  (((elt.getAttribute("language"))==="knowlet") ||
+	   ((elt.getAttribute("language"))==="KNOWLET"))) {
+	if (elt.src) KnowletLoad(elt,knowlet);
+	else if (elt.text) {
+	  var dterms=knowlet.handleEntries(elt.text);
+	  if (knowlets_trace_load)
+	    fdjtLog("[%fs] Parsed %d entries from %o",
+		    fdjtET(),dterms.length,elt);}
+	else {}}}
+    var finished=new Date();
+    if (knowlets_trace_load)
+      fdjtLog("[%fs] Processed knowlets in ",fdjtET(),
+	      ((finished.getTime()-start.getTime())/1000)+"s");}
+  Knowlet.HTML.Setup=knowletSetupHTML;
+
+ })();
 
 /* Emacs local variables
 ;;;  Local variables: ***

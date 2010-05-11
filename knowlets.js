@@ -101,6 +101,8 @@ var Knowlet=
       knowlet.drules={};
       return knowlet;}
     Knowlet.prototype=new fdjtKB.Pool();
+    Knowlet.revid="$Id$";
+    Knowlet.version=parseInt("$Revision$".slice(10,-1));
 
     function DTerm(knowlet,string,lang){
       if (!(knowlet)) return this;
@@ -293,12 +295,12 @@ var Knowlet=
     function handleSubjectEntry(entry){
       var clauses=segmentString(entry,"|");
       var subject=this.DTerm(clauses[0]);
-      if (Knowlet.trace_parsing>2)
+      if (this.trace_parsing>2)
 	fdjtLog("[%fs] Processing subject entry %s %o %o",
 		fdjtET(),entry,subject,clauses);
       var i=1; while (i<clauses.length)
 		 this.handleClause(clauses[i++],subject);
-      if (Knowlet.trace_parsing>2)
+      if (this.trace_parsing>2)
 	fdjtLog("[%fs] Processed subject entry %o",fdjtET(),subject);
       return subject;}
     Knowlet.prototype.handleSubjectEntry=handleSubjectEntry;
@@ -357,7 +359,7 @@ var Knowlet=
       if (typeof block === "string") {
 	var nocomment=stripComments(block);
 	var segmented=segmentString(nocomment,';');
-	if (Knowlet.trace_parsing>1)
+	if (this.trace_parsing>1)
 	  fdjtLog("[%fs] Handling %d entries",fdjtET(),segmented.length);
 	return this.handleEntries(segmented);}
       else if (block instanceof Array) {
@@ -374,7 +376,7 @@ var Knowlet=
       if (!(kno)) kno=Knowlet.knowlet;
       return kno.def(string);};
 
-    Knowlet.trace_parsing=0;
+    Knowlet.prototype.trace_parsing=0;
 
     return Knowlet;})();
 
@@ -382,14 +384,18 @@ var DTerm=Knowlet.DTerm;
 
 function KnowletIndex(knowlet) {
   if (knowlet) this.knowlet=knowlet;
-  this.byweight={}; this.bykey={}; this.tagweights={};
+  this.byweight={}; this.bykey={}; this.tagweights={}; this._alltags=[];
   return this;}
 
 KnowletIndex.prototype.add=function(item,key,weight,kno){
+  if (typeof weight !== 'number')
+    if (weight) weight=2; else weight=0;
   if ((weight)&&(!(this.byweight[weight])))
     this.byweight[weight]={};
   if (this.bykey[key]) fdjtKB.add(this.bykey[key],item);
-  else this.bykey[key]=fdjtKB.Set(item);
+  else {
+    this.bykey[key]=fdjtKB.Set(item);
+    this._alltags.push(key);}
   if (weight) {
     var byweight=this.byweight[weight];
     if (byweight[key]) fdjtKB.add(byweight[key],item);
@@ -420,7 +426,31 @@ KnowletIndex.prototype.score=function(key,scores){
 	if (cur=scores[item]) scores[item]=cur+weight;
 	else scores[item]=weight;}}
   return scores;};
-
+KnowletIndex.prototype.tagScores=function(){
+  if (this._tagscores) return this._tagscores;
+  var tagscores={}; var tagfreqs={}; var alltags=[];
+  var book_tags=sbook_index._all;
+  var byweight=sbook_index.byweight;
+  for (var w in byweight) {
+    var tagtable=byweight[w];
+    for (var tag in tagtable) {
+      var howmany=tagtable[tag].length;
+      if (tagscores[tag]) {
+	tagscores[tag]=tagscores[tag]+w*howmany;
+	tagfreqs[tag]=tagfreqs[tag]+howmany;}
+      else {
+	tagscores[tag]=w*howmany;
+	tagfreqs[tag]=howmany;
+	alltags.push(tag);}}}
+  tagfreqs._count=alltags.length;
+  alltags.sort(function (x,y) {
+      var xlen=tagfreqs[x]; var ylen=tagfreqs[y];
+      if (xlen==ylen) return 0;
+      else if (xlen>ylen) return -1;
+      else return 1;});
+  tagscores._all=alltags; tagscores._freq=tagfreqs;
+  this._tagscores=tagscores;
+  return tagscores;};
 
 
 /* Emacs local variables
