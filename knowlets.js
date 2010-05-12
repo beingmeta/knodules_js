@@ -388,6 +388,9 @@ function KnowletIndex(knowlet) {
   return this;}
 
 KnowletIndex.prototype.add=function(item,key,weight,kno){
+  if (key instanceof DTerm)
+    if ((key.knowlet)===(this.knowlet)) key=key.dterm;
+    else key=key.tagString();
   if (typeof weight !== 'number')
     if (weight) weight=2; else weight=0;
   if ((weight)&&(!(this.byweight[weight])))

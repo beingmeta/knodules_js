@@ -46,8 +46,7 @@
       span.title=fdjtString.strip_markup(this.gloss);
       span.dterm=this.dterm;
       return span;}
-    else return fdjtDOM("span.dterm",this.dterm);
-  };
+    else return fdjtDOM("span.dterm",this.dterm);};
 
   /* Making DTERM descriptions */
 
@@ -91,7 +90,7 @@
       fdjtDOM.addClass(span,"completion");
       span.key=text;
       span.value=tagstring;}
-    if (!(dterm instanceof DTerm)) fdjtDOM.addClass(dterm,"raw");
+    if (!(dterm instanceof DTerm)) fdjtDOM.addClass(span,"raw");
     if (dterm.gloss) span.title=dterm.gloss;
     return span;};
   Knowlet.HTML=knowletHTML;
