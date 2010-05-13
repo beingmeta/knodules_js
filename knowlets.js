@@ -117,8 +117,10 @@ var Knowlet=
 	return knowlet.dterms[term];
       var dterm=((this instanceof DTerm)?
 		 (knowlet.ref(string+"@"+knowlet.name,this)):
-		 (knowlet.ref(string+"@"+knowlet.name,new DTerm())));
-      dterm.dterm=term; knowlet.dterms[term]=dterm;
+		 (knowlet.ref(string+"@"+knowlet.name)));
+      dterm.dterm=term;
+      knowlet.dterms[dterm.oid]=dterm;
+      knowlet.dterms[term]=dterm;
       knowlet.alldterms.push(dterm);
       if ((lang)&&(lang!==knowlet.language)) dterm.language=lang;
       dterm._always=fdjtKB.Set();
@@ -128,9 +130,10 @@ var Knowlet=
     DTerm.prototype=new fdjtKB.KNode();
 
     Knowlet.DTerm=DTerm;
-    Knowlet.prototype.cons=DTerm;
     Knowlet.prototype.DTerm=function(string,lang) {
-      return DTerm(this,string,lang);};
+      return new DTerm(this,string,lang);};
+    Knowlet.prototype.cons=function(string,lang) {
+      return new DTerm(this,string,lang);};
     Knowlet.prototype.probe=function(string,langid) {
       if (this.language===langid)
 	return this.dterms[string]||false;
