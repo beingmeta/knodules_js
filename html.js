@@ -117,8 +117,7 @@
 
   function knowletSetupHTML(knowlet){
     if (!(knowlet))
-      knowlet=document.knowlet||
-	Knowlet(document.location.href);
+      knowlet=Knowlet(document.location.href);
     var doing_the_whole_thing=false;
     var start=new Date();
     var elts=document.getElementsByTagName("META");
