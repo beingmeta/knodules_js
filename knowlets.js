@@ -435,8 +435,8 @@ KnowletIndex.prototype.score=function(key,scores){
 KnowletIndex.prototype.tagScores=function(){
   if (this._tagscores) return this._tagscores;
   var tagscores={}; var tagfreqs={}; var alltags=[];
-  var book_tags=sbook_index._all;
-  var byweight=sbook_index.byweight;
+  var book_tags=this._all;
+  var byweight=this.byweight;
   for (var w in byweight) {
     var tagtable=byweight[w];
     for (var tag in tagtable) {
