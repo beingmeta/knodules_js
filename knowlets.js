@@ -119,7 +119,7 @@ var Knowlet=
 		 (knowlet.ref(string+"@"+knowlet.name,this)):
 		 (knowlet.ref(string+"@"+knowlet.name)));
       dterm.dterm=term;
-      knowlet.dterms[dterm.oid]=dterm;
+      knowlet.dterms[dterm.qid]=dterm;
       knowlet.dterms[term]=dterm;
       knowlet.alldterms.push(dterm);
       if ((lang)&&(lang!==knowlet.language)) dterm.language=lang;
