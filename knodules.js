@@ -1,10 +1,10 @@
 /* -*- Mode: Javascript; -*- */
 
 /* Copyright (C) 2009-2010 beingmeta, inc.
-   This file provides a Javascript/ECMAScript of KNOWLETS, 
+   This file provides a Javascript/ECMAScript of KNODULES, 
      a lightweight knowledge representation facility.
 
-   For more information on knowlets, visit www.knowlets.net
+   For more information on knodules, visit www.knodules.net
    For more information about beingmeta, visit www.beingmeta.com
 
    This library is built on the FDJT (www.fdjt.org) toolkit.
@@ -33,11 +33,11 @@
 
 */
 
-var Knowlet=
+var Knodule=
     (function(){
-	var knowlets={};
-	var all_knowlets=[];
-	var knowlet=false;
+	var knodules={};
+	var all_knodules=[];
+	var knodule=false;
 	var trace_parsing=0;
 	var trace_edits=false;
 
@@ -45,117 +45,117 @@ var Knowlet=
 	var kno_named_oidpat=/@[0-9A-Fa-f]+\/[0-9A-Fa-f]+(\x22([^\x22]+)\x22)*/;
 	var kno_atbreak=/[^\\]@/g;
 	
-	function Knowlet(id,lang) {
+	function Knodule(id,lang) {
 	    // Raw cons
 	    if (!(id)) return this;
 	    // Do lookup
-	    if (knowlets[id])
-		if ((lang)&&(lang!==knowlets[id].language))
+	    if (knodules[id])
+		if ((lang)&&(lang!==knodules[id].language))
 		    throw { error: "language mismatch" };
-	    else return knowlets[id];
+	    else return knodules[id];
 	    if (fdjtKB.Pool.probe(id))
-		throw { error: "pool/knowlet conflict"};
-	    if (this instanceof Knowlet)
-		knowlet=fdjtKB.Pool.call(this,id);
-	    else knowlet=fdjtKB.Pool.call((new Knowlet()),id);
-	    // The name of the knowlet
-	    knowlet.name=id;
-	    knowlets[id]=knowlet;
-	    // The default language for this knowlet
-	    if (lang) knowlet.language=lang.toUpperCase();
-	    else knowlet.language='EN';
-	    // Mapping strings to DTerm objects (many-to-one)
-	    knowlet.dterms={};
-	    // A vector of all dterms local to this knowlet
-	    knowlet.alldterms=[];
+		throw { error: "pool/knodule conflict"};
+	    if (this instanceof Knodule)
+		knodule=fdjtKB.Pool.call(this,id);
+	    else knodule=fdjtKB.Pool.call((new Knodule()),id);
+	    // The name of the knodule
+	    knodule.name=id;
+	    knodules[id]=knodule;
+	    // The default language for this knodule
+	    if (lang) knodule.language=lang.toUpperCase();
+	    else knodule.language='EN';
+	    // Mapping strings to KNode objects (many-to-one)
+	    knodule.dterms={};
+	    // A vector of all dterms local to this knodule
+	    knodule.alldterms=[];
 	    // Prime dterms
-	    knowlet.prime=[];
-	    // Whether the knowlet is indexed (e.g. keeps inverse indices for
+	    knodule.prime=[];
+	    // Whether the knodule is indexed (e.g. keeps inverse indices for
 	    // relations and rules)
-	    knowlet.index=fdjtKB.Index();
+	    knodule.index=fdjtKB.Index();
 	    // Whether to validate asserted relations
-	    knowlet.validate=true;
-	    // Whether the knowlet is 'strict'
+	    knodule.validate=true;
+	    // Whether the knodule is 'strict'
 	    // (requiring dterm definitions for all references)
-	    knowlet.strict=false;
-	    // Whether the knowlet is 'finished' (all references declared)
-	    knowlet.finished=false;
+	    knodule.strict=false;
+	    // Whether the knodule is 'finished' (all references declared)
+	    knodule.finished=false;
 	    // Terms which are assumed unique.  This is used in non-strict
-	    // knowlets to catch terms that become ambiguous.
-	    knowlet.assumed_dterms=[];
+	    // knodules to catch terms that become ambiguous.
+	    knodule.assumed_dterms=[];
 	    // Mapping external dterms to knowdes
-	    knowlet.xdterms={};
+	    knodule.xdterms={};
 	    // A vector of all foreign references
-	    knowlet.allxdterms=[];
-	    // Mapping terms to arrays of of DTerms (ambiguous)
-	    knowlet.terms={};
-	    // Mapping hook terms to arrays of of DTerms (ambiguous)
-	    knowlet.hooks={};
+	    knodule.allxdterms=[];
+	    // Mapping terms to arrays of of KNodes (ambiguous)
+	    knodule.terms={};
+	    // Mapping hook terms to arrays of of KNodes (ambiguous)
+	    knodule.hooks={};
 	    // Inverted indices
-	    knowlet.genlsIndex={};
+	    knodule.genlsIndex={};
 	    // This maps external OIDs to knowdes
-	    knowlet.oidmap={};
+	    knodule.oidmap={};
 	    // Key concepts
-	    knowlet.key_concepts=[];
+	    knodule.key_concepts=[];
 	    // DRULES (disambiguation rules)
-	    knowlet.drules={};
-	    return knowlet;}
-	Knowlet.prototype=new fdjtKB.Pool();
-	Knowlet.revid="$Id$";
-	Knowlet.version=parseInt("$Revision$".slice(10,-1));
+	    knodule.drules={};
+	    return knodule;}
+	Knodule.prototype=new fdjtKB.Pool();
+	Knodule.revid="$Id$";
+	Knodule.version=parseInt("$Revision$".slice(10,-1));
 
-	function DTerm(knowlet,string,lang){
-	    if (!(knowlet)) return this;
+	function KNode(knodule,string,lang){
+	    if (!(knodule)) return this;
 	    if (string.search(/[a-zA-Z]\$/)===0) {
 		lang=string.slice(0,2).toUpperCase();
 		string=string.slice(3);}
 	    else if (lang) lang=lang.toUpperCase();
-	    else lang=knowlet.language;
+	    else lang=knodule.language;
 	    var term=string;
-	    if (knowlet.language!==lang) term=lang+"$"+string;
-	    if (knowlet.dterms.hasOwnProperty(term))
-		return knowlet.dterms[term];
-	    var dterm=((this instanceof DTerm)?
-		       (knowlet.ref(string+"@"+knowlet.name,this)):
-		       (knowlet.ref(string+"@"+knowlet.name)));
+	    if (knodule.language!==lang) term=lang+"$"+string;
+	    if (knodule.dterms.hasOwnProperty(term))
+		return knodule.dterms[term];
+	    var dterm=((this instanceof KNode)?
+		       (knodule.ref(string+"@"+knodule.name,this)):
+		       (knodule.ref(string+"@"+knodule.name)));
 	    dterm.dterm=term;
-	    knowlet.dterms[dterm.qid]=dterm;
-	    knowlet.dterms[term]=dterm;
-	    knowlet.alldterms.push(dterm);
-	    if ((lang)&&(lang!==knowlet.language)) dterm.language=lang;
+	    knodule.dterms[dterm.qid]=dterm;
+	    knodule.dterms[term]=dterm;
+	    knodule.alldterms.push(dterm);
+	    if ((lang)&&(lang!==knodule.language)) dterm.language=lang;
 	    dterm._always=fdjtKB.Set();
-	    dterm.knowlet=knowlet;
+	    dterm.knodule=knodule;
 	    dterm.addTerm(string,lang);
 	    return dterm;}
-	DTerm.prototype=new fdjtKB.KNode();
+	KNode.prototype=new fdjtKB.Ref();
 
-	Knowlet.DTerm=DTerm;
-	Knowlet.prototype.DTerm=function(string,lang) {
-	    return new DTerm(this,string,lang);};
-	Knowlet.prototype.cons=function(string,lang) {
-	    return new DTerm(this,string,lang);};
-	Knowlet.prototype.probe=function(string,langid) {
+	Knodule.KNode=KNode;
+	Knodule.prototype.KNode=function(string,lang) {
+	    return new KNode(this,string,lang);};
+	Knodule.prototype.cons=function(string,lang) {
+	    return new KNode(this,string,lang);};
+	Knodule.prototype.probe=function(string,langid) {
 	    if ((this.language===langid)||(!(langid)))
 		return this.dterms[string]||false;
 	    else return this.dterms[langid+"$"+string]||false;};
 	
-	DTerm.prototype.add=function(prop,val){
-	    if ((fdjtKB.KNode.prototype.add.call(this,prop,val))&&
+	KNode.prototype.add=function(prop,val){
+	    if ((fdjtKB.Ref.prototype.add.call(this,prop,val))&&
 		(prop==='genls')) {
 		fdjtKB.add(this._always,val);
 		fdjtKB.merge(this._always,val._always);
 		return true;}
 	    else return false;}
-	DTerm.prototype.addTerm=function(val,field){
+	KNode.prototype.addTerm=function(val,field){
 	    if (val.search(/[a-zA-Z]\$/)===0)
 		if (field)
 		    this.add(val.slice(0,2)+'$'+field,val.slice(3));
 	    else this.add(val.slice(0,2),val.slice(3));
 	    else if (field) this.add(field,val);
-	    else this.add(this.knowlet.language,val);};
-	DTerm.prototype.tagString=function(kno) {
-	    if ((kno===this.knowlet)||(!(kno))) return this.dterm;
-	    else return this.dterm+"@"+this.knowlet.name;};
+	    else this.add(this.knodule.language,val);};
+	KNode.prototype.tagString=function(kno) {
+	    if ((kno===this.knodule)||(!(kno))) return this.dterm;
+	    else return this.dterm+"@"+this.knodule.name;};
 	/* Text processing utilities */
 	function stdspace(string) {
 	    return string.replace(/\s+/," ").
@@ -172,14 +172,14 @@ var Knowlet=
 	    else pos=string.indexOf(brk,pos+1);
 	    return pos;}
 
-	var _knowlet_oddpat=/(\\)|(\s\s)|(\s;)|(\s;)/g;
+	var _knodule_oddpat=/(\\)|(\s\s)|(\s;)|(\s;)/g;
 	
 	function segmentString(string,brk,start,keepspace) {
 	    if (start)
-		if (string.slice(start).search(_knowlet_oddpat)<0)
+		if (string.slice(start).search(_knodule_oddpat)<0)
 		    return string.slice(start).split(brk);
 	    else {}
-	    else if (string.search(_knowlet_oddpat)<0)
+	    else if (string.search(_knodule_oddpat)<0)
 		return string.split(brk);
 	    else {}
 	    var result=[]; var i=0, pos=start||0;
@@ -204,34 +204,34 @@ var Knowlet=
 	    switch (clause[0]) {
 	    case '^':
 		if (clause[1]==='~') 
-		    subject.add('sometimes',this.DTerm(clause.slice(2)));
+		    subject.add('sometimes',this.KNode(clause.slice(2)));
 		else if (clause[2]==='*') 
-		    subject.add('commonly',this.DTerm(clause.slice(2)));
+		    subject.add('commonly',this.KNode(clause.slice(2)));
 		else {
 		    var pstart=findBreak("(");
 		    if (pstart>0) {
 			var pend=findBreak(")",pstart);
 			if (pend<0) {
-			    fdjtLog.warn("Invalid Knowlet clause '%s' for %o (%s)",
+			    fdjtLog.warn("Invalid Knodule clause '%s' for %o (%s)",
 					 clause,subject,subject.dterm);}
 			else {
-			    var role=this.DTerm(clause.slice(1,pstart));
-			    var object=this.DTerm(clause.slice(pstart+1,pend));
+			    var role=this.KNode(clause.slice(1,pstart));
+			    var object=this.KNode(clause.slice(pstart+1,pend));
 			    object.add(role.dterm,subject);
 			    subject.add('genls',role);}}
-		    else subject.add('genls',this.DTerm(clause.slice(1)));}
+		    else subject.add('genls',this.KNode(clause.slice(1)));}
 		break;
 	    case '_': {
-		var object=this.DTerm(clause.slice(1));
+		var object=this.KNode(clause.slice(1));
 		subject.add('examples',object);
 		object.add('genls',subject);
 		break;}
 	    case '-':
-		subject.add('never',this.DTerm(clause.slice(1)));
+		subject.add('never',this.KNode(clause.slice(1)));
 		break;
 	    case '&': {
 		var value=clause.slice((clause[1]==="-") ? (2) : (1));
-		var assoc=this.DTerm(value);
+		var assoc=this.KNode(value);
 		if (clause[1]==="-")
 		    subject.add('antiassocs',assoc);
 		else subject.add('assocs',assoc);
@@ -245,11 +245,11 @@ var Knowlet=
 		if (clause[1]==='@')
 		    subject.oid=clause.slice(1);
 		else if (clause[1]==='*')
-		    subject.add('equiv',this.DTerm(clause.slice(2)));
+		    subject.add('equiv',this.KNode(clause.slice(2)));
 		else if (clause[1]==='~')
-		    subject.add('kinda',this.DTerm(clause.slice(2)));
+		    subject.add('kinda',this.KNode(clause.slice(2)));
 		else 
-		    subject.add('identical',this.DTerm(clause.slice(1)));
+		    subject.add('identical',this.KNode(clause.slice(1)));
 		break;
 	    case '"': {
 		var qend=((clause[-1]==='"') ? (-1) : (false));
@@ -261,7 +261,7 @@ var Knowlet=
 		    subject.addTerm(gloss,"glosses");}
 		break;}
 	    case '%': {
-		var mirror=this.DTerm(clause.slice(1));
+		var mirror=this.KNode(clause.slice(1));
 		if (subject.mirror===mirror) break;
 		else {
 		    var omirror=subject.mirror;
@@ -279,25 +279,25 @@ var Knowlet=
 		var brk=findBreak(clause,'=');
 		if (!(brk))
 		    throw {name: 'InvalidClause', irritant: clause};
-		var role=this.DTerm(clause.slice(1,brk));
-		var object=this.DTerm(clause.slice(brk+1));
+		var role=this.KNode(clause.slice(1,brk));
+		var object=this.KNode(clause.slice(brk+1));
 		this.add(role.dterm,object);
 		object.add('genls',role);
 		break;}
 	    default: {
 		var brk=findBreak(clause,'=');
 		if (brk>0) {
-		    var role=this.DTerm(clause.slice(0,brk));
-		    var object=this.DTerm(clause.slice(brk+1));
+		    var role=this.KNode(clause.slice(0,brk));
+		    var object=this.KNode(clause.slice(brk+1));
 		    subject.add(role.dterm,object);
 		    object.add('genls',role);}
 		else subject.addTerm(clause);}}
 	    return subject;}
-	Knowlet.prototype.handleClause=handleClause;
+	Knodule.prototype.handleClause=handleClause;
 
 	function handleSubjectEntry(entry){
 	    var clauses=segmentString(entry,"|");
-	    var subject=this.DTerm(clauses[0]);
+	    var subject=this.KNode(clauses[0]);
 	    if (this.trace_parsing>2)
 		fdjtLog("[%fs] Processing subject entry %s %o %o",
 			fdjtET(),entry,subject,clauses);
@@ -306,7 +306,7 @@ var Knowlet=
 	    if (this.trace_parsing>2)
 		fdjtLog("[%fs] Processed subject entry %o",fdjtET(),subject);
 	    return subject;}
-	Knowlet.prototype.handleSubjectEntry=handleSubjectEntry;
+	Knodule.prototype.handleSubjectEntry=handleSubjectEntry;
 
 	function handleEntry(entry){
 	    entry=trimspace(entry);
@@ -317,9 +317,9 @@ var Knowlet=
 		var term=entry.slice(0,atsign);
 		var knostring=((bar<0) ? (entry.slice(atsign+1)) :
 			       (entry.slice(atsign+1,bar)));
-		var knowlet=Knowlet(knostring);
-		if (bar<0) return knowlet.DTerm(term);
-		else return knowlet.handleEntry(term+entry.slice(bar));}
+		var knodule=Knodule(knostring);
+		if (bar<0) return knodule.KNode(term);
+		else return knodule.handleEntry(term+entry.slice(bar));}
 	    switch (entry[0]) {
 	    case '*': {
 		var subject=this.handleSubjectEntry(entry.slice(1));
@@ -330,7 +330,7 @@ var Knowlet=
 		var subentries=segmentString(entry.slice(1),"/");
 		var knowdes=[];
 		var i=0; while (i<subentries.length) {
-		    knowdes[i]=this.DTerm(subentries[i]); i++;}
+		    knowdes[i]=this.KNode(subentries[i]); i++;}
 		var j=0; while (j<knowdes.length) {
 		    var k=0; while (k<knowdes.length) {
 			if (j!=k) knowdes[j].add('disjoin',knowdes[k]);
@@ -356,7 +356,7 @@ var Knowlet=
 		return head;}
 	    default:
 		return this.handleSubjectEntry(entry);}}
-	Knowlet.prototype.handleEntry=handleEntry;
+	Knodule.prototype.handleEntry=handleEntry;
 
 	function handleEntries(block){
 	    if (typeof block === "string") {
@@ -371,29 +371,29 @@ var Knowlet=
 		    results[i]=this.handleEntry(block[i]); i++;}
 		return results;}
 	    else throw {name: 'TypeError', irritant: block};}
-	Knowlet.prototype.handleEntries=handleEntries;
+	Knodule.prototype.handleEntries=handleEntries;
 
-	Knowlet.prototype.def=handleSubjectEntry;
+	Knodule.prototype.def=handleSubjectEntry;
 
-	Knowlet.def=function(string,kno){
-	    if (!(kno)) kno=Knowlet.knowlet;
+	Knodule.def=function(string,kno){
+	    if (!(kno)) kno=Knodule.knodule;
 	    return kno.def(string);};
 
-	Knowlet.prototype.trace_parsing=0;
+	Knodule.prototype.trace_parsing=0;
 
-	return Knowlet;})();
+	return Knodule;})();
 
-var DTerm=Knowlet.DTerm;
+var KNode=Knodule.KNode;
 
-function KnowletIndex(knowlet) {
-    if (knowlet) this.knowlet=knowlet;
+function KnoduleIndex(knodule) {
+    if (knodule) this.knodule=knodule;
     this.byweight={}; this.bykey={}; this.tagweights={}; this._alltags=[];
     return this;}
 
-KnowletIndex.prototype.add=function(item,key,weight,kno)
+KnoduleIndex.prototype.add=function(item,key,weight,kno)
 {
-    if (key instanceof DTerm) {
-	if ((key.knowlet)===(this.knowlet))
+    if (key instanceof KNode) {
+	if ((key.knodule)===(this.knodule))
 	    key=key.dterm;
 	else key=key.tagString();}
     if (typeof weight !== 'number')
@@ -415,14 +415,14 @@ KnowletIndex.prototype.add=function(item,key,weight,kno)
 	    var always=dterm._always;
 	    var i=0; var len=always.length;
 	    while (i<len) this.add(item,always[i++].dterm,((weight)&&(weight-1)));}}};
-KnowletIndex.prototype.freq=function(key){
+KnoduleIndex.prototype.freq=function(key){
     if (this.bykey[key])
 	return this.bykey[key].length;
     else return 0;};
-KnowletIndex.prototype.find=function(key){
+KnoduleIndex.prototype.find=function(key){
     if (this.bykey[key]) return this.bykey[key];
     else return [];};
-KnowletIndex.prototype.score=function(key,scores){
+KnoduleIndex.prototype.score=function(key,scores){
     var byweight=this.byweight;
     if (!(scores)) scores={};
     for (weight in byweight)
@@ -434,7 +434,7 @@ KnowletIndex.prototype.score=function(key,scores){
 		if (cur=scores[item]) scores[item]=cur+weight;
 		else scores[item]=weight;}}
     return scores;};
-KnowletIndex.prototype.tagScores=function(){
+KnoduleIndex.prototype.tagScores=function(){
     if (this._tagscores) return this._tagscores;
     var tagscores={}; var tagfreqs={}; var alltags=[];
     var book_tags=this._all;

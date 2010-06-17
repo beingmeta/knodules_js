@@ -1,10 +1,10 @@
 /* -*- Mode: Javascript; -*- */
 
 /* Copyright (C) 2009-2010 beingmeta, inc.
-   This file provides a Javascript/ECMAScript of KNOWLETS, 
+   This file provides a Javascript/ECMAScript of KNODULES, 
      a lightweight knowledge representation facility.
 
-   For more information on knowlets, visit www.knowlets.net
+   For more information on knodules, visit www.knodules.net
    For more information about beingmeta, visit www.beingmeta.com
 
    This library is built on the FDJT (www.fdjt.org) toolkit.
@@ -33,7 +33,7 @@
 
 */
 
-KnowletIndex.Query=
+KnoduleIndex.Query=
   (function(){
     function Query(index,query) {
       if (!(index)) return this;
@@ -68,9 +68,9 @@ KnowletIndex.Query=
 		result._refiners._results);
       if (index.cache) index.cache[qstring]=this;
       return this;}
-    Knowlet.Query=Query;
-    KnowletIndex.Query=Query;
-    KnowletIndex.prototype.Query=function(string){
+    Knodule.Query=Query;
+    KnoduleIndex.Query=Query;
+    KnoduleIndex.prototype.Query=function(string){
       return new Query(this,string);}
 
     function string2query(string) {
