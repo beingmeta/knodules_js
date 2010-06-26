@@ -118,9 +118,7 @@
 		fdjtLog("[%fs] Parsed %d more entries from %s",fdjtET(),knowdes.length);}}
 
     function knoduleSetupHTML(knodule){
-	fdjtLog("Doing HTML setup for %o",knodule);
-	if (!(knodule))
-	    knodule=Knodule(document.location.href);
+	if (!(knodule)) knodule=Knodule(document.location.href);
 	var doing_the_whole_thing=false;
 	var start=new Date();
 	var elts=document.getElementsByTagName("META");
