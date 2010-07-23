@@ -35,7 +35,7 @@
 
 (function(){
 
-    var knodules_trace_load=1;
+    var knodules_trace_load=0;
 
     /* Getting knowdes into HTML */
 
