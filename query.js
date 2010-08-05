@@ -121,9 +121,10 @@ KnoduleIndex.Query=
 			if (j>=i) {j++; continue}
 			else if (matches[j].length===0) {j++; continue;}
 			else if (allitems) {
-			    var join=fdjtKB.intersect(matches[i],matches[j]);
+			    var join=fdjtKB.intersection(matches[i],matches[j]);
 			    allitems=fdjtKB.union(allitems,join);}
-			else allitems=fdjtKB.intersect(matches[i],matches[j]);}
+			else allitems=fdjtKB.intersection(matches[i],matches[j]);
+			j++;}
 		    i++;}}
 	    results._results=allitems;
 	    i=0; var n_items=allitems.length;
