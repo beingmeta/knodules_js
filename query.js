@@ -70,8 +70,8 @@ KnoduleIndex.Query=
 	    return this;}
 	Knodule.Query=Query;
 	KnoduleIndex.Query=Query;
-	KnoduleIndex.prototype.Query=function(string){
-	    return new Query(this,string);}
+	KnoduleIndex.prototype.Query=function(query){
+	    return new Query(this,query);}
 
 	// Queries are sets of terms and interchangable between vectors
 	// and strings with semi-separated tag names
@@ -94,6 +94,7 @@ KnoduleIndex.Query=
 	    else return query;}
 	Query.prototype.cache={};
 	Query.prototype.query2string=query2string;
+	Query.prototype.getString=query2string;
 	Query.query2string=query2string;
 
 	function do_search(results) {
