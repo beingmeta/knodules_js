@@ -385,80 +385,88 @@ var Knodule=
 
 var KNode=Knodule.KNode;
 
-function KnoduleIndex(knodule) {
-    if (knodule) this.knodule=knodule;
-    this.byweight={}; this.bykey={}; this.tagweights={}; this._alltags=[];
-    return this;}
 
-KnoduleIndex.prototype.add=function(item,key,weight,kno)
-{
-    if (key instanceof KNode) {
+var KnoduleIndex=(function(){
+    var isobject=fdjtKB.isobject;
+    var objectkey=fdjtKB.objectkey;
+    
+    function KnoduleIndex(knodule) {
+      if (knodule) this.knodule=knodule;
+      this.byweight={}; this.bykey={}; this.tagweights={}; this._alltags=[];
+      return this;}
+    
+    KnoduleIndex.prototype.add=function(item,key,weight,kno){
+      if (key instanceof KNode) {
 	if ((key.knodule)===(this.knodule))
-	    key=key.dterm;
+	  key=key.dterm;
 	else key=key.tagString();}
-    if (typeof weight !== 'number')
+      if (typeof weight !== 'number')
 	if (weight) weight=2; else weight=0;
-    if ((weight)&&(!(this.byweight[weight])))
+      if ((weight)&&(!(this.byweight[weight])))
 	this.byweight[weight]={};
-    if (this.bykey[key]) fdjtKB.add(this.bykey[key],item);
-    else {
-	this.bykey[key]=fdjtKB.Set(item);
+      var itemkey=((typeof item === 'object')?(objectkey(item)):(item));
+      if (this.bykey[key]) fdjtKB.add(this.bykey[key],itemkey);
+      else {
+	this.bykey[key]=fdjtKB.Set(itemkey);
 	this._alltags.push(key);}
-    if (weight) {
+      if (weight) {
 	var byweight=this.byweight[weight];
-	if (byweight[key]) fdjtKB.add(byweight[key],item);
-	else byweight[key]=fdjtKB.Set(item);
+	if (byweight[key]) fdjtKB.add(byweight[key],itemkey);
+	else byweight[key]=fdjtKB.Set(itemkey);
 	(this.tagweights[key])=((this.tagweights[key])||0)+weight;}
-    if (kno) {
+      if (kno) {
 	var dterm=kno.probe(key);
 	if ((dterm)&&(dterm._always)) {
-	    var always=dterm._always;
-	    var i=0; var len=always.length;
-	    while (i<len) this.add(item,always[i++].dterm,((weight)&&(weight-1)));}}};
-KnoduleIndex.prototype.freq=function(key){
-    if (this.bykey[key])
+	  var always=dterm._always;
+	  var i=0; var len=always.length;
+	  while (i<len)
+	    this.add(itemkey,always[i++].dterm,((weight)&&(weight-1)));}}};
+    KnoduleIndex.prototype.freq=function(key){
+      if (this.bykey[key])
 	return this.bykey[key].length;
-    else return 0;};
-KnoduleIndex.prototype.find=function(key){
-    if (this.bykey[key]) return this.bykey[key];
-    else return [];};
-KnoduleIndex.prototype.score=function(key,scores){
-    var byweight=this.byweight;
-    if (!(scores)) scores={};
-    for (weight in byweight)
+      else return 0;};
+    KnoduleIndex.prototype.find=function(key){
+      if (this.bykey[key]) return this.bykey[key];
+      else return [];};
+    KnoduleIndex.prototype.score=function(key,scores){
+      var byweight=this.byweight;
+      if (!(scores)) scores={};
+      for (weight in byweight)
 	if (byweight[weight][key]) {
-	    var hits=byweight[weight][key];
-	    var i=0; var len=hits.length;
-	    while (i<len) {
-		var item=hits[i++]; var cur;
-		if (cur=scores[item]) scores[item]=cur+weight;
-		else scores[item]=weight;}}
-    return scores;};
-KnoduleIndex.prototype.tagScores=function(){
-    if (this._tagscores) return this._tagscores;
-    var tagscores={}; var tagfreqs={}; var alltags=[];
-    var book_tags=this._all;
-    var byweight=this.byweight;
-    for (var w in byweight) {
+	  var hits=byweight[weight][key];
+	  var i=0; var len=hits.length;
+	  while (i<len) {
+	    var item=hits[i++]; var cur;
+	    if (cur=scores[item]) scores[item]=cur+weight;
+	    else scores[item]=weight;}}
+      return scores;};
+    KnoduleIndex.prototype.tagScores=function(){
+      if (this._tagscores) return this._tagscores;
+      var tagscores={}; var tagfreqs={}; var alltags=[];
+      var book_tags=this._all;
+      var byweight=this.byweight;
+      for (var w in byweight) {
 	var tagtable=byweight[w];
 	for (var tag in tagtable) {
-	    var howmany=tagtable[tag].length;
-	    if (tagscores[tag]) {
-		tagscores[tag]=tagscores[tag]+w*howmany;
-		tagfreqs[tag]=tagfreqs[tag]+howmany;}
-	    else {
-		tagscores[tag]=w*howmany;
-		tagfreqs[tag]=howmany;
-		alltags.push(tag);}}}
-    tagfreqs._count=alltags.length;
-    alltags.sort(function (x,y) {
-	var xlen=tagfreqs[x]; var ylen=tagfreqs[y];
-	if (xlen==ylen) return 0;
-	else if (xlen>ylen) return -1;
-	else return 1;});
-    tagscores._all=alltags; tagscores._freq=tagfreqs;
-    this._tagscores=tagscores;
-    return tagscores;};
+	  var howmany=tagtable[tag].length;
+	  if (tagscores[tag]) {
+	    tagscores[tag]=tagscores[tag]+w*howmany;
+	    tagfreqs[tag]=tagfreqs[tag]+howmany;}
+	  else {
+	    tagscores[tag]=w*howmany;
+	    tagfreqs[tag]=howmany;
+	    alltags.push(tag);}}}
+      tagfreqs._count=alltags.length;
+      alltags.sort(function (x,y) {
+	  var xlen=tagfreqs[x]; var ylen=tagfreqs[y];
+	  if (xlen==ylen) return 0;
+	  else if (xlen>ylen) return -1;
+	  else return 1;});
+      tagscores._all=alltags; tagscores._freq=tagfreqs;
+      this._tagscores=tagscores;
+      return tagscores;};
+
+    return KnoduleIndex;})();
 
 
 /* Emacs local variables
