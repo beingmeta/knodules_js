@@ -35,7 +35,7 @@
 
 (function(){
 
-    var knodules_trace_load=0;
+    var knodules_trace_load=2;
 
     /* Getting knowdes into HTML */
 
@@ -127,10 +127,10 @@
 	    if (elt.name==="KNOWDEF") knodule.handleEntry(elt.content);}
 	elts=document.getElementsByTagName("SCRIPT");
 	i=0; while (i<elts.length) {
-	    var elt=elts[i++];
-	    if ((elt.getAttribute("language")) &&
-		(((elt.getAttribute("language"))==="knodule") ||
-		 ((elt.getAttribute("language"))==="KNODULE"))) {
+	  var elt=elts[i++]; var lang=elt.getAttribute("language");
+	  if ((lang) &&
+	      ((lang==="knodule") ||(lang==="KNODULE")||
+	       (lang==="knowlet"||(lang==="KNOWLET")))) {
 		if (elt.src) KnoduleLoad(elt,knodule);
 		else if (elt.text) {
 		    var dterms=knodule.handleEntries(elt.text);
