@@ -131,7 +131,12 @@ var Knodule=
 
 	Knodule.KNode=KNode;
 	Knodule.prototype.KNode=function(string,lang) {
-	    return new KNode(this,string,lang);};
+	    if (string instanceof KNode) {
+		if (string.pool===this)
+		    // Should this do some kind of import?
+		    return string;
+		else return string;}
+	    else return new KNode(this,string,lang);};
 	Knodule.prototype.cons=function(string,lang) {
 	    return new KNode(this,string,lang);};
 	Knodule.prototype.probe=function(string,langid) {
