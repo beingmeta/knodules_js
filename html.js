@@ -108,19 +108,20 @@
     var _knodulesHTML_done=false;
 
     function KnoduleLoad(elt,knodule){
-	var text=fdjtAjaxGetText(elt.src);
-	var knowdes=knodule.handleEntries(text);
-	if (knodules_trace_load)
-	    fdjtLog("[%fs] Parsed %d entries from %s",fdjtET(),knowdes.length,elt.src);
-	if (elt.text) {
-	    var more_knowdes=knodule.handleEntries(elt.text);
-	    if (knodules_trace_load)
-		fdjtLog("[%fs] Parsed %d more entries from %s",fdjtET(),knowdes.length);}}
+      var src=((typeof elt === 'string')?(elt):(elt.src));
+      var text=fdjtAjaxGetText(src);
+      var knowdes=knodule.handleEntries(text);
+      if (knodules_trace_load)
+	fdjtLog("[%fs] Parsed %d entries from %s",
+		fdjtET(),knowdes.length,elt.src);}
 
     function knoduleSetupHTML(knodule){
 	if (!(knodule)) knodule=Knodule(document.location.href);
 	var doing_the_whole_thing=false;
 	var start=new Date();
+	var links=fdjtDOM.getLink("knodule",true,false).concat
+	  (fdjtDOM.getLink("knowlet",true,false));
+	var i=0; while (i<links.length) KnoduleLoad(links[i++]);
 	var elts=document.getElementsByTagName("META");
 	var i=0; while (i<elts.length) {
 	    var elt=elts[i++];
