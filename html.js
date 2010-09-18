@@ -135,13 +135,12 @@
 		else if (elt.text) {
 		    var dterms=knodule.handleEntries(elt.text);
 		    if (knodules_trace_load)
-			fdjtLog("[%fs] Parsed %d entries from %o",
-				fdjtET(),dterms.length,elt);}
+			fdjtLog("[%fs] Parsed %d inline knodule entries",fdjtET(),dterms.length);}
 		else {}}}
 	var finished=new Date();
 	if (knodules_trace_load)
-	    fdjtLog("[%fs] Processed knodules in ",fdjtET(),
-		    ((finished.getTime()-start.getTime())/1000)+"s");}
+	    fdjtLog("[%fs] Processed knodules in %fs",fdjtET(),
+		    ((finished.getTime()-start.getTime())/1000));}
     Knodule.HTML.Setup=knoduleSetupHTML;
 
 })();
