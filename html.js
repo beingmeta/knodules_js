@@ -84,14 +84,13 @@
 		    var synonym=synonyms[i++];
 		    if (synonym===dterm) continue;
 		    var variation=fdjtDOM("span.variation",synonym,"=");
-		    variation.key=synonym;
+		    variation.setAttribute("key",synonym);
 		    variations.push(variation);}}}
 	var span=fdjtDOM("span.dterm",checkbox,variations,text);
 	if (varname) fdjtDOM.addClass(span,"checkspan");
 	if (lang) {
 	    fdjtDOM.addClass(span,"completion");
-	    span.key=text;
-	    span.value=tagstring;}
+	    span.key=text; span.value=tagstring;}
 	if (!(dterm instanceof KNode)) fdjtDOM.addClass(span,"raw");
 	if (dterm.gloss) span.title=dterm.gloss;
 	return span;};
