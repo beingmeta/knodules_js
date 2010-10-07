@@ -88,6 +88,7 @@
 		    variations.push(variation);}}}
 	var span=fdjtDOM("span.dterm",checkbox,variations,text);
 	if (varname) fdjtDOM.addClass(span,"checkspan");
+	if (typeof text !== 'string') text=tagstring;
 	if (lang) {
 	    fdjtDOM.addClass(span,"completion");
 	    span.key=text; span.value=tagstring;}
@@ -108,7 +109,7 @@
 
     function KnoduleLoad(elt,knodule){
       var src=((typeof elt === 'string')?(elt):(elt.src));
-      var text=fdjtAjaxGetText(src);
+      var text=fdjtAjax.getText(src);
       var knowdes=knodule.handleEntries(text);
       if (knodules_trace_load)
 	fdjtLog("[%fs] Parsed %d entries from %s",
