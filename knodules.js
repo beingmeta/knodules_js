@@ -410,13 +410,15 @@ var KnoduleIndex=(function(){
 	if ((weight)&&(!(this.byweight[weight])))
 	    this.byweight[weight]={};
 	var itemkey=((typeof item === 'object')?(objectkey(item)):(item));
-	if (this.bykey[key]) fdjtKB.add(this.bykey[key],itemkey);
+	if (this.bykey.hasOwnProperty(key))
+	    fdjtKB.add(this.bykey[key],itemkey);
 	else {
 	    this.bykey[key]=fdjtKB.Set(itemkey);
 	    this._alltags.push(key);}
 	if (weight) {
 	    var byweight=this.byweight[weight];
-	    if (byweight[key]) fdjtKB.add(byweight[key],itemkey);
+	    if (byweight.hasOwnProperty(key))
+		fdjtKB.add(byweight[key],itemkey);
 	    else byweight[key]=fdjtKB.Set(itemkey);
 	    (this.tagweights[key])=((this.tagweights[key])||0)+weight;}
 	if (kno) {
@@ -427,11 +429,11 @@ var KnoduleIndex=(function(){
 		while (i<len)
 		    this.add(itemkey,always[i++].dterm,((weight)&&(weight-1)));}}};
     KnoduleIndex.prototype.freq=function(key){
-	if (this.bykey[key])
+	if (this.bykey.hasOwnProperty(key))
 	    return this.bykey[key].length;
 	else return 0;};
     KnoduleIndex.prototype.find=function(key){
-	if (this.bykey[key]) return this.bykey[key];
+	if (this.bykey.hasOwnProperty(key)) return this.bykey[key];
 	else return [];};
     KnoduleIndex.prototype.score=function(key,scores){
 	var byweight=this.byweight;
