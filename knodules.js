@@ -213,9 +213,9 @@ var Knodule=
 		else if (clause[2]==='*') 
 		    subject.add('commonly',this.KNode(clause.slice(2)));
 		else {
-		    var pstart=findBreak("(");
+		    var pstart=findBreak(clause,"(");
 		    if (pstart>0) {
-			var pend=findBreak(")",pstart);
+			var pend=findBreak(clause,")",pstart);
 			if (pend<0) {
 			    fdjtLog.warn("Invalid Knodule clause '%s' for %o (%s)",
 					 clause,subject,subject.dterm);}
