@@ -108,6 +108,7 @@ KnoduleIndex.Query=
 	    // possibly with weights based on the basis of the match.
 	    var i=0; while (i<query.length) {
 		var term=query[i];
+		if (typeof term !== 'string') term=term.qid||term.dterm;
 		var items=matches[i]=results.index.find(term);
 		if (results.index.trace)
 		    fdjtLog("Query element '%s' matches %d items",term,items.length);
@@ -156,6 +157,7 @@ KnoduleIndex.Query=
 		var item=rvec[i++];
 		var item_score=((scores)&&(scores[item]));
 		var tags=results.index.Tags(item)||[];
+		if (typeof tags === 'string') tags=[tags];
 		if (tags) {
 		    var j=0; var len=tags.length; while (j<len) {
 			var tag=tags[j++];

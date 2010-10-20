@@ -70,7 +70,8 @@
 	else dterm=dterm;
 	var tagstring=false;
 	if ((varname)||(lang)) {
-	    tagstring=((dterm.tagString)?(dterm.tagString()):(dterm));
+	    tagstring=((dterm.tagString)?(dterm.tagString()):
+		       ((dterm.qid)||(dterm)));
 	    if (def) tagstring=tagstring+def;}
 	if (varname) 
 	    checkbox=fdjtDOM
