@@ -113,8 +113,7 @@
       var text=fdjtAjax.getText(src);
       var knowdes=knodule.handleEntries(text);
       if (knodules_trace_load)
-	fdjtLog("[%fs] Parsed %d entries from %s",
-		fdjtET(),knowdes.length,elt.src);}
+	fdjtLog("Parsed %d entries from %s",knowdes.length,elt.src);}
 
     function knoduleSetupHTML(knodule){
 	if (!(knodule)) knodule=Knodule(document.location.href);
@@ -137,11 +136,12 @@
 		else if (elt.text) {
 		    var dterms=knodule.handleEntries(elt.text);
 		    if (knodules_trace_load)
-			fdjtLog("[%fs] Parsed %d inline knodule entries",fdjtET(),dterms.length);}
+			fdjtLog("Parsed %d inline knodule entries",
+				dterms.length);}
 		else {}}}
 	var finished=new Date();
 	if (knodules_trace_load)
-	    fdjtLog("[%fs] Processed knodules in %fs",fdjtET(),
+	    fdjtLog("Processed knodules in %fs",
 		    ((finished.getTime()-start.getTime())/1000));}
     Knodule.HTML.Setup=knoduleSetupHTML;
 

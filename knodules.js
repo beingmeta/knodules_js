@@ -205,7 +205,7 @@ var Knodule=
 	function handleClause(clause,subject) {
 	    if (clause.indexOf('\\')>=0) clause=fdjtString.unEscape(clause);
 	    if (trace_parsing>2)
-		fdjtLog("[%fs] Handling clause '%s' for %o",fdjtET(),clause,subject);
+		fdjtLog("Handling clause '%s' for %o",clause,subject);
 	    switch (clause[0]) {
 	    case '^':
 		if (clause[1]==='~') 
@@ -217,8 +217,9 @@ var Knodule=
 		    if (pstart>0) {
 			var pend=findBreak(clause,")",pstart);
 			if (pend<0) {
-			    fdjtLog.warn("Invalid Knodule clause '%s' for %o (%s)",
-					 clause,subject,subject.dterm);}
+			    fdjtLog.warn(
+				"Invalid Knodule clause '%s' for %o (%s)",
+				clause,subject,subject.dterm);}
 			else {
 			    var role=this.KNode(clause.slice(1,pstart));
 			    var object=this.KNode(clause.slice(pstart+1,pend));
@@ -304,12 +305,12 @@ var Knodule=
 	    var clauses=segmentString(entry,"|");
 	    var subject=this.KNode(clauses[0]);
 	    if (this.trace_parsing>2)
-		fdjtLog("[%fs] Processing subject entry %s %o %o",
-			fdjtET(),entry,subject,clauses);
+		fdjtLog("Processing subject entry %s %o %o",
+			entry,subject,clauses);
 	    var i=1; while (i<clauses.length)
 		this.handleClause(clauses[i++],subject);
 	    if (this.trace_parsing>2)
-		fdjtLog("[%fs] Processed subject entry %o",fdjtET(),subject);
+		fdjtLog("Processed subject entry %o",subject);
 	    return subject;}
 	Knodule.prototype.handleSubjectEntry=handleSubjectEntry;
 
@@ -368,7 +369,7 @@ var Knodule=
 		var nocomment=stripComments(block);
 		var segmented=segmentString(nocomment,';');
 		if (this.trace_parsing>1)
-		    fdjtLog("[%fs] Handling %d entries",fdjtET(),segmented.length);
+		    fdjtLog("Handling %d entries",segmented.length);
 		return this.handleEntries(segmented);}
 	    else if (block instanceof Array) {
 		var results=[];
