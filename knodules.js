@@ -1,6 +1,6 @@
 /* -*- Mode: Javascript; -*- */
 
-/* Copyright (C) 2009-2010 beingmeta, inc.
+/* Copyright (C) 2009-2011 beingmeta, inc.
    This file provides a Javascript/ECMAScript of KNODULES, 
    a lightweight knowledge representation facility.
 
