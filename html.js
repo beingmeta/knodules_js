@@ -87,7 +87,7 @@
 		    var variation=fdjtDOM("span.variation",synonym,"=");
 		    variation.setAttribute("key",synonym);
 		    variations.push(variation);}}}
-	var span=fdjtDOM("span.dterm",checkbox,variations,text);
+	var span=fdjtDOM("span.knode",checkbox,variations,text);
 	if (varname) fdjtDOM.addClass(span,"checkspan");
 	if (typeof text !== 'string') text=tagstring;
 	if (lang) {
