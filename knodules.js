@@ -158,9 +158,11 @@ var Knodule=
 	    else this.add(val.slice(0,2),val.slice(3));
 	    else if (field) this.add(field,val);
 	    else this.add(this.knodule.language,val);};
-	KNode.prototype.tagString=function(kno) {
+	KNode.prototype.oldtagString=function(kno) {
 	    if ((kno===this.knodule)||(!(kno))) return this.dterm;
 	    else return this.dterm+"@"+this.knodule.name;};
+	KNode.prototype.tagString=function(kno) {
+	    return this.dterm+"@"+this.knodule.name;};
 	/* Text processing utilities */
 	function stdspace(string) {
 	    return string.replace(/\s+/," ").
@@ -403,9 +405,7 @@ var KnoduleIndex=(function(){
     
     KnoduleIndex.prototype.add=function(item,key,weight,kno){
 	if (key instanceof KNode) {
-	    if ((key.knodule)===(this.knodule))
-		key=key.dterm;
-	    else key=key.tagString();}
+	    key=((key.tagString)?(key.tagString()):(key.dterm));}
 	if (typeof weight !== 'number')
 	    if (weight) weight=2; else weight=0;
 	if ((weight)&&(!(this.byweight[weight])))
