@@ -1,4 +1,4 @@
-/* -*- Mode: Javascript; -*- */
+/* -*- Mode: Javascript; Character-encoding: utf-8; -*- */
 
 /* Copyright (C) 2009-2011 beingmeta, inc.
    This file provides for HTML documents using KNODULES, including
