@@ -101,8 +101,6 @@ var Knodule=
 	    knodule.drules={};
 	    return knodule;}
 	Knodule.prototype=new fdjtKB.Pool();
-	Knodule.revid="$Id$";
-	Knodule.version=parseInt("$Revision$".slice(10,-1));
 
 	function KNode(knodule,string,lang){
 	    if (!(knodule)) return this;

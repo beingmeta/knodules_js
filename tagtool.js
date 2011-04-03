@@ -1,6 +1,6 @@
 /* -*- Mode: Javascript; -*- */
 
-/* Copyright (C) 2009 beingmeta, inc.
+/* Copyright (C) 2009-2011 beingmeta, inc.
    This file provides for browser-based tagging with knowlets.
 
    For more information on knowlets, visit www.knowlets.net
