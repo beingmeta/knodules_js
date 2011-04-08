@@ -69,7 +69,7 @@ var Knodule=
 	    // A vector of all dterms local to this knodule
 	    knodule.alldterms=[];
 	    // Prime dterms
-	    knodule.prime=[];
+	    knodule.prime=[]; knodule.primescores={};
 	    // Whether the knodule is indexed (e.g. keeps inverse indices for
 	    // relations and rules)
 	    knodule.index=fdjtKB.Index();
@@ -95,8 +95,6 @@ var Knodule=
 	    knodule.genlsIndex={};
 	    // This maps external OIDs to knowdes
 	    knodule.oidmap={};
-	    // Key concepts
-	    knodule.key_concepts=[];
 	    // DRULES (disambiguation rules)
 	    knodule.drules={};
 	    return knodule;}
@@ -328,10 +326,15 @@ var Knodule=
 		else return knodule.handleEntry(term+entry.slice(bar));}
 	    switch (entry[0]) {
 	    case '*': {
-		var subject=this.handleSubjectEntry(entry.slice(1));
-		if (!(fdjtKB.contains(this.key_concepts,subject)))
-		    this.key_concepts.push(subject);
-		return subject;}
+	      var score=entry.search(/[^*]/);
+	      var trimmed=entry.slice(score);
+	      var subject=this.handleSubjectEntry(trimmed);
+	      var prime=this.prime; var scores=this.primescores;
+	      if (primescores[subject.qid]) {
+		prime.push(subject);
+		primescores[subject.qid]=score;}
+	      else primescores[subject.qid]=primescores[subject.qid]+score;
+	      return subject;}
 	    case '-': {
 		var subentries=segmentString(entry.slice(1),"/");
 		var knowdes=[];
