@@ -475,6 +475,37 @@ var KnoduleIndex=(function(){
 	this._tagscores=tagscores;
 	return tagscores;};
 
+    // This takes an array of tags (with possible .scores)
+    //  and combines them into an array with unique elements
+    //  and combined scores
+    function combineTags(tagsets,weights){
+      var tags=[]; var scores={};
+      var tagscores=[];
+      var i=0; var lim=tagsets.length;
+      while (i<lim) {
+	if ((tagsets[i])&&(tagsets[i].scores))
+	  tagscores.push(tagsets[i].scores);
+	i++;}
+      var i=0; var lim=tagsets.length;
+      while (i<lim) {
+	var taglist=tagsets[i++];
+	if (!(taglist)) continue;
+	var j=0; var jlim=taglist.length;
+	while (j<jlim) {
+	  var tag=taglist[j]; var score=0;
+	  if (!(scores[tag])) {
+	    tags.push(tag);
+	    var k=0; var klim=tagscores.length;
+	    while (k<klim) {
+	      var tscore=tagscores[k++][tag];
+	      if (tscore) score=score+tscore;}}
+	  scores[tag]=(((weights)&&(weights[i]))||1)+score;
+	  j++;}}
+      tags.scores=tagscores;
+      return tags;}
+    KnoduleIndex.combineTags=combineTags;
+    KnoduleIndex.prototype.combineTags=combineTags;
+
     return KnoduleIndex;})();
 
 
