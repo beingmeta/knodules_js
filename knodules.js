@@ -326,15 +326,16 @@ var Knodule=
 		else return knodule.handleEntry(term+entry.slice(bar));}
 	    switch (entry[0]) {
 	    case '*': {
-	      var score=entry.search(/[^*]/);
-	      var trimmed=entry.slice(score);
-	      var subject=this.handleSubjectEntry(trimmed);
-	      var prime=this.prime; var scores=this.primescores;
-	      if (primescores[subject.qid]) {
-		prime.push(subject);
-		primescores[subject.qid]=score;}
-	      else primescores[subject.qid]=primescores[subject.qid]+score;
-	      return subject;}
+		var score=entry.search(/[^*]/);
+		var trimmed=entry.slice(score);
+		var subject=this.handleSubjectEntry(trimmed);
+		var prime=this.prime; var scores=this.primescores;
+		if (scores[subject.qid])
+		    scores[subject.qid]=scores[subject.qid]+score;
+		else {
+		    prime.push(subject);
+		    scores[subject.qid]=score;}
+		return subject;}
 	    case '-': {
 		var subentries=segmentString(entry.slice(1),"/");
 		var knowdes=[];
@@ -482,30 +483,30 @@ var KnoduleIndex=(function(){
     //  and combines them into an array with unique elements
     //  and combined scores
     function combineTags(tagsets,weights){
-      var tags=[]; var scores={};
-      var tagscores=[];
-      var i=0; var lim=tagsets.length;
-      while (i<lim) {
-	if ((tagsets[i])&&(tagsets[i].scores))
-	  tagscores.push(tagsets[i].scores);
-	i++;}
-      var i=0; var lim=tagsets.length;
-      while (i<lim) {
-	var taglist=tagsets[i++];
-	if (!(taglist)) continue;
-	var j=0; var jlim=taglist.length;
-	while (j<jlim) {
-	  var tag=taglist[j]; var score=0;
-	  if (!(scores[tag])) {
-	    tags.push(tag);
-	    var k=0; var klim=tagscores.length;
-	    while (k<klim) {
-	      var tscore=tagscores[k++][tag];
-	      if (tscore) score=score+tscore;}}
-	  scores[tag]=(((weights)&&(weights[i]))||1)+score;
-	  j++;}}
-      tags.scores=tagscores;
-      return tags;}
+	var tags=[]; var scores={};
+	var tagscores=[];
+	var i=0; var lim=tagsets.length;
+	while (i<lim) {
+	    if ((tagsets[i])&&(tagsets[i].scores))
+		tagscores.push(tagsets[i].scores);
+	    i++;}
+	var i=0; var lim=tagsets.length;
+	while (i<lim) {
+	    var taglist=tagsets[i++];
+	    if (!(taglist)) continue;
+	    var j=0; var jlim=taglist.length;
+	    while (j<jlim) {
+		var tag=taglist[j]; var score=0;
+		if (!(scores[tag])) {
+		    tags.push(tag);
+		    var k=0; var klim=tagscores.length;
+		    while (k<klim) {
+			var tscore=tagscores[k++][tag];
+			if (tscore) score=score+tscore;}}
+		scores[tag]=(((weights)&&(weights[i]))||1)+score;
+		j++;}}
+	tags.scores=tagscores;
+	return tags;}
     KnoduleIndex.combineTags=combineTags;
     KnoduleIndex.prototype.combineTags=combineTags;
 
