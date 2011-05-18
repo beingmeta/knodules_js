@@ -115,7 +115,7 @@ var Knodule=
 		       (knodule.ref(string+"@"+knodule.name,this)):
 		       (knodule.ref(string+"@"+knodule.name)));
 	    dterm.dterm=term;
-	    knodule.dterms[dterm.qid]=dterm;
+	    knodule.dterms[dterm._id]=dterm;
 	    knodule.dterms[term]=dterm;
 	    knodule.alldterms.push(dterm);
 	    if ((lang)&&(lang!==knodule.language)) dterm.language=lang;
@@ -330,11 +330,11 @@ var Knodule=
 		var trimmed=entry.slice(score);
 		var subject=this.handleSubjectEntry(trimmed);
 		var prime=this.prime; var scores=this.primescores;
-		if (scores[subject.qid])
-		    scores[subject.qid]=scores[subject.qid]+score;
+		if (scores[subject._id])
+		    scores[subject._id]=scores[subject._id]+score;
 		else {
 		    prime.push(subject);
-		    scores[subject.qid]=score;}
+		    scores[subject._id]=score;}
 		return subject;}
 	    case '-': {
 		var subentries=segmentString(entry.slice(1),"/");
