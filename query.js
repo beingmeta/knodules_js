@@ -149,10 +149,18 @@ KnoduleIndex.Query=
 	    // terms which occur in most of the results.
 	    if (results._refiners) return results._refiners;
 	    var query=results._query;
+	    var qterms=[];
 	    var rvec=(results._results);
 	    var refiners={};
 	    var scores=(results._scores)||false; var freqs={};
 	    var alltags=[];
+	    var i=0; while (i<query.length) {
+		var q=query[i++];
+		qterms.push(q);
+		if (q.dterm) qterms.push(q.dterm);
+		if (q.dterms) {
+		    var dterms=q.dterms; var j=0;
+		    while (j<dterms.length) qterms.push(dterms[j++]);}}
 	    var i=0; while (i<rvec.length) {
 		var item=rvec[i++];
 		var item_score=((scores)&&(scores[item]));
@@ -162,7 +170,7 @@ KnoduleIndex.Query=
 		    var j=0; var len=tags.length; while (j<len) {
 			var tag=tags[j++];
 			// If the tag is already part of the query, we ignore it.
-			if (fdjtKB.contains(query,tag)) {}
+			if (fdjtKB.contains(qterms,tag)) {}
 			// If the tag has already been seen, we increase its frequency
 			// and its general score
 			else if (freqs[tag]) {
