@@ -134,7 +134,12 @@
 	       (lang==="knowlet"||(lang==="KNOWLET")))) {
 		if (elt.src) KnoduleLoad(elt,knodule);
 		else if (elt.text) {
-		    var dterms=knodule.handleEntries(elt.text);
+		    var txt=elt.text;
+		    var cdata=txt.search("<!\\[CDATA\\[");
+		    if (cdata>=0) {
+			var cdend=txt.search("]]>");
+			txt=txt.slice(cdata+9,cdend);}
+		    var dterms=knodule.handleEntries(txt);
 		    if (knodules_trace_load)
 			fdjtLog("Parsed %d inline knodule entries",
 				dterms.length);}
