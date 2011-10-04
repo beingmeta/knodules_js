@@ -40,3 +40,8 @@ div.dterm span.head span.disambig {
 div.richtip .relcode {
   font-weight: bold; color: red;}
 
+span.dterm {}
+span.dterm.weak:before {
+    font-weight: bold; content: '‘'; color: red;}
+span.dterm.weak:after {
+    font-weight: bold; content: '’'; color: red;}

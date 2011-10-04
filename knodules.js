@@ -102,6 +102,16 @@ var Knodule=
 
 	function KNode(knodule,string,lang){
 	    if (!(knodule)) return this;
+	    var weak=false; var prime=
+		((string[0]==='*')&&(string.search(/[^*]/)));
+	    var newprime=false;
+	    if (string[0]==='~') {weak=true; string=string.slice(1);}
+	    else if (prime) {
+		string=string.slice(prime);
+		if (!(knodule.primescores[string])) {
+		    if (prime>(knodule.primescores[string]))
+			knodule.primescores[string]=prime;
+		    newprime=true;}}
 	    if (string.search(/[a-zA-Z]\$/)===0) {
 		lang=string.slice(0,2).toUpperCase();
 		string=string.slice(3);}
@@ -115,6 +125,9 @@ var Knodule=
 		       (knodule.ref(string+"@"+knodule.name,this)):
 		       (knodule.ref(string+"@"+knodule.name)));
 	    dterm.dterm=term;
+	    if (weak) dterm.weak=true;
+	    if (prime) dterm.prime=prime;
+	    if ((prime)&&(newprime)) knodule.prime.push(dterm);
 	    knodule.dterms[dterm._id]=dterm;
 	    knodule.dterms[term]=dterm;
 	    knodule.alldterms.push(dterm);

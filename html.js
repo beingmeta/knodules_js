@@ -41,12 +41,15 @@
 
     var KNode=Knodule.KNode;
     Knodule.KNode.prototype.toHTML=function(lang){
+	var spec=((this.prime)?("span.dterm.prime"):
+		  (this.weak)?("span.dterm.weak"):
+		  "span.dterm");
 	if (this.gloss) {
-	    var span=fdjtDOM("span.dterm",this.dterm);
+	    var span=fdjtDOM(spec,this.dterm);
 	    span.title=fdjtString.strip_markup(this.gloss);
 	    span.dterm=this.dterm;
 	    return span;}
-	else return fdjtDOM("span.dterm",this.dterm);};
+	else return fdjtDOM(spec,this.dterm);};
 
     /* Making DTERM descriptions */
 
