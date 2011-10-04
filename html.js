@@ -2,9 +2,9 @@
 
 /* Copyright (C) 2009-2011 beingmeta, inc.
    This file provides for HTML documents using KNODULES, including
-    the extraction and processing of embedded KNODULE definitions
-    or references and interaction with interactive parts of the
-    FDJT library.
+   the extraction and processing of embedded KNODULE definitions
+   or references and interaction with interactive parts of the
+   FDJT library.
 
    For more information on knodules, visit www.knodules.net
    This library is built on the FDJT (www.fdjt.org) toolkit.
@@ -13,21 +13,21 @@
    warranties of merchantability or fitness for any particular
    purpose.
 
-    Use, modification and redistribution of this program is permitted
-    under the GNU General Public License (GPL) Version 2:
+   Use, modification and redistribution of this program is permitted
+   under the GNU General Public License (GPL) Version 2:
 
-          http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
+   http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
 
-    Use and redistribution (especially embedding in other
-      CC licensed content) is permitted under the terms of the
-      Creative Commons "Attribution-NonCommercial" license:
+   Use and redistribution (especially embedding in other
+   CC licensed content) is permitted under the terms of the
+   Creative Commons "Attribution-NonCommercial" license:
 
-          http://creativecommons.org/licenses/by-nc/3.0/ 
+   http://creativecommons.org/licenses/by-nc/3.0/ 
 
-    Other uses may be allowed based on prior agreement with
-      beingmeta, inc.  Inquiries can be addressed to:
+   Other uses may be allowed based on prior agreement with
+   beingmeta, inc.  Inquiries can be addressed to:
 
-       licensing@biz.beingmeta.com
+   licensing@biz.beingmeta.com
 
    Enjoy!
 
@@ -109,18 +109,18 @@
     var _knodulesHTML_done=false;
 
     function KnoduleLoad(elt,knodule){
-      var src=((typeof elt === 'string')?(elt):(elt.src));
-      var text=fdjtAjax.getText(src);
-      var knowdes=knodule.handleEntries(text);
-      if (knodules_trace_load)
-	fdjtLog("Parsed %d entries from %s",knowdes.length,elt.src);}
+	var src=((typeof elt === 'string')?(elt):(elt.src));
+	var text=fdjtAjax.getText(src);
+	var knowdes=knodule.handleEntries(text);
+	if (knodules_trace_load)
+	    fdjtLog("Parsed %d entries from %s",knowdes.length,elt.src);}
 
     function knoduleSetupHTML(knodule){
 	if (!(knodule)) knodule=Knodule(document.location.href);
 	var doing_the_whole_thing=false;
 	var start=new Date();
 	var links=fdjtDOM.getLink("knodule",true,false).concat
-	  (fdjtDOM.getLink("knowlet",true,false));
+	(fdjtDOM.getLink("knowlet",true,false));
 	var i=0; while (i<links.length) KnoduleLoad(links[i++],knodule);
 	var elts=document.getElementsByTagName("META");
 	var i=0; while (i<elts.length) {
@@ -128,10 +128,13 @@
 	    if (elt.name==="KNOWDEF") knodule.handleEntry(elt.content);}
 	elts=document.getElementsByTagName("SCRIPT");
 	i=0; while (i<elts.length) {
-	  var elt=elts[i++]; var lang=elt.getAttribute("language");
-	  if ((lang) &&
-	      ((lang==="knodule") ||(lang==="KNODULE")||
-	       (lang==="knowlet"||(lang==="KNOWLET")))) {
+	    var elt=elts[i++];
+	    var lang=elt.getAttribute("language");
+	    var type=elt.type;
+	    if ((type==="text/knodule")||(type==="application/knodule")||
+		((lang) &&
+		 ((lang==="knodule") ||(lang==="KNODULE")||
+		  (lang==="knowlet"||(lang==="KNOWLET"))))) {
 		if (elt.src) KnoduleLoad(elt,knodule);
 		else if (elt.text) {
 		    var txt=elt.text;
@@ -153,7 +156,7 @@
 })();
 
 /* Emacs local variables
-;;;  Local variables: ***
-;;;  compile-command: "cd ..; make" ***
-;;;  End: ***
+   ;;;  Local variables: ***
+   ;;;  compile-command: "cd ..; make" ***
+   ;;;  End: ***
 */
