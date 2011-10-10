@@ -121,9 +121,16 @@ var Knodule=
 	    if (knodule.language!==lang) term=lang+"$"+string;
 	    if (knodule.dterms.hasOwnProperty(term))
 		return knodule.dterms[term];
+	    /* Try taking this out, knodule name is implicit
+	       in structure */
+	    /*
 	    var dterm=((this instanceof KNode)?
 		       (knodule.ref(string+"@"+knodule.name,this)):
 		       (knodule.ref(string+"@"+knodule.name)));
+	    */
+	    var dterm=((this instanceof KNode)?
+		       (knodule.ref(string,this)):
+		       (knodule.ref(string)));
 	    dterm.dterm=term;
 	    if (weak) dterm.weak=true;
 	    if (prime) dterm.prime=prime;
