@@ -53,9 +53,7 @@ KnoduleIndex.Query=
 	    this.do_search();
 	    this._done=new Date();
 	    if (this._refiners) {}
-	    else if (this._results.length>1)
-		this._refiners=this.get_refiners();
-	    else this._refiners={_results: []};
+	    else this._refiners=this.get_refiners();
 	    this._refined=new Date();
 	    if (this.index.trace)
 		fdjtLog("In %f secs, %o yielded %d results: %o",
