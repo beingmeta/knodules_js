@@ -122,8 +122,8 @@
 	if (!(knodule)) knodule=Knodule(document.location.href);
 	var doing_the_whole_thing=false;
 	var start=new Date();
-	var links=fdjtDOM.getLink("knodule",true,false).concat
-	(fdjtDOM.getLink("knowlet",true,false));
+	var links=fdjtDOM.getLink("knodule",true,false).
+	    concat(fdjtDOM.getLink("knowlet",true,false));
 	var i=0; while (i<links.length) KnoduleLoad(links[i++],knodule);
 	var elts=document.getElementsByTagName("META");
 	var i=0; while (i<elts.length) {
