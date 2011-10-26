@@ -174,11 +174,11 @@ var Knodule=
 	    else this.add(val.slice(0,2),val.slice(3));
 	    else if (field) this.add(field,val);
 	    else this.add(this.knodule.language,val);};
-	KNode.prototype.oldtagString=function(kno) {
+	KNode.prototype.tagString=function(kno) {
 	    if ((kno===this.knodule)||(!(kno))) return this.dterm;
 	    else return this.dterm+"@"+this.knodule.name;};
-	KNode.prototype.tagString=function(kno) {
-	    return this.dterm+"@"+this.knodule.name;};
+	KNode.prototype.newtagString=function(kno) {
+	    return this.dterm;}; /* return this.dterm+"@"+this.knodule.name; */
 	/* Text processing utilities */
 	function stdspace(string) {
 	    return string.replace(/\s+/," ").
