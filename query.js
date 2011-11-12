@@ -109,7 +109,8 @@ KnoduleIndex.Query=
 		if (typeof term !== 'string') term=term._id||term.dterm;
 		var items=matches[i]=results.index.find(term);
 		if (results.index.trace)
-		    fdjtLog("Query element '%s' matches %d items",term,items.length);
+		    fdjtLog("Query element '%s' matches %d items",
+			    term,items.length);
 		i++;}
 	    var allitems=false;
 	    if (query.length===1) allitems=matches[0];
