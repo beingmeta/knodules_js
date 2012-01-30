@@ -1,6 +1,6 @@
 /* -*- Mode: Javascript; Character-encoding: utf-8; -*- */
 
-/* Copyright (C) 2009-2011 beingmeta, inc.
+/* Copyright (C) 2009-2012 beingmeta, inc.
    This file provides for HTML documents using KNODULES, including
    the extraction and processing of embedded KNODULE definitions
    or references and interaction with interactive parts of the
