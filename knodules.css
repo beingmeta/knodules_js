@@ -41,7 +41,7 @@ div.richtip .relcode {
   font-weight: bold; color: red;}
 
 span.dterm {}
-span.dterm.weak:before {
+span.dterm.weak:before, span.raw:before {
     font-weight: bold; content: '“'; color: red;}
-span.dterm.weak:after {
+span.dterm.weak:after, span.raw:after {
     font-weight: bold; content: '”'; color: red;}

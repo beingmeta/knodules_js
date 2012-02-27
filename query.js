@@ -115,6 +115,10 @@ KnoduleIndex.Query=
 	    var allitems=false;
 	    if (query.length===1) allitems=matches[0];
 	    else {
+		// When there are multiple query terms, an item is in
+		// the result if it contains at least two of the query
+		// terms, with the score being determined by various
+		// factors.
 		var i=0; var lim=query.length;
 		while (i<lim) {
 		    var j=0; while (j<lim) {
@@ -126,10 +130,16 @@ KnoduleIndex.Query=
 			else allitems=fdjtKB.intersection(matches[i],matches[j]);
 			j++;}
 		    i++;}}
+	    // Now you've got all the items, so we try to score them
 	    results._results=allitems;
 	    i=0; var n_items=allitems.length;
 	    while (i<n_items) {
 		var item=allitems[i++];
+		// Could we use, the 'scores' on the index to somehow
+		// figure this out without requiring that the
+		// application provide a Tags() method?
+		// If the index kept an item->tagscores table, we could
+		//  figure this out.
 		var tags=results.index.Tags(item);
 		var j=0; var lim=query.length; var cur;
 		while (j<lim) {
