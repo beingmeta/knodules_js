@@ -44,7 +44,7 @@ KnoduleIndex.Query=
 	    if (cached) return cached;
 	    // Construct the results object
 	    this.index=index; this._query=query; this._qstring=qstring;
-	    this._results=[]; this._scores={};
+	    this._results=[]; this._scores={}; this._counts={};
 	    if (query.length===0) {
 		this._refiners={_results: index._alltags};
 		return this;}
@@ -97,7 +97,8 @@ KnoduleIndex.Query=
 
 	function do_search(results) {
 	    if (!(results)) results=this;
-	    var query=results._query; var scores=results._scores;
+	    var query=results._query;
+	    var scores=results._scores; var counts=results._counts;
 	    var matches=[];
 	    // A query is an array of terms.  In a simple query,
 	    // the results are simply all elements which are tagged
@@ -108,6 +109,11 @@ KnoduleIndex.Query=
 		var term=query[i];
 		if (typeof term !== 'string') term=term._id||term.dterm;
 		var items=matches[i]=results.index.find(term);
+		var j=0; var jlim=items.length;
+		while (j<jlim) {
+		    var item=items[j++];
+		    if (scores[item]) scores[item]++; else scores[item]=1;
+		    if (counts[item]) counts[item]++; else counts[item]=1;}
 		if (results.index.trace)
 		    fdjtLog("Query element '%s' matches %d items",
 			    term,items.length);
@@ -130,24 +136,20 @@ KnoduleIndex.Query=
 			else allitems=fdjtKB.intersection(matches[i],matches[j]);
 			j++;}
 		    i++;}}
-	    // Now you've got all the items, so we try to score them
+	    // Now we apply the tagscores where they're assigned
 	    results._results=allitems;
 	    i=0; var n_items=allitems.length;
 	    while (i<n_items) {
 		var item=allitems[i++];
-		// Could we use, the 'scores' on the index to somehow
-		// figure this out without requiring that the
-		// application provide a Tags() method?
-		// If the index kept an item->tagscores table, we could
-		//  figure this out.
-		var tags=results.index.Tags(item);
-		var j=0; var lim=query.length; var cur;
-		while (j<lim) {
-		    var tag=query[j++];
-		    if (cur=scores[item])
-			scores[item]=cur+tags[item]||1;
-		    else scores[item]=tags[item]||1;}}
-	    // Initialize scores for all of results
+		var tags=results.index.tags[item];
+		var tagscores=tags._scores;
+		var j=0; var lim=query.length; var score=scores[item];
+		if (tagscores) {
+		    while (j<lim) {
+			var tag=query[j++];
+			if (tagscores[tag])
+			    score=score+(tagscores[tag]*2);}}
+		scores[item]=score;}
 	    return results;}
 	Query.do_search=do_search;
 	Query.prototype.do_search=function() { return do_search(this);};
@@ -162,6 +164,7 @@ KnoduleIndex.Query=
 	    var rvec=(results._results);
 	    var refiners={};
 	    var scores=(results._scores)||false; var freqs={};
+	    var max_score=0, max_freq=0;
 	    var alltags=[];
 	    var i=0; while (i<query.length) {
 		var q=query[i++];
@@ -173,25 +176,32 @@ KnoduleIndex.Query=
 	    var i=0; while (i<rvec.length) {
 		var item=rvec[i++];
 		var item_score=((scores)&&(scores[item]));
-		var tags=results.index.Tags(item)||[];
+		var tags=results.index.tags[item]||[];
 		if (typeof tags === 'string') tags=[tags];
 		if (tags) {
 		    var j=0; var len=tags.length; while (j<len) {
-			var tag=tags[j++];
+			var tag=tags[j++]; var freq, score;
 			// If the tag is already part of the query, we ignore it.
 			if (fdjtKB.contains(qterms,tag)) {}
 			// If the tag has already been seen, we increase its frequency
 			// and its general score
-			else if (freqs[tag]) {
-			    freqs[tag]=freqs[tag]+1;
-			    if (item_score) refiners[tag]=refiners[tag]+item_score;}
+			else if (freq=freqs[tag]) {
+			    freq++; freqs[tag]=freq;
+			    if (freq>max_freq) max_freq=freq;
+			    if (item_score) {
+				var score=(refiners[tag]||0)+item_score;
+				if (score>max_score) max_score=score;
+				refiners[tag]=score;}}
 			else {
 			    // If the tag hasn't been counted, we initialize its frequency
 			    // and score, adding it to the list of all the tags we've found
 			    alltags.push(tag); freqs[tag]=1;
+			    if (max_score<item_score) max_score=item_score;
 			    if (item_score) refiners[tag]=item_score;}}}}
 	    freqs._count=rvec.length;
 	    refiners._freqs=freqs;
+	    refiners._maxfreq=max_freq;
+	    refiners._maxscore=max_score;
 	    results._refiners=refiners;
 	    alltags.sort(function(x,y) {
 		if (freqs[x]>freqs[y]) return -1;
@@ -205,20 +215,6 @@ KnoduleIndex.Query=
 	Query.get_refiners=get_refiners;
 	Query.prototype.get_refiners=function() {return get_refiners(this);};
 
-	/* Dead code? */
-	/*
-	  Query.base=function(string) {
-	  var lastsemi=string.lastIndexOf(';');
-	  if (lastsemi>0)
-	  return string.slice(0,lastsemi+1);
-	  else return "";};
-	  Query.tail=function(string) {
-	  var lastsemi=string.lastIndexOf(';');
-	  if (lastsemi>0)
-	  return string.slice(lastsemi+1);
-	  else return string;};
-
-	*/
 	return Query;
     })();
 

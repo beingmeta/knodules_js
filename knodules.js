@@ -422,83 +422,64 @@ var KnoduleIndex=(function(){
     
     function KnoduleIndex(knodule) {
 	if (knodule) this.knodule=knodule;
-	this.byweight={}; this.bykey={}; this.tagweights={}; this._alltags=[];
+	this.items={}; this.tags={}; this._alltags=[]; this._allitems=[];
+	this.tagscores={}; this.tagfreqs={}; this.maxscore=0; this.maxfreq=0;
+	// this.byweight={}; this.bykey={}; this.tagweights={}; this._alltags=[];
 	return this;}
     
-    KnoduleIndex.prototype.add=function(item,key,weight,kno){
-	if (key instanceof KNode) {
-	    key=((key.tagString)?(key.tagString()):(key.dterm));}
-	if (typeof weight !== 'number')
-	    if (weight) weight=2; else weight=0;
-	if ((weight)&&(!(this.byweight[weight])))
-	    this.byweight[weight]={};
+    KnoduleIndex.prototype.add=function(item,tag,weight,kno){
 	var itemkey=((typeof item === 'object')?(objectkey(item)):(item));
-	if (this.bykey.hasOwnProperty(key))
-	    fdjtKB.add(this.bykey[key],itemkey);
+	if ((typeof tag === 'string')&&(kno)) tag=kno.ref(tag)||tag;
+	var tagkey=(((typeof tag === 'string')&&(tag))||
+		    ((tag.tagString)&&(tag.tagString()))||
+		    ((tag instanceof KNode)&&(tag.dterm))||
+		    (objectkey(tag)));
+	var items=this.items, tags=this.tags;
+	var alltags=this._alltags, allitems=this._allitems;
+	var tagfreqs=this.tagfreqs;
+	var tagscores=this.tagscores;
+	var itemv=false, iscores=false;
+	if ((weight)&&(typeof weight !== 'number')) weight=1;
+	if (items.hasOwnProperty(tagkey)) {
+	    itemv=items[tagkey];
+	    fdjtKB.add(itemv,itemkey);
+	    var freq=tagfreqs[tagkey]+1;
+	    if (freq>this.maxfreq) this.maxfreq=freq;
+	    tagfreqs[tagkey]=freq;}
 	else {
-	    this.bykey[key]=fdjtKB.Set(itemkey);
-	    this._alltags.push(key);}
+	    items[tagkey]=itemv=[itemkey];
+	    tagfreqs[tagkey]=1;
+	    if (this.maxfreq===0) this.maxfreq=1;
+	    alltags.push(tagkey);
+	    if (tag!==tagkey) alltags[tagkey]=tag;}
+	if (itemv.hasOwnProperty('_scores')) iscores=itemv._scores;
+	if ((weight)&&(!(iscores))) itemv._scores=iscores={};
+	if (tags.hasOwnProperty(item)) fdjtKB.add(tags[itemkey],tagkey);
+	else {
+	    tags[itemkey]=tagv=[tagkey];
+	    allitems.push[itemkey];}
 	if (weight) {
-	    var byweight=this.byweight[weight];
-	    if (byweight.hasOwnProperty(key))
-		fdjtKB.add(byweight[key],itemkey);
-	    else byweight[key]=fdjtKB.Set(itemkey);
-	    (this.tagweights[key])=((this.tagweights[key])||0)+weight;}
-	if (kno) {
-	    var dterm=kno.probe(key);
-	    if ((dterm)&&(dterm._always)) {
-		var always=dterm._always;
-		var i=0; var len=always.length;
-		while (i<len)
-		    this.add(itemkey,always[i++].dterm,((weight)&&(weight-1)));}}};
-    KnoduleIndex.prototype.freq=function(key){
-	if (this.bykey.hasOwnProperty(key))
-	    return this.bykey[key].length;
-	else return 0;};
-    KnoduleIndex.prototype.find=function(key){
-	if (this.bykey.hasOwnProperty(key)) return this.bykey[key];
-	else return [];};
-    KnoduleIndex.prototype.score=function(key,scores){
-	var byweight=this.byweight;
-	if (!(scores)) scores={};
-	for (weight in byweight)
-	    if (byweight[weight][key]) {
-		var hits=byweight[weight][key];
-		var i=0; var len=hits.length;
-		while (i<len) {
-		    var item=hits[i++]; var cur;
-		    if (cur=scores[item]) scores[item]=cur+weight;
-		    else scores[item]=weight;}}
-	return scores;};
-    KnoduleIndex.prototype.tagScores=function(){
-	if (this._tagscores) return this._tagscores;
-	var tagscores={}; var tagfreqs={}; var alltags=[];
-	var book_tags=this._all; var max_score=0; var max_freq=0;
-	var byweight=this.byweight;
-	for (var w in byweight) {
-	    var tagtable=byweight[w];
-	    for (var tag in tagtable) {
-		var howmany=tagtable[tag].length; var score; var freq;
-		if (tagscores[tag]) {
-		    score=tagscores[tag]=tagscores[tag]+w*howmany;
-		    freq=tagfreqs[tag]=tagfreqs[tag]+howmany;}
-		else {
-		    score=tagscores[tag]=w*howmany;
-		    freq=tagfreqs[tag]=howmany;	      
-		    alltags.push(tag);}
-		if (score>max_score) max_score=score;
-		if (freq>max_freq) freq=max_freq;}}
-	tagfreqs._count=alltags.length;
-	alltags.sort(function (x,y) {
-	    var xlen=tagfreqs[x]; var ylen=tagfreqs[y];
-	    if (xlen==ylen) return 0;
-	    else if (xlen>ylen) return -1;
-	    else return 1;});
-	tagscores._all=alltags; tagscores._freq=tagfreqs;
-	tagscores._maxscore=max_score; tagscores._maxfreq=max_freq;
-	this._tagscores=tagscores;
-	return tagscores;};
+	    if (tagv[tagkey]) tagv[tagkey]=+weight;
+	    else tagv[tagkey]=weight;
+	    var tagscore=(tagscores[tagkey]||0)+weight;
+	    tagscores[tagkey]=tagscore;
+	    if (tagscore>this.maxscore) this.maxscore=tagscore;
+	    if (itemv[itemkey]) itemv[itemkey]=+weight;
+	    else itemv[itemkey]=+weight;}
+	if ((tag)&&(tag._always)) {
+	    var always=tag._always;
+	    var i=0; var len=always.length;
+	    while (i<len)
+		this.add(itemkey,always[i++].dterm,((weight)&&(weight>i)&&(weight-i)));}};
 
+    KnoduleIndex.prototype.freq=function(tag){
+	if (this.items.hasOwnProperty(tag))
+	    return this.items[tag].length;
+	else return 0;};
+    KnoduleIndex.prototype.find=function(tag){
+	if (this.items.hasOwnProperty(tag)) return this.items[tag];
+	else return [];};
+    
     // This takes an array of tags (with possible .scores)
     //  and combines them into an array with unique elements
     //  and combined scores
@@ -529,6 +510,7 @@ var KnoduleIndex=(function(){
 	return tags;}
     KnoduleIndex.combineTags=combineTags;
     KnoduleIndex.prototype.combineTags=combineTags;
+    Knodule.combineTags=combineTags;
 
     return KnoduleIndex;})();
 
