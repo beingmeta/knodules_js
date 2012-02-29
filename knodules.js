@@ -423,8 +423,8 @@ var KnoduleIndex=(function(){
     function KnoduleIndex(knodule) {
 	if (knodule) this.knodule=knodule;
 	this.items={}; this.tags={}; this._alltags=[]; this._allitems=[];
+	this._ranked=false; this.ranks=false;
 	this.tagscores={}; this.tagfreqs={}; this.maxscore=0; this.maxfreq=0;
-	// this.byweight={}; this.bykey={}; this.tagweights={}; this._alltags=[];
 	return this;}
     
     KnoduleIndex.prototype.add=function(item,tag,weight,kno){
@@ -454,10 +454,11 @@ var KnoduleIndex=(function(){
 	    if (tag!==tagkey) alltags[tagkey]=tag;}
 	if (itemv.hasOwnProperty('_scores')) iscores=itemv._scores;
 	if ((weight)&&(!(iscores))) itemv._scores=iscores={};
-	if (tags.hasOwnProperty(item)) fdjtKB.add(tags[itemkey],tagkey);
+	if (tags.hasOwnProperty(itemkey))
+	    fdjtKB.add(tags[itemkey],tagkey);
 	else {
 	    tags[itemkey]=tagv=[tagkey];
-	    allitems.push[itemkey];}
+	    allitems.push(itemkey);}
 	if (weight) {
 	    if (tagv[tagkey]) tagv[tagkey]=+weight;
 	    else tagv[tagkey]=weight;
@@ -470,7 +471,9 @@ var KnoduleIndex=(function(){
 	    var always=tag._always;
 	    var i=0; var len=always.length;
 	    while (i<len)
-		this.add(itemkey,always[i++].dterm,((weight)&&(weight>i)&&(weight-i)));}};
+		this.add(itemkey,always[i++].dterm,((weight)&&(weight>i)&&(weight-i)));}
+	// Invalidate ranks.  In the future, this might do something more incremental
+	this.ranks=false;};
 
     KnoduleIndex.prototype.freq=function(tag){
 	if (this.items.hasOwnProperty(tag))
@@ -480,6 +483,30 @@ var KnoduleIndex=(function(){
 	if (this.items.hasOwnProperty(tag)) return this.items[tag];
 	else return [];};
     
+    KnoduleIndex.prototype.rankTags=function(){
+	if (this.ranks) return this.ranks;
+	else {
+	    var ranked=[].concat(this._alltags);
+	    var ranks={};
+	    var tagscores=this.tagscores, tagfreqs=this.tagfreqs;
+	    ranked.sort(function(tag1,tag2){
+		var tscore1=tagscores[tag1], tscore2=tagscores[tag2];
+		if ((tscore1)&&(tscore2)) {
+		    if (tscore1>tscore2) return -1;
+		    else if (tscore1<tscore2) return 1;}
+		else if (tscore1) return -1;
+		else if (tscore2) return 1;
+		/* Nothing based on tagscores */
+		var freq1=tagfreqs[tag1], freq2=tagfreqs[tag2];
+		if (freq1>freq2) return -1;
+		else if (freq2>freq1) return 1;
+		else return 0;});
+	    var i=0; var lim=ranked.length;
+	    while (i<lim) {ranks[ranked[i]]=i; i++;}
+	    this._ranked=ranked;
+	    this.ranks=ranks;
+	    return ranks;}};
+
     // This takes an array of tags (with possible .scores)
     //  and combines them into an array with unique elements
     //  and combined scores

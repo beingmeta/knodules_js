@@ -198,7 +198,7 @@ KnoduleIndex.Query=
 			    alltags.push(tag); freqs[tag]=1;
 			    if (max_score<item_score) max_score=item_score;
 			    if (item_score) refiners[tag]=item_score;}}}}
-	    freqs._count=rvec.length;
+	    refiners._count=freqs._count=rvec.length;
 	    refiners._freqs=freqs;
 	    refiners._maxfreq=max_freq;
 	    refiners._maxscore=max_score;
