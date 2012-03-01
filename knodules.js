@@ -333,30 +333,48 @@ var Knodule=
 	Knodule.prototype.handleSubjectEntry=handleSubjectEntry;
 
 	function handleEntry(entry){
+	    var weak=false;
 	    entry=trimspace(entry);
 	    if (entry.length===0) return false;
+	    var starpower=entry.search(/[^*]/);
+	    if (starpower) entry=entry.slice(starpower);
 	    var bar=fdjtString.findSplit(entry,'|');
 	    var atsign=fdjtString.findSplit(entry,'@');
+	    var subject;
 	    if ((atsign>0) && ((bar<0)||(atsign<bar))) {
+		// This is a foreign dterm reference (+def), e.g.
+		//  dog@beingmeta.com|doggy|^mammal
 		var term=entry.slice(0,atsign);
 		var knostring=((bar<0) ? (entry.slice(atsign+1)) :
 			       (entry.slice(atsign+1,bar)));
 		var knodule=Knodule(knostring);
-		if (bar<0) return knodule.KNode(term);
-		else return knodule.handleEntry(term+entry.slice(bar));}
+		var subject=
+		    ((bar<0)?(knodule.KNode(term)):
+		     (knodule.handleEntry(term+entry.slice(bar))));
+		var id=subject._id;
+		var prime=this.prime; var scores=this.primescores;
+		if (starpower) {
+		    var score;
+		    if (score=scores[id]) {
+			if (starpower>score) scores[id]=starpower;}
+		    else {
+			prime.push(id); scores[id]=starpower;}}
+		return subject;}
 	    switch (entry[0]) {
 	    case '*': {
-		var score=entry.search(/[^*]/);
-		var trimmed=entry.slice(score);
-		var subject=this.handleSubjectEntry(trimmed);
+		// Definition with priority score
+		var starpower=entry.search(/[^*]/), score=false;
 		var prime=this.prime; var scores=this.primescores;
-		if (scores[subject._id])
-		    scores[subject._id]=scores[subject._id]+score;
+		var subject=this.handleSubjectEntry(entry.slice(starpower));
+		var id=subject._id;
+		if (score=scores[id])
+		    if (starpower>score) scores[id]=starpower;
 		else {
-		    prime.push(subject);
-		    scores[subject._id]=score;}
+		    prime.push(id);
+		    scores[id]=starpower;}
 		return subject;}
 	    case '-': {
+		// Declaration of disjointness
 		var subentries=segmentString(entry.slice(1),"/");
 		var knowdes=[];
 		var i=0; while (i<subentries.length) {
@@ -368,6 +386,7 @@ var Knodule=
 		    j++;}
 		return knowdes[0];}
 	    case '/': {
+		// Declaration of hierarchy
 		var pos=1; var subject=false; var head=false;
 		var next=findBreak(entry,'/',pos);
 		while (true) {
@@ -429,7 +448,7 @@ var KnoduleIndex=(function(){
     
     KnoduleIndex.prototype.add=function(item,tag,weight,kno){
 	var itemkey=((typeof item === 'object')?(objectkey(item)):(item));
-	if ((typeof tag === 'string')&&(kno)) tag=kno.ref(tag)||tag;
+	if ((typeof tag === 'string')&&(kno)) tag=kno.probe(tag)||tag;
 	var tagkey=(((typeof tag === 'string')&&(tag))||
 		    ((tag.tagString)&&(tag.tagString()))||
 		    ((tag instanceof KNode)&&(tag.dterm))||
