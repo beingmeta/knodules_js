@@ -175,10 +175,9 @@ var Knodule=
 	    else if (field) this.add(field,val);
 	    else this.add(this.knodule.language,val);};
 	KNode.prototype.tagString=function(kno) {
-	    if ((kno===this.knodule)||(!(kno))) return this.dterm;
+	    if (!(kno)) kno=Knodule.current||false;
+	    if (kno===this.knodule) return "@"+this.dterm;
 	    else return this.dterm+"@"+this.knodule.name;};
-	KNode.prototype.newtagString=function(kno) {
-	    return this.dterm;}; /* return this.dterm+"@"+this.knodule.name; */
 	/* Text processing utilities */
 	function stdspace(string) {
 	    return string.replace(/\s+/," ").
@@ -337,7 +336,7 @@ var Knodule=
 	    entry=trimspace(entry);
 	    if (entry.length===0) return false;
 	    var starpower=entry.search(/[^*]/);
-	    if (starpower) entry=entry.slice(starpower);
+	    if (starpower>0) entry=entry.slice(starpower);
 	    var bar=fdjtString.findSplit(entry,'|');
 	    var atsign=fdjtString.findSplit(entry,'@');
 	    var subject;
@@ -348,63 +347,18 @@ var Knodule=
 		var knostring=((bar<0) ? (entry.slice(atsign+1)) :
 			       (entry.slice(atsign+1,bar)));
 		var knodule=Knodule(knostring);
-		var subject=
-		    ((bar<0)?(knodule.KNode(term)):
-		     (knodule.handleEntry(term+entry.slice(bar))));
+		subject=((bar<0)?(knodule.KNode(term)):
+			 (knodule.handleEntry(term+entry.slice(bar))));}
+	    else subject=this.handleSubjectEntry(entry);
+	    if (starpower) {
 		var id=subject._id;
 		var prime=this.prime; var scores=this.primescores;
-		if (starpower) {
-		    var score;
-		    if (score=scores[id]) {
-			if (starpower>score) scores[id]=starpower;}
-		    else {
-			prime.push(id); scores[id]=starpower;}}
-		return subject;}
-	    switch (entry[0]) {
-	    case '*': {
-		// Definition with priority score
-		var starpower=entry.search(/[^*]/), score=false;
-		var prime=this.prime; var scores=this.primescores;
-		var subject=this.handleSubjectEntry(entry.slice(starpower));
-		var id=subject._id;
-		if (score=scores[id])
-		    if (starpower>score) scores[id]=starpower;
+		var score;
+		if (score=scores[id]) {
+		    if (starpower>score) scores[id]=starpower;}
 		else {
-		    prime.push(id);
-		    scores[id]=starpower;}
-		return subject;}
-	    case '-': {
-		// Declaration of disjointness
-		var subentries=segmentString(entry.slice(1),"/");
-		var knowdes=[];
-		var i=0; while (i<subentries.length) {
-		    knowdes[i]=this.KNode(subentries[i]); i++;}
-		var j=0; while (j<knowdes.length) {
-		    var k=0; while (k<knowdes.length) {
-			if (j!=k) knowdes[j].add('disjoin',knowdes[k]);
-			k++;}
-		    j++;}
-		return knowdes[0];}
-	    case '/': {
-		// Declaration of hierarchy
-		var pos=1; var subject=false; var head=false;
-		var next=findBreak(entry,'/',pos);
-		while (true) {
-		    var basic_level=false;
-		    if (entry[pos]==='*') {basic_level=true; pos++;}
-		    var next_subject=
-			((next) ? (this.handleSubjectEntry(entry.slice(pos,next))) :
-			 (this.handleSubjectEntry(entry.slice(pos))));
-		    if (subject) subject.add('genls',next_subject);
-		    else head=next_subject;
-		    subject=next_subject;
-		    if (basic_level) subject.basic=true;
-		    if (next) {
-			pos=next+1; next=findBreak(entry,"/",pos);}
-		    else break;}
-		return head;}
-	    default:
-		return this.handleSubjectEntry(entry);}}
+		    prime.push(id); scores[id]=starpower;}}
+	    return subject;}
 	Knodule.prototype.handleEntry=handleEntry;
 
 	function handleEntries(block){
@@ -490,8 +444,10 @@ var KnoduleIndex=(function(){
 	    var always=tag._always;
 	    var i=0; var len=always.length;
 	    while (i<len)
-		this.add(itemkey,always[i++].dterm,((weight)&&(weight>i)&&(weight-i)));}
-	// Invalidate ranks.  In the future, this might do something more incremental
+		this.add(itemkey,always[i++].dterm,
+			 ((weight)&&(weight>i)&&(weight-i)));}
+	// Invalidate ranks.  In the future, this might do something
+	// more incremental
 	this.ranks=false;};
 
     KnoduleIndex.prototype.freq=function(tag){
