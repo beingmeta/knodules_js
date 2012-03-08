@@ -44,12 +44,11 @@
 	var spec=((this.prime)?("span.dterm.prime"):
 		  (this.weak)?("span.dterm.weak"):
 		  "span.dterm");
-	if (this.gloss) {
-	    var span=fdjtDOM(spec,this.dterm);
+	var span=fdjtDOM(spec,this.dterm);
+	if (this.gloss) 
 	    span.title=fdjtString.strip_markup(this.gloss);
-	    span.dterm=this.dterm;
-	    return span;}
-	else return fdjtDOM(spec,this.dterm);};
+	span.dterm=this.dterm;
+	return span;};
 
     /* Making DTERM descriptions */
 
@@ -73,12 +72,13 @@
 	else dterm=dterm;
 	var tagstring=false;
 	if ((varname)||(lang)) {
-	    tagstring=((dterm.tagString)?(dterm.tagString()):
+	    tagstring=((dterm.tagString)?(dterm.tagString(this)):
 		       ((dterm._id)||(dterm)));
 	    if (def) tagstring=tagstring+def;}
 	if (varname) 
-	    checkbox=fdjtDOM
-	({tagName: "INPUT",type: "CHECKBOX",name: varname,value: tagstring});
+	    checkbox=fdjtDOM(
+		{tagName: "INPUT",type: "CHECKBOX",
+		 name: varname,value: tagstring});
 	if ((lang)&&(dterm instanceof KNode)) {
 	    var synonyms=dterm[lang];
 	    if ((synonyms)&&(typeof synonyms === 'string'))
