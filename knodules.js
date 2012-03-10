@@ -514,6 +514,8 @@ var KnoduleIndex=(function(){
     KnoduleIndex.prototype.combineTags=combineTags;
     Knodule.combineTags=combineTags;
 
+    KnoduleIndex.Trace={clouds:false};
+
     return KnoduleIndex;})();
 
 
