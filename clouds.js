@@ -44,36 +44,39 @@
 		 var end=showname.lastIndexOf(' ',showname.length-8);
 		 if (start<0) start=8; if (end<0) end=showname.length-8;
 		 if (start<(showname.length-end)) {
-		     showname=showname.slice(0,start)+" \u2026 "+showname.slice(end);}
+		     showname=showname.slice(0,start)+" \u2026 "+
+			 showname.slice(end);}
 		 title=term;}
-	     var span=fdjtDOM("span.completion",fdjtDOM("span.sectname",showname));
+	     var span=fdjtDOM("span.completion",
+			      fdjtDOM("span.sectname",showname));
 	     span.key=term; span.value=term; span.anymatch=true;
 	     if (title)
 		 span.title=title+"; "+term;
 	     else span.title=""+index.freq(term)+" items: "+term;
 	     return span;}
-	 var dterm=knodule.probe(term); var showterm=term;
-	 if (!(dterm)) {
+	 var ref=knodule.probe(term)||fdjtKB.ref(term);
+	 var text=((ref)?(ref.dterm):(term));
+	 if (!(ref)) {
 	     if (just_knodes) return false;
 	     var knopos=term.indexOf('@');
 	     if ((knopos>0)&&(term.slice(1+knopos)===knodule.name)) {
 		 if (title) title="("+term+") "+title; else title=term;
-		 showterm=term.slice(0,knopos);}}
-	 else if (!(dterm.dterm)) {
-	     fdjtLog("Got bogus dterm reference for %s: %o",term,dterm);
-	     dterm=false;}
-	 var term_node=((dterm) ? (dterm.toHTML()) :
+		 text=term.slice(0,knopos);}}
+	 else if (!(ref.dterm)) {
+	     fdjtLog("Got bogus dterm reference for %s: %o",term,ref);
+	     ref=false;}
+	 var term_node=((ref) ?
+			(((ref.toDOM)&&(ref.toDOM()))||
+			 ((ref.toHTML)&&(ref.toHTML()))) :
 			(fdjtDOM("span.rawterm",showterm)));
-	 if ((dterm)&&(fdjtString.hasSuffix(dterm.dterm,"...")))
+	 if ((ref)&&(fdjtString.hasSuffix(ref.dterm,"...")))
 	     addClass(term_node,"weak");
 	 var span=fdjtDOM("span.completion");
-	 if (dterm) {
-	     if (dterm.gloss) {
-		 if (title) span.title=title+": "+dterm.gloss;
-		 else span.title=dterm.gloss;}
-	     // This would be a place to generate titles from the
-	     // knodule itself
-	     else span.title=title;
+	 if (ref) {
+	     if ((ref.gloss)||(ref.about))
+		 span.title=((title)||"")+(ref.gloss||ref.about||"");
+	     else if (title) span.title=title;
+	     else {}
 	     /* Now add variation elements */
 	     var variations=[];
 	     var i=0; var terms=dterm.getSet('EN');
@@ -85,11 +88,12 @@
 		 span.appendChild(vary);
 		 span.appendChild(document.createTextNode(" "));}
 	     span.appendChild(term_node);
-	     span.key=dterm.dterm;
-	     span.value=((dterm.tagString)?(dterm.tagString()):(dterm.dterm));
+	     span.setAttribute(
+		 "value",((dterm.tagString)?(dterm.tagString()):(dterm.dterm)));
 	     span.setAttribute("dterm",dterm.dterm);}
 	 else {
-	     span.key=term; span.value=term;
+	     span.setAttribute("key",term);
+	     span.setAttribute("value",term);
 	     span.appendChild(term_node);
 	     if (title) span.title=title;}
 	 return span;}
@@ -113,8 +117,9 @@
 	 if (index.trace_clouds)
 	     fdjtLog("Making cloud from %d dterms using scores=%o [%d,%d] and freqs=%o",
 		     dterms.length,scores,max_score,min_score,freqs);
-	 // We show cues if there are too many terms and we would have any cues to show
-	 //  Cues are either primescores or higher scored items
+	 // We show cues if there are too many terms and we would have
+	 //  any cues to show Cues are either primescores or higher
+	 //  scored items
 	 var usecues=(!((n_terms<17)||
 			((max_score===min_score)&&(primescores===0))));
 	 var spans=fdjtDOM("span");
@@ -244,3 +249,10 @@
 	     return query._cloud;}};
 
  })();
+
+
+/* Emacs local variables
+   ;;;  Local variables: ***
+   ;;;  compile-command: "cd ..; make" ***
+   ;;;  End: ***
+*/
