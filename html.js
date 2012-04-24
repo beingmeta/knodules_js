@@ -60,22 +60,24 @@
 	if ((lang)&&(typeof lang !== 'string')) {
 	    if (kno) lang=kno.language; else lang='EN';}
 	// Resolve the KNode if you can
-	if ((kno)&&(typeof dterm === 'string'))
-	    if (kno.probe(dterm)) {
-		dterm=kno.probe(dterm);
-		text=dterm.dterm;}
+	if (!(typeof dterm === 'string')) {
+	    text=((dterm.toDOM)&&(dterm.toDOM()))||dterm;}
 	else if (dterm.indexOf('|')>=0) {
 	    var pos=dterm.indexOf('|');
 	    def=dterm.slice(pos);
 	    dterm=kno.handleSubjectEntry(dterm);
 	    text=dterm.dterm;}
+	else if (kno) {
+	    if (kno.probe(dterm)) {
+		dterm=kno.probe(dterm);
+		text=dterm.dterm;}}
 	else dterm=dterm;
 	var tagstring=false;
 	if ((varname)||(lang)) {
-	    tagstring=((dterm.tagString)?(dterm.tagString(this)):
+	    tagstring=((dterm.tagString)?(dterm.tagString(kno)):
 		       ((dterm._id)||(dterm)));
 	    if (def) tagstring=tagstring+def;}
-	if (varname) 
+	if (varname)
 	    checkbox=fdjtDOM(
 		{tagName: "INPUT",type: "CHECKBOX",
 		 name: varname,value: tagstring});
