@@ -107,7 +107,9 @@ KnoduleIndex.Query=
 	    // possibly with weights based on the basis of the match.
 	    var i=0; while (i<query.length) {
 		var term=query[i];
-		if (typeof term !== 'string') term=term._id||term.dterm;
+		if (typeof term !== 'string')
+		    term=(((term.tagString)&&(term.tagString()))||
+			  term._id||term.dterm);
 		var items=matches[i]=results.index.find(term);
 		var j=0; var jlim=items.length;
 		while (j<jlim) {

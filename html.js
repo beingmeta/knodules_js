@@ -37,52 +37,59 @@
 
     var knodules_trace_load=2;
 
+    var addClass=fdjtDOM.addClass;
+
     /* Getting knowdes into HTML */
 
     var KNode=Knodule.KNode;
-    Knodule.KNode.prototype.toHTML=function(lang){
-	var spec=((this.prime)?("span.dterm.prime"):
-		  (this.weak)?("span.dterm.weak"):
-		  "span.dterm");
-	var span=fdjtDOM(spec,this.dterm);
-	if (this.gloss) 
-	    span.title=fdjtString.strip_markup(this.gloss);
-	span.dterm=this.dterm;
-	return span;};
-
+    Knodule.KNode.prototype.toDOM=
+	Knodule.KNode.prototype.toHTML=function(lang){
+	    var spec=((this.prime)?("span.dterm.prime"):
+		      (this.weak)?("span.dterm.weak"):
+		      "span.dterm");
+	    var span=fdjtDOM(spec,this.dterm);
+	    if (this.gloss) 
+		span.title=fdjtString.strip_markup(this.gloss);
+	    span.dterm=this.dterm;
+	    return span;};
+    
     /* Making DTERM descriptions */
 
     function knoduleHTML(dterm,kno,varname,lang){
 	var checkbox=false; var variations=[];
-	var text=dterm; var def=false;
+	var ref=false, text=false, def=false, tag=false;
 	// A non-false language arg generates a completion, and a
 	// non-string language arg just uses the knodules default language
+	// to generate text
 	if ((lang)&&(typeof lang !== 'string')) {
 	    if (kno) lang=kno.language; else lang='EN';}
-	// Resolve the KNode if you can
-	if (!(typeof dterm === 'string')) {
-	    text=((dterm.toDOM)&&(dterm.toDOM()))||dterm;}
+	// Resolve the KNode if you need to and can
+	if (typeof dterm !== 'string') {
+	    ref=dterm; dterm=ref.dterm||ref._id||ref.oid||ref.uuid;}
+	else ref=fdjtKB.ref(dterm,kno);
+	if (ref) text=((ref.toDOM)&&(ref.toDOM()))||dterm;
 	else if (dterm.indexOf('|')>=0) {
 	    var pos=dterm.indexOf('|');
 	    def=dterm.slice(pos);
-	    dterm=kno.handleSubjectEntry(dterm);
-	    text=dterm.dterm;}
-	else if (kno) {
-	    if (kno.probe(dterm)) {
-		dterm=kno.probe(dterm);
-		text=dterm.dterm;}}
-	else dterm=dterm;
-	var tagstring=false;
-	if ((varname)||(lang)) {
-	    tagstring=((dterm.tagString)?(dterm.tagString(kno)):
-		       ((dterm._id)||(dterm)));
-	    if (def) tagstring=tagstring+def;}
+	    ref=kno.handleSubjectEntry(dterm);
+	    text=ref.dterm;}
+	else text=dterm;
+	// Figure out the 'tag' which is a string reference to the
+	//  value
+	if (!(ref)) tag=dterm;
+	else if ((varname)||(lang)) {
+	    tag=((ref.tagString)?(ref.tagString(kno)):
+		 ((ref._id)||(ref.oid)||(ref.uuid)||(ref.dterm)));
+	    if (def) tag=tag+def;}
+	// Don't need tag
+	else {}
 	if (varname)
 	    checkbox=fdjtDOM(
 		{tagName: "INPUT",type: "CHECKBOX",
-		 name: varname,value: tagstring});
-	if ((lang)&&(dterm instanceof KNode)) {
-	    var synonyms=dterm[lang];
+		 name: varname,value: tag});
+	// Add variations for synonyms in the given language.
+	if ((lang)&&(ref instanceof KNode)) {
+	    var synonyms=ref[lang];
 	    if ((synonyms)&&(typeof synonyms === 'string'))
 		synonyms=[synonyms];
 	    if (synonyms) {
@@ -92,14 +99,19 @@
 		    var variation=fdjtDOM("span.variation",synonym,"=");
 		    variation.setAttribute("key",synonym);
 		    variations.push(variation);}}}
-	var span=fdjtDOM("span.knode",checkbox,variations,text);
-	if (varname) fdjtDOM.addClass(span,"checkspan");
-	if (typeof text !== 'string') text=tagstring;
+	var span=fdjtDOM("span",checkbox,variations,text);
+	if (ref instanceof KNode) addClass(span,"knode");
+	if (varname) addClass(span,"checkspan");
 	if (lang) {
 	    fdjtDOM.addClass(span,"completion");
-	    span.key=text; span.value=tagstring;}
-	if (!(dterm instanceof KNode)) fdjtDOM.addClass(span,"raw");
-	if (dterm.gloss) span.title=dterm.gloss;
+	    if (typeof text === 'string')
+		span.setAttribute('key',text);
+	    if (!(ref)) span.setAttribute('value',tag);}
+	if (!(ref)) fdjtDOM.addClass(span,"rawterm");
+	if (!(ref)) span.title=tag;
+	else if (ref.gloss) span.title=ref.gloss;
+	else if (ref.about) span.title=ref.about;
+	else span.title=tag;
 	return span;};
     Knodule.HTML=knoduleHTML;
     Knodule.prototype.HTML=function(dterm){
