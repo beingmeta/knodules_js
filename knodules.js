@@ -405,7 +405,6 @@ var KnoduleIndex=(function(){
 	if ((typeof tag === 'string')&&(kno)) tag=kno.probe(tag)||tag;
 	var tagkey=(((typeof tag === 'string')&&(tag))||
 		    ((tag.tagString)&&(tag.tagString()))||
-		    ((tag instanceof KNode)&&(tag.dterm))||
 		    (objectkey(tag)));
 	var items=this.items, tags=this.tags;
 	var alltags=this._alltags, allitems=this._allitems;
@@ -443,9 +442,12 @@ var KnoduleIndex=(function(){
 	if ((tag)&&(tag._always)) {
 	    var always=tag._always;
 	    var i=0; var len=always.length;
-	    while (i<len)
-		this.add(itemkey,always[i++].dterm,
-			 ((weight)&&(weight>i)&&(weight-i)));}
+	    while (i<len) {
+		var genl=always[i++];
+		var gkey=(((typeof genl === 'string')&&(genl))||
+			  ((genl.tagString)&&(genl.tagString()))||
+			  (objectkey(genl)));
+		this.add(itemkey,gkey,((weight)&&(weight>i)&&(weight-i)));}}
 	// Invalidate ranks.  In the future, this might do something
 	// more incremental
 	this.ranks=false;};
