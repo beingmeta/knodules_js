@@ -144,7 +144,7 @@ KnoduleIndex.Query=
 	    while (i<n_items) {
 		var item=allitems[i++];
 		var tags=results.index.tags[item];
-		var tagscores=tags._scores;
+		var tagscores=tags.scores;
 		var j=0; var lim=query.length; var score=scores[item];
 		if (tagscores) {
 		    while (j<lim) {

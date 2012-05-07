@@ -410,35 +410,49 @@ var KnoduleIndex=(function(){
 	var alltags=this._alltags, allitems=this._allitems;
 	var tagfreqs=this.tagfreqs;
 	var tagscores=this.tagscores;
-	var itemv=false, iscores=false;
+	var itemv=false, tagv=false, iscores=false, tscores=false;
 	if ((weight)&&(typeof weight !== 'number')) weight=1;
+	// items maps tagkeys to arrays of items
 	if (items.hasOwnProperty(tagkey)) {
 	    itemv=items[tagkey];
-	    fdjtKB.add(itemv,itemkey);
+	    iscores=itemv.scores;
+	    if (iscores[itemkey])
+		iscores[itemkey]+=weight||1;
+	    else {
+		itemv.push(item);
+		iscores[itemkey]+=1;}
 	    var freq=tagfreqs[tagkey]+1;
 	    if (freq>this.maxfreq) this.maxfreq=freq;
 	    tagfreqs[tagkey]=freq;}
 	else {
 	    items[tagkey]=itemv=[itemkey];
+	    itemv.scores={itemkey:(weight||1)};
 	    tagfreqs[tagkey]=1;
 	    if (this.maxfreq===0) this.maxfreq=1;
 	    alltags.push(tagkey);
 	    if (tag!==tagkey) alltags[tagkey]=tag;}
-	if (itemv.hasOwnProperty('_scores')) iscores=itemv._scores;
-	if ((weight)&&(!(iscores))) itemv._scores=iscores={};
-	if (tags.hasOwnProperty(itemkey))
-	    fdjtKB.add(tags[itemkey],tagkey);
+	// Initialize the scores property
+	// tags maps items to their tags
+	if (tags.hasOwnProperty(itemkey)) {
+	    tagv=tags[itemkey];
+	    tscores=tagv.scores;
+	    if (tscores[itemkey])
+		tscores[itemkey]+=weight||1;
+	    else {
+		tagv.push(itemkey);
+		tscores[itemkey]=weight||1;}}
 	else {
 	    tags[itemkey]=tagv=[tagkey];
+	    tagv.scores={tagkey:weight||1};
 	    allitems.push(itemkey);}
 	if (weight) {
-	    if (tagv[tagkey]) tagv[tagkey]=+weight;
-	    else tagv[tagkey]=weight;
+	    var tscores=tagv.scores;
+	    if (!(tscores)) tagv.scores=tscores={};
 	    var tagscore=(tagscores[tagkey]||0)+weight;
 	    tagscores[tagkey]=tagscore;
 	    if (tagscore>this.maxscore) this.maxscore=tagscore;
-	    if (itemv[itemkey]) itemv[itemkey]=+weight;
-	    else itemv[itemkey]=+weight;}
+	    if (tscores[itemkey]) tscores[itemkey]+=weight;
+	    else tscores[itemkey]=weight;}
 	if ((tag)&&(tag._always)) {
 	    var always=tag._always;
 	    var i=0; var len=always.length;
