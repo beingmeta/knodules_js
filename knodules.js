@@ -439,7 +439,7 @@ var KnoduleIndex=(function(){
 	    if (tscores[itemkey])
 		tscores[itemkey]+=weight||1;
 	    else {
-		tagv.push(itemkey);
+		tagv.push(tagkey);
 		tscores[itemkey]=weight||1;}}
 	else {
 	    tags[itemkey]=tagv=[tagkey];
