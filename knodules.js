@@ -419,7 +419,7 @@ var KnoduleIndex=(function(){
 	    if (iscores[itemkey])
 		iscores[itemkey]+=weight||1;
 	    else {
-		itemv.push(item);
+		itemv.push(itemkey);
 		iscores[itemkey]+=1;}
 	    var freq=tagfreqs[tagkey]+1;
 	    if (freq>this.maxfreq) this.maxfreq=freq;
