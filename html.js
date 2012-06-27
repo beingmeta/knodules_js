@@ -106,7 +106,11 @@
 	    fdjtDOM.addClass(span,"completion");
 	    if (typeof text === 'string')
 		span.setAttribute('key',text);
-	    if (!(ref)) span.setAttribute('value',tag);}
+	    else if ((ref)&&(ref.name))
+		span.setAttribute('key',ref.name);
+	    else if (tag)
+		span.setAttribute('key',tag);
+	    if (tag) span.setAttribute('value',tag);}
 	if (!(ref)) fdjtDOM.addClass(span,"rawterm");
 	if (!(ref)) span.title=tag;
 	else if (ref.gloss) span.title=ref.gloss;
