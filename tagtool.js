@@ -1,6 +1,8 @@
 /* -*- Mode: Javascript; -*- */
 
-/* Copyright (C) 2009-2011 beingmeta, inc.
+/* ##################### knodules/tagtool.js ####################### */
+
+/* Copyright (C) 2009-2012 beingmeta, inc.
    This file provides for browser-based tagging with knowlets.
 
    For more information on knowlets, visit www.knowlets.net
