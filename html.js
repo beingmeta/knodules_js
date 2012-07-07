@@ -37,8 +37,6 @@
 
 (function(){
 
-    var knodules_trace_load=2;
-
     var addClass=fdjtDOM.addClass;
 
     /* Getting knowdes into HTML */
@@ -135,7 +133,7 @@
 	var src=((typeof elt === 'string')?(elt):(elt.src));
 	var text=fdjtAjax.getText(src);
 	var knowdes=knodule.handleEntries(text);
-	if (knodules_trace_load)
+	if ((knodule.trace_load)||(Knodule.trace_load))
 	    fdjtLog("Parsed %d entries from %s",knowdes.length,elt.src);}
 
     function knoduleSetupHTML(knodule){
@@ -166,12 +164,12 @@
 			var cdend=txt.search("]]>");
 			txt=txt.slice(cdata+9,cdend);}
 		    var dterms=knodule.handleEntries(txt);
-		    if (knodules_trace_load)
+		    if ((knodule.trace_load)||(Knodule.trace_load))
 			fdjtLog("Parsed %d inline knodule entries",
 				dterms.length);}
 		else {}}}
 	var finished=new Date();
-	if (knodules_trace_load)
+	if ((knodule.trace_load)||(Knodule.trace_load))
 	    fdjtLog("Processed knodules in %fs",
 		    ((finished.getTime()-start.getTime())/1000));}
     Knodule.HTML.Setup=knoduleSetupHTML;
