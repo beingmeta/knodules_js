@@ -80,7 +80,9 @@
 	else if ((varname)||(lang)) {
 	    tag=((ref.tagString)?(ref.tagString(kno)):
 		 ((ref._id)||(ref.oid)||(ref.uuid)||(ref.dterm)));
-	    if (def) tag=tag+def;}
+	    if (def) {
+		if (def[0]==='|') tag=tag+def;
+		else tag=tag+"|"+def;}}
 	// Don't need tag
 	else {}
 	if (varname)
@@ -108,14 +110,18 @@
 		span.setAttribute('key',text);
 	    else if ((ref)&&(ref.name))
 		span.setAttribute('key',ref.name);
+	    else if ((ref)&&(ref.dterm))
+		span.setAttribute('key',ref.dterm);
 	    else if (tag)
 		span.setAttribute('key',tag);
 	    if (tag) span.setAttribute('value',tag);}
 	if (!(ref)) fdjtDOM.addClass(span,"rawterm");
+	var from=(((ref)&&(ref.pool.description))?
+		  (" (from "+ref.pool.description+")"):(""))
 	if (!(ref)) span.title=tag;
-	else if (ref.gloss) span.title=ref.gloss;
-	else if (ref.about) span.title=ref.about;
-	else span.title=tag;
+	else if (ref.gloss) span.title=ref.gloss+from;
+	else if (ref.about) span.title=ref.about+from;
+	else span.title=dterm+from;
 	return span;};
     Knodule.HTML=knoduleHTML;
     Knodule.prototype.HTML=function(dterm){
