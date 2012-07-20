@@ -425,21 +425,23 @@ var KnoduleIndex=(function(){
 	var tagscores=this.tagscores;
 	var itemv=false, tagv=false, iscores=false, tscores=false;
 	if ((weight)&&(typeof weight !== 'number')) weight=1;
+	else if (!(weight)) weight=0;
 	// items maps tagkeys to arrays of items
 	if (items.hasOwnProperty(tagkey)) {
 	    itemv=items[tagkey];
 	    iscores=itemv.scores;
 	    if (iscores[itemkey])
-		iscores[itemkey]+=weight||1;
+		iscores[itemkey]+=weight;
 	    else {
 		itemv.push(itemkey);
-		iscores[itemkey]+=1;}
+		iscores[itemkey]=weight;}
 	    var freq=tagfreqs[tagkey]+1;
 	    if (freq>this.maxfreq) this.maxfreq=freq;
 	    tagfreqs[tagkey]=freq;}
 	else {
 	    items[tagkey]=itemv=[itemkey];
-	    itemv.scores={itemkey:(weight||1)};
+	    itemv.scores={};
+	    itemv.scores[itemkey]=weight;
 	    tagfreqs[tagkey]=1;
 	    if (this.maxfreq===0) this.maxfreq=1;
 	    alltags.push(tagkey);
