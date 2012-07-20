@@ -66,14 +66,14 @@ var Knodule=
 	    // The default language for this knodule
 	    if (lang) knodule.language=lang.toUpperCase();
 	    else knodule.language='EN';
-	    // Mapping strings to KNode objects (many-to-one)
+	    // Mapping dterms (univocal references) to KNode objects
+	    // (many-to-one)
 	    knodule.dterms={};
 	    // A vector of all dterms local to this knodule
 	    knodule.alldterms=[];
-	    // Prime dterms
+	    // Prime (important) dterms
 	    knodule.prime=[]; knodule.primescores={};
-	    // Whether the knodule is indexed (e.g. keeps inverse indices for
-	    // relations and rules)
+	    // Inverse indices for relations, rules, etc.
 	    knodule.index=fdjtKB.Index();
 	    // Whether to validate asserted relations
 	    knodule.validate=true;
@@ -85,17 +85,19 @@ var Knodule=
 	    // Terms which are assumed unique.  This is used in non-strict
 	    // knodules to catch terms that become ambiguous.
 	    knodule.assumed_dterms=[];
-	    // Mapping external dterms to knowdes
+	    // Mapping external dterms to their knodes
 	    knodule.xdterms={};
-	    // A vector of all foreign references
+	    // A vector of all foreign knode references
 	    knodule.allxdterms=[];
-	    // Mapping terms to arrays of of KNodes (ambiguous)
+	    // Mapping natural language terms to arrays of of KNodes
+	    // (ambiguous, many to many)
 	    knodule.terms={};
 	    // Mapping hook terms to arrays of of KNodes (ambiguous)
 	    knodule.hooks={};
-	    // Inverted indices
+	    // Inverted index for genls in particular (useful for
+	    // faster search, inferences, etc)
 	    knodule.genlsIndex={};
-	    // This maps external OIDs to knowdes
+	    // This maps external OIDs to knodes
 	    knodule.oidmap={};
 	    // DRULES (disambiguation rules)
 	    knodule.drules={};
@@ -119,32 +121,28 @@ var Knodule=
 		string=string.slice(3);}
 	    else if (lang) lang=lang.toUpperCase();
 	    else lang=knodule.language;
-	    var term=string;
-	    if (knodule.language!==lang) term=lang+"$"+string;
-	    if (knodule.dterms.hasOwnProperty(term))
-		return knodule.dterms[term];
-	    /* Try taking this out, knodule name is implicit
-	       in structure */
-	    /*
-	    var dterm=((this instanceof KNode)?
-		       (knodule.ref(string+"@"+knodule.name,this)):
-		       (knodule.ref(string+"@"+knodule.name)));
-	    */
-	    var dterm=((this instanceof KNode)?
-		       (knodule.ref(string,this)):
-		       (knodule.ref(string)));
-	    dterm.dterm=term;
-	    if (weak) dterm.weak=true;
-	    if (prime) dterm.prime=prime;
-	    if ((prime)&&(newprime)) knodule.prime.push(dterm);
-	    knodule.dterms[dterm._id]=dterm;
-	    knodule.dterms[term]=dterm;
-	    knodule.alldterms.push(dterm);
-	    if ((lang)&&(lang!==knodule.language)) dterm.language=lang;
-	    dterm._always=fdjtKB.Set();
-	    dterm.knodule=knodule;
-	    dterm.addTerm(string,lang);
-	    return dterm;}
+	    var term=string; var absref=false;
+	    var knode=((this instanceof KNode)?
+		       (knodule.ref(term,this)):
+		       (knodule.ref(term)));
+	    if (!(knode._qid)) {
+		if (knodule.language!==lang) term=lang+"$"+string;
+		if (knodule.dterms.hasOwnProperty(term))
+		    return knodule.dterms[term];
+		knode._qid=term+"@"+(knodule.absref||knodule.name);}
+	    knode.dterm=term;
+	    knode._init=fdjtTime();
+	    if (weak) knode.weak=true;
+	    if (prime) knode.prime=prime;
+	    if ((prime)&&(newprime)) knodule.prime.push(knode);
+	    knodule.dterms[knode.dterm]=knode;
+	    knodule.dterms[term]=knode;
+	    knodule.alldterms.push(knode);
+	    if ((lang)&&(lang!==knodule.language)) knode.language=lang;
+	    knode._always=fdjtKB.Set();
+	    knode.knodule=knodule;
+	    knode.addTerm(string,lang);
+	    return knode;}
 	KNode.prototype=new fdjtKB.Ref();
 
 	Knodule.KNode=KNode;
@@ -170,16 +168,29 @@ var Knodule=
 		return true;}
 	    else return false;}
 	KNode.prototype.addTerm=function(val,field){
-	    if (val.search(/[a-zA-Z]\$/)===0)
-		if (field)
-		    this.add(val.slice(0,2)+'$'+field,val.slice(3));
-	    else this.add(val.slice(0,2),val.slice(3));
-	    else if (field) this.add(field,val);
-	    else this.add(this.knodule.language,val);};
+	    if (typeof val === 'string') {
+		var langspec=val.search(/[a-zA-Z][a-zA-Z_]+[a-zA-Z]\$/);
+		var lang=this.knodule.language;
+		if (langspec===0) {
+		    var dollar=val.indexOf('$');
+		    lang=val.slice(0,dollar);
+		    if (field) field=lang+"$"+field;
+		    else field=lang;
+		    term=val.slice(dollar+1);}
+		else if (field) term=val;
+		else {
+		    field=lang; term=val;}
+		this.add(field,term);}
+	    else this.add(val,field);}
 	KNode.prototype.tagString=function(kno) {
+	    if (this.oid) return this.oid;
+	    else if (this.uuid) return this.uuid;
+	    else if (this._qid) return this._qid;
 	    if (!(kno)) kno=Knodule.current||false;
-	    if (kno===this.knodule) return "@"+this.dterm;
-	    else return this.dterm+"@"+this.knodule.name;};
+	    if (kno===this.knodule) return "@@"+this.dterm;
+	    else return this.dterm+"@"+
+		(this.knodule.absref||this.knodule.name);};
+	
 	/* Text processing utilities */
 	function stdspace(string) {
 	    return string.replace(/\s+/," ").
