@@ -236,6 +236,8 @@ var Knodule=
 	    if (clause.indexOf('\\')>=0) clause=fdjtString.unEscape(clause);
 	    if (trace_parsing>2)
 		fdjtLog("Handling clause '%s' for %o",clause,subject);
+	    if ((clause.length===0)||(clause.search(/[^\n\t ]/g)<0))
+		return;
 	    switch (clause[0]) {
 	    case '^':
 		if (clause[1]==='~') 
