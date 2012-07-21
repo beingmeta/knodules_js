@@ -58,6 +58,9 @@
     function knoduleHTML(dterm,kno,varname,lang){
 	var checkbox=false; var variations=[];
 	var ref=false, text=false, def=false, tag=false;
+	// Provide a default knodule based on the current document
+	if (!(kno)) kno=Knodule.current||
+	    (Knodule.current=(new Knodule(location.href)));
 	// A non-false language arg generates a completion, and a
 	// non-string language arg just uses the knodules default language
 	// to generate text
@@ -79,7 +82,7 @@
 	if (!(ref)) tag=dterm;
 	else if ((varname)||(lang)) {
 	    tag=((ref.tagString)?(ref.tagString(kno)):
-		 ((ref._id)||(ref.oid)||(ref.uuid)||(ref.dterm)));
+		 ((ref._qid)||(ref.oid)||(ref.uuid)||(ref.dterm)||(ref._id)));
 	    if (def) {
 		if (def[0]==='|') tag=tag+def;
 		else tag=tag+"|"+def;}}
