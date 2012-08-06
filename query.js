@@ -88,9 +88,20 @@ KnoduleIndex.Query=
 
 	function query2string(query){
 	    if (!(query)) query=this.query;
-	    if ((typeof query === "object") && (query instanceof Array))
+	    if ((typeof query === "object") && (query instanceof Array)) {
 		if (query.length===0) return "";
-	    else return query.join(';')+';';
+		else {
+		    var i=0, lim=query.length; var result="";
+		    while (i<lim) {
+			if (i>0) result=result+";";
+			var elt=query[i++], id=false;
+			if (typeof elt === 'string')
+			    result=result+elt;
+			else if (id=((elt._qid)||(elt.oid)||
+				     (elt.uuid)||(elt._id)))
+			    result=result+id;
+			else result=result+elt;}
+		    return result;}}
 	    else return query;}
 	Query.prototype.cache={};
 	Query.prototype.query2string=query2string;
