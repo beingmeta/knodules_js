@@ -40,11 +40,21 @@ div.dterm span.head span.disambig {
 div.richtip .relcode {
   font-weight: bold; color: red;}
 
-span.dterm {}
-span.dterm.weak:before, span.rawterm:before {
+span.dterm {
+    padding-right: 0.35em; padding-left: 1ex;
+    padding-top: 0px; padding-bottom: 0px;
+    border-top-left-radius: 1ex; border-bottom-left-radius: 1ex;
+    color: darkblue; background-color: gold;
+    border: solid blue 2px;}
+span.dterm.weak {
+    border: solid yellow 2px;
+    opacity: 0.85;}
+
+span.rawterm:before {
     font-weight: bold; content: '“'; color: black;}
-span.dterm.weak:after, span.rawterm:after {
+span.rawterm:after {
     font-weight: bold; content: '”'; color: black;}
+
 
 /* Emacs local variables
 ;;;  Local variables: ***

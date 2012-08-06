@@ -100,6 +100,7 @@
 		((obj.toHuman)&&(html2dom(obj.toHuman(lang))))||
 		obj.name||obj._name||obj._id||obj):
 	       arg));
+	if ((knode)&&(knode.literal)) text="“"+text+"”";
 	// Figure out the 'tag' which is a string reference to the
 	//  value
 	tag=((obj)&&(obj.tagString)&&(obj.tagString()))||
@@ -130,6 +131,8 @@
 	var span=fdjtDOM("span",checkbox,variations,text);
 	// Declare as a dterm
 	if (knode) addClass(span,"dterm");
+	// Say if it's a "weak" dterm
+	if ((knode)&&(knode.weak)) addClass(span,"weak");
 	// Set up as a clickable checkspan
 	if (varname) addClass(span,"checkspan");
 	if (lang) {
