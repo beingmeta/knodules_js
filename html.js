@@ -55,48 +55,64 @@
     
     /* Making DTERM descriptions */
 
+    function html2dom(html){
+	if (!(html)) return false;
+	else if (typeof html === 'string') {
+	    if (html[0]==='<') return fdjtDOM(html);
+	    else fdjtDOM("span",html);}
+	else return html;}
+
     function knoduleHTML(arg,knodule,varname,lang){
 	var checkbox=false; var variations=[];
 	var knode=false, text=false, def=false, obj=false, tag=false;
+	// If needed, provide a default knodule based on the current
+	// document
 	var default_knodule=knodule||Kindule.current||
 	    (Knodule.current=(new Knodule(location.href)));
-	// Provide a default knodule based on the current document
 	if (typeof arg === 'string') {
-	    if (arg.indexOf('|')) {
-		var pos=arg.indexOf('|');
-		def=arg.slice(pos);
+	    // Try to convert a string arg into a knode
+	    if (arg.indexOf('|')>0) {
+		// We'll save the def to attach to any tag string
+		var pos=arg.indexOf('|'); def=arg.slice(pos);
 		obj=knode=default_knodule.handleSubjectEntry(arg);}
-	    else if (arg.indexOf('@'))
+	    else if (arg.indexOf('@')>0)
 		obj=knode=default_knodule.ref(arg);
 	    else knode=default_knodule.probe(arg);}
 	else if (arg instanceof KNode) obj=knode=arg;
 	else obj=arg;
-	// A non-false language arg generates a completion, and a
-	// non-string language arg just uses the knodules default language
-	// to generate text
+	// A non-false language arg means generate a FDJT completion
+	// node; if the language arg isn't a string, just use the
+	// default knodule's default language to generate the text.
 	if ((lang)&&(typeof lang !== 'string')) {
 	    if (default_knodule) lang=default_knodule.language;
 	    else lang='EN';}
-	// Resolve the KNode if you need to and can
-	if ((obj)&&(obj.toDOM)) text=obj.toDOM();
-	if ((!(text))&&(knode)) text=knode.dterm;
-	if ((!text)&&(obj))
-	    text=((obj.humanString)&&(obj.humanString()))||
-	    ((obj.tagString)&&(obj.tagString()))||
-	    obj.name||obj._name||obj._id||obj;
-	if (!(text)) text=arg;
+	// This figures out the core text for the DOM node which is
+	// returned.
+	text=((knode)?
+	      // This should probably look for a dterm in the target
+	      // language, but we'll skip that for now
+	      (knode.dterm):
+	      ((obj)?
+	       // Use the toHuman, toDOM, and toHTML methods when
+	       // available (in that order)
+	       (((obj.toDOM)&&(obj.toDOM()))||
+		((obj.toHTML)&&(html2dom(obj.toHTML())))||
+		((obj.toHuman)&&(html2dom(obj.toHuman(lang))))||
+		obj.name||obj._name||obj._id||obj):
+	       arg));
 	// Figure out the 'tag' which is a string reference to the
 	//  value
-	if ((lang)||(varname)) {
-	    tag=((obj)&&(obj.tagString)&&(obj.tagString()))||
-		((knode)&&(knode.knodule===knodule)&&(knode.dterm))||
-		((knode)&&(knode.dterm+"@"+knode.knodule.name))||
-		(obj._qid)||(obj.oid)||(obj.uuid)||(obj._id)||obj;
-	    if (def) tag=tag+def;
-	    if (varname) {
-		checkbox=fdjtDOM(
-		    {tagName: "INPUT",type: "CHECKBOX",
-		     name: varname,value: tag});}}
+	tag=((obj)&&(obj.tagString)&&(obj.tagString()))||
+	    ((knode)&&(knode.knodule===knodule)&&(knode.dterm))||
+	    ((knode)&&(knode.dterm+"@"+knode.knodule.name))||
+	    (obj._qid)||(obj.oid)||(obj.uuid)||
+	    ((obj._id)&&(obj.pool)&&
+	     (obj._id+"@"+obj.pool.name));
+	if ((tag)&&(def)) tag=tag+def;
+	if ((varname)&&(tag)) {
+	    checkbox=fdjtDOM(
+		{tagName: "INPUT",type: "CHECKBOX",
+		 name: varname,value: tag});}
 	// Add variations for synonyms in the given language.
 	if ((lang)&&(knode)) {
 	    var dterm=knode.dterm;
@@ -110,20 +126,23 @@
 		    var variation=fdjtDOM("span.variation",synonym,"=");
 		    variation.setAttribute("key",synonym);
 		    variations.push(variation);}}}
+	// This is the actual returned DOM node
 	var span=fdjtDOM("span",checkbox,variations,text);
-	if (knode) {
-	    addClass(span,"knode"); addClass(span,"dterm");}
+	// Declare as a dterm
+	if (knode) addClass(span,"dterm");
+	// Set up as a clickable checkspan
 	if (varname) addClass(span,"checkspan");
 	if (lang) {
+	    // Set up as a FDJT completion
 	    fdjtDOM.addClass(span,"completion");
 	    if (typeof text === 'string')
 		span.setAttribute('key',text);
-	    else if ((obj)&&(obj.name))
-		span.setAttribute('key',obj.name);
 	    else if ((obj)&&(obj.dterm))
 		span.setAttribute('key',obj.dterm);
-	    else if (tag)
-		span.setAttribute('key',tag);
+	    else if ((obj)&&(obj.name))
+		span.setAttribute('key',obj.name);
+	    else if (tag) span.setAttribute('key',tag);
+	    else {}
 	    if (tag) span.setAttribute('value',tag);}
 	if (!(knode)) fdjtDOM.addClass(span,"rawterm");
 	var from=(((knode)&&(knode.pool.description))?
@@ -131,7 +150,10 @@
 	if ((knode)&&(knode.gloss)) span.title=knode.gloss+from;
 	else if ((knode)&&(knode.about)) span.title=knode.about+from;
 	else if ((obj)&&(obj.about)) span.title=obj.about+from;
+	else if ((knode)&&(knode.dterm)) span.title=knode.dterm+from;
 	else if (tag) span.title=tag+from;
+	else {}
+	if (tag) span.setAttribute('tag',tag);
 	return span;};
     Knodule.HTML=knoduleHTML;
     Knodule.prototype.HTML=function(dterm){
