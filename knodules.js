@@ -453,11 +453,11 @@ var KnoduleIndex=(function(){
 	if (tags.hasOwnProperty(itemkey)) {
 	    tagv=tags[itemkey];
 	    tscores=tagv.scores;
-	    if (tscores[itemkey])
-		tscores[itemkey]+=weight||1;
+	    if (tscores[tagkey])
+		tscores[tagkey]+=weight||1;
 	    else {
 		tagv.push(tagkey);
-		tscores[itemkey]=weight||1;}}
+		tscores[tagkey]=weight||1;}}
 	else {
 	    tags[itemkey]=tagv=[tagkey];
 	    tagv.scores={tagkey:weight||1};
