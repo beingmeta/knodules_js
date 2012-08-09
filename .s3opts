@@ -1,1 +1,1 @@
---encoding=utf-8 -rMPv --rexclude='(.s3opts)|(.s3opts)|(.s3root)|(.svn.*)|(.*/svn/.*)|(.git.*)|(.*/.git/.*)|(.*/[.].*)|(.*~)|(.*/originals/.*)|(originals/.*)|(tmp/.*)|(.*/tmp/.*)|(.*~)'
+--encoding=utf-8 -rMPv --rexclude='(.s3opts)|(.s3opts)|(.s3root)|(.svn.*)|(.*/svn/.*)|(.git.*)|(.*/.git/.*)|(.*/[.].*)|(.*~)|(.*/originals/.*)|(originals/.*)|(tmp/.*)|(.*/tmp/.*)|(.*~)|(#*#)'
