@@ -289,11 +289,11 @@ var Knodule=
 		else 
 		    subject.add('identical',this.KNode(clause.slice(1)));
 		break;
-	    case '"': {
-		var qend=((clause[-1]==='"') ? (-1) : (false));
-		var gloss=((qend)?(clause.slice(2,qend)):(clause.slice(2)));
+	    case '+': {
 		if (clause[1]==="*") {
-		    subject.gloss=gloss.slice(1);
+		    subject.gloss=gloss.slice(2);
+		    subject.addTerm(subject.gloss,'glosses');}
+		else if (clause[1]==="~") {
 		    subject.addTerm(subject.gloss,'glosses');}
 		else {
 		    subject.addTerm(gloss,"glosses");}
