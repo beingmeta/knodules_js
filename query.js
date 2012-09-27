@@ -113,6 +113,7 @@ KnoduleIndex.Query=
 	    var query=results._query;
 	    var scores=results._scores; var counts=results._counts;
 	    var matches=[];
+	    var allitems=false;
 	    // A query is an array of terms.  In a simple query,
 	    // the results are simply all elements which are tagged
 	    // with all of the query terms.  In a linear scored query,
@@ -127,13 +128,12 @@ KnoduleIndex.Query=
 		var j=0; var jlim=items.length;
 		while (j<jlim) {
 		    var item=items[j++];
-		    if (scores[item]) scores[item]++; else scores[item]=1;
+		    // if (scores[item]) scores[item]++; else scores[item]=1;
 		    if (counts[item]) counts[item]++; else counts[item]=1;}
 		if (results.index.trace)
 		    fdjtLog("Query element '%s' matches %d items",
 			    term,items.length);
 		i++;}
-	    var allitems=false;
 	    if (query.length===1) allitems=matches[0];
 	    else {
 		// When there are multiple query terms, an item is in
@@ -153,17 +153,20 @@ KnoduleIndex.Query=
 		    i++;}}
 	    // Now we apply the tagscores where they're assigned
 	    results._results=allitems;
+	    var seen_tags={};
 	    i=0; var n_items=allitems.length;
 	    while (i<n_items) {
 		var item=allitems[i++];
 		var tags=results.index.tags[item];
 		var tagscores=tags.scores;
-		var j=0; var lim=query.length; var score=scores[item];
+		var j=0; var lim=query.length; var score=0;
 		if (tagscores) {
 		    while (j<lim) {
 			var tag=query[j++];
+			if (!(seen_tags[tag])) seen_tags=true;
 			if (tagscores[tag])
-			    score=score+(tagscores[tag]*2);}}
+			    score=score+(tagscores[tag]*2);
+			else score++;}}
 		scores[item]=score;}
 	    return results;}
 	Query.do_search=do_search;
