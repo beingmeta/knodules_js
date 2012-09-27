@@ -130,6 +130,8 @@ var Knodule=
 		if (knodule.dterms.hasOwnProperty(term))
 		    return knodule.dterms[term];
 		knode._qid=term+"@"+(knodule.absref||knodule.name);}
+	    // It's already initialized
+	    if (this!==knode) return knode;
 	    knode.dterm=term;
 	    knode._init=fdjtTime();
 	    if (weak) knode.weak=true;
@@ -164,7 +166,7 @@ var Knodule=
 	    if ((fdjtKB.Ref.prototype.add.call(this,prop,val))&&
 		(prop==='genls')) {
 		fdjtKB.add(this._always,val);
-		fdjtKB.merge(this._always,val._always);
+		this._always=fdjtKB.merge(this._always,val._always);
 		return true;}
 	    else return false;}
 	KNode.prototype.addTerm=function(val,field){
