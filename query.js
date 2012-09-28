@@ -112,14 +112,14 @@ KnoduleIndex.Query=
 	    if (!(results)) results=this;
 	    var query=results._query;
 	    var scores=results._scores; var counts=results._counts;
-	    var matches=[];
-	    var allitems=false;
+	    var matches=[]; var counted=[];
+	    var allitems=[];
 	    // A query is an array of terms.  In a simple query,
 	    // the results are simply all elements which are tagged
 	    // with all of the query terms.  In a linear scored query,
 	    // a score is based on how many of the query terms are matched,
 	    // possibly with weights based on the basis of the match.
-	    var i=0; while (i<query.length) {
+	    var i=0, lim=query.length; while (i<lim) {
 		var term=query[i];
 		if (typeof term !== 'string')
 		    term=(((term.tagString)&&(term.tagString()))||
@@ -129,28 +129,18 @@ KnoduleIndex.Query=
 		while (j<jlim) {
 		    var item=items[j++];
 		    // if (scores[item]) scores[item]++; else scores[item]=1;
-		    if (counts[item]) counts[item]++; else counts[item]=1;}
+		    if (counts[item]) counts[item]++;
+		    else {counted.push(item); counts[item]=1;}}
 		if (results.index.trace)
 		    fdjtLog("Query element '%s' matches %d items",
 			    term,items.length);
 		i++;}
-	    if (query.length===1) allitems=matches[0];
+	    if (query.length===1) allitems=fdjtKB.Set(matches[0]);
 	    else {
-		// When there are multiple query terms, an item is in
-		// the result if it contains at least two of the query
-		// terms, with the score being determined by various
-		// factors.
-		var i=0; var lim=query.length;
+		var i=0, lim=counted.length;
 		while (i<lim) {
-		    var j=0; while (j<lim) {
-			if (j>=i) {j++; continue}
-			else if (matches[j].length===0) {j++; continue;}
-			else if (allitems) {
-			    var join=fdjtKB.intersection(matches[i],matches[j]);
-			    allitems=fdjtKB.union(allitems,join);}
-			else allitems=fdjtKB.intersection(matches[i],matches[j]);
-			j++;}
-		    i++;}}
+		    var item=counted[i++];
+		    if (counts[item]>=2) allitems.push(item);}}
 	    // Now we apply the tagscores where they're assigned
 	    results._results=allitems;
 	    var seen_tags={};
