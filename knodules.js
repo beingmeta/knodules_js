@@ -535,6 +535,7 @@ var KnoduleIndex=(function(){
 	    var j=0; var jlim=taglist.length;
 	    while (j<jlim) {
 		var tag=taglist[j]; var score=0;
+		if (typeof tag !== 'string') tag=tag._qid||tag;
 		if (!(scores[tag])) {
 		    tags.push(tag);
 		    var k=0; var klim=tagscores.length;
