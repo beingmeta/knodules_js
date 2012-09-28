@@ -191,7 +191,7 @@ KnoduleIndex.Query=
 		if (q.dterms) {
 		    var dterms=q.dterms; var j=0;
 		    while (j<dterms.length) qterms.push(dterms[j++]);}}
-	    var i=0; while (i<rvec.length) {
+	    var i=0, lim=rvec.length; while (i<lim) {
 		var item=rvec[i++];
 		var item_score=((scores)&&(scores[item]));
 		var tags=results.index.tags[item]||[];
@@ -199,10 +199,12 @@ KnoduleIndex.Query=
 		if (tags) {
 		    var j=0; var len=tags.length; while (j<len) {
 			var tag=tags[j++]; var freq, score;
-			// If the tag is already part of the query, we ignore it.
+			// If the tag is already part of the query, we
+			// ignore it.
 			if (fdjtKB.contains(qterms,tag)) {}
-			// If the tag has already been seen, we increase its frequency
-			// and its general score
+			// If the tag has already been seen, we
+			// increase its frequency and its general
+			// score
 			else if (freq=freqs[tag]) {
 			    freq++; freqs[tag]=freq;
 			    if (freq>max_freq) max_freq=freq;
@@ -211,12 +213,14 @@ KnoduleIndex.Query=
 				if (score>max_score) max_score=score;
 				refiners[tag]=score;}}
 			else {
-			    // If the tag hasn't been counted, we initialize its frequency
-			    // and score, adding it to the list of all the tags we've found
+			    // If the tag hasn't been counted, we
+			    // initialize its frequency and score,
+			    // adding it to the list of all the tags
+			    // we've found
 			    alltags.push(tag); freqs[tag]=1;
 			    if (max_score<item_score) max_score=item_score;
 			    if (item_score) refiners[tag]=item_score;}}}}
-	    refiners._count=freqs._count=rvec.length;
+	    refiners._count=freqs._count=alltags.length;
 	    refiners._freqs=freqs;
 	    refiners._maxfreq=max_freq;
 	    refiners._maxscore=max_score;
