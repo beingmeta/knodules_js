@@ -183,7 +183,7 @@ var Knodule=
 		else {
 		    field=lang; term=val;}
 		this.add(field,term);}
-	    else this.add(val,field);}
+	    else this.add(field,val);}
 	KNode.prototype.tagString=function(kno) {
 	    if (this.oid) return this.oid;
 	    else if (this.uuid) return this.uuid;
@@ -323,6 +323,13 @@ var Knodule=
 		var object=this.KNode(clause.slice(brk+1));
 		this.add(role.dterm,object);
 		object.add('genls',role);
+		break;}
+	    case '~': {
+		var hook=clause.slice(1);
+		subject.addTerm(hook,'hooks');
+		if (knodule.hooks[hook])
+		    knodule.hooks[hook].push(subject);
+		else knodule.hooks[hook]=[subject];
 		break;}
 	    default: {
 		var brk=findBreak(clause,'=');
