@@ -518,6 +518,7 @@ var KnoduleIndex=(function(){
 		if (freq1>freq2) return -1;
 		else if (freq2>freq1) return 1;
 		else return 0;});
+	    tagscores._maxscore=this.maxscore;
 	    var i=0; var lim=ranked.length;
 	    while (i<lim) {ranks[ranked[i]]=i; i++;}
 	    this._ranked=ranked;
