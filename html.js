@@ -181,10 +181,14 @@
 	if (!(knodule)) knodule=Knodule(document.location.href);
 	var doing_the_whole_thing=false;
 	var start=new Date();
-	var links=fdjtDOM.getLink("knodule",true,false).
-	    concat(fdjtDOM.getLink("knowlet",true,false));
+	var links=fdjtDOM.getLinks("SBOOK.knodule",true,true).
+	    concat(fdjtDOM.getLink("~knodule",true,true));
 	var i=0; while (i<links.length) KnoduleLoad(links[i++],knodule);
-	var elts=document.getElementsByTagName("META");
+	var elts=fdjtDOM.getMeta("SBOOK.knowdef");
+	var i=0; while (i<elts.length) {
+	    var elt=elts[i++];
+	    if (elt.name==="KNOWDEF") knodule.handleEntry(elt.content);}
+	elts=document.getElementsByTagName("META");
 	var i=0; while (i<elts.length) {
 	    var elt=elts[i++];
 	    if (elt.name==="KNOWDEF") knodule.handleEntry(elt.content);}
