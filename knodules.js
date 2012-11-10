@@ -173,6 +173,7 @@ var Knodule=
 	    if (typeof val === 'string') {
 		var langspec=val.search(/[a-zA-Z][a-zA-Z_]+[a-zA-Z]\$/);
 		var lang=this.knodule.language;
+		var term=false;
 		if (langspec===0) {
 		    var dollar=val.indexOf('$');
 		    lang=val.slice(0,dollar);

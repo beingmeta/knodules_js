@@ -182,7 +182,7 @@
 	var doing_the_whole_thing=false;
 	var start=new Date();
 	var links=fdjtDOM.getLinks("SBOOK.knodule",true,true).
-	    concat(fdjtDOM.getLink("~knodule",true,true));
+	    concat(fdjtDOM.getLink("knodule",true,true));
 	var i=0; while (i<links.length) KnoduleLoad(links[i++],knodule);
 	var elts=fdjtDOM.getMeta("SBOOK.knowdef");
 	var i=0; while (i<elts.length) {
