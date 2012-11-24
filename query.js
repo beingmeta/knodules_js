@@ -37,6 +37,12 @@
 
 KnoduleIndex.Query=
     (function(){
+        var fdjtString=fdjt.String;
+        var fdjtLog=fdjt.Log;
+        var fdjtDOM=fdjt.DOM;
+        var fdjtUI=fdjt.UI;
+        var fdjtKB=fdjt.KB, fdjtID=fdjt.ID;
+        
         function Query(index,query) {
             if (!(index)) return this;
             if (!(this instanceof Query)) return new Query(this,index);

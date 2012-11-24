@@ -37,6 +37,12 @@
 
 (function(){
      
+    var fdjtString=fdjt.String;
+    var fdjtLog=fdjt.Log;
+    var fdjtDOM=fdjt.DOM;
+    var fdjtUI=fdjt.UI;
+    var fdjtKB=fdjt.KB;
+
      function KNodeCompletion(index,term,title,just_knodes){
 	 var knodule=index.knodule;
 	 var showname=term;

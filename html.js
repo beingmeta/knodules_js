@@ -37,6 +37,12 @@
 
 (function(){
 
+    var fdjtString=fdjt.String;
+    var fdjtLog=fdjt.Log;
+    var fdjtDOM=fdjt.DOM;
+    var fdjtUI=fdjt.UI;
+    var fdjtKB=fdjt.KB, fdjtID=fdjt.ID;
+
     var addClass=fdjtDOM.addClass;
 
     /* Getting knowdes into HTML */
