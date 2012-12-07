@@ -506,9 +506,12 @@ var KnoduleIndex=(function(){
         // more incremental
         this.ranks=false;};
 
+    var Set=fdjtKB.Set;
+
     KnoduleIndex.prototype.freq=function(tag){
-        if (this.items.hasOwnProperty(tag))
-            return this.items[tag].length;
+        if (this.items.hasOwnProperty(tag)) {
+            var set=this.items[tag]=Set(this.items[tag]);
+            return set.length;}
         else return 0;};
     KnoduleIndex.prototype.find=function(tag){
         if (this.items.hasOwnProperty(tag)) return this.items[tag];
