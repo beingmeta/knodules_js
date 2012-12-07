@@ -156,13 +156,22 @@
         if (!(knode)) fdjtDOM.addClass(span,"rawterm");
         var from=(((knode)&&(knode.pool.description))?
                   (" (from "+knode.pool.description+")"):(""))
-        if ((knode)&&(knode.gloss)) span.title=knode.gloss+from;
-        else if ((knode)&&(knode.about)) span.title=knode.about+from;
-        else if ((obj)&&(obj.about)) span.title=obj.about+from;
-        else if ((knode)&&(knode.dterm)) span.title=knode.dterm+from;
-        else if (tag) span.title=tag+from;
+        if ((knode)&&(knode.gloss)) title=knode.gloss+from;
+        else if ((knode)&&(knode.about)) title=knode.about+from;
+        else if ((obj)&&(obj.about)) title=obj.about+from;
+        else if ((knode)&&(knode.dterm)) title=knode.dterm+from;
+        else if (tag) title=tag+from;
         else {}
+        if ((knode)&&(knode._always)) {
+            var seen={};
+            var always=knode._always;
+            var i=0, lim=always.length;
+            while (i<lim) {
+                var a=always[i++];
+                if (seen[a._qid]) continue;
+                title=title+" ^"+a.dterm;}}
         if (tag) span.setAttribute('tag',tag);
+        span.title=title;
         return span;};
     Knodule.HTML=knoduleHTML;
     Knodule.prototype.HTML=function(dterm){
