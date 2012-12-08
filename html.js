@@ -86,6 +86,7 @@
             else knode=default_knodule.probe(arg);}
         else if (arg instanceof KNode) obj=knode=arg;
         else obj=arg;
+        if ((knode)&&(!(knode._init))) knode.load();
         // A non-false language arg means generate a FDJT completion
         // node; if the language arg isn't a string, just use the
         // default knodule's default language to generate the text.
