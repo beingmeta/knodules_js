@@ -70,7 +70,8 @@
 
     function knoduleHTML(arg,knodule,varname,lang){
         var checkbox=false; var variations=[];
-        var knode=false, text=false, def=false, obj=false, tag=false;
+        var knode=false, text=false, tag=false, title=false;
+        var def=false, obj=false;
         // If needed, provide a default knodule based on the current
         // document
         var default_knodule=knodule||Kindule.current||
