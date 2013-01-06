@@ -455,6 +455,7 @@ var KnoduleIndex=(function(){
         if (items.hasOwnProperty(tagkey)) {
             itemv=items[tagkey];
             iscores=itemv.scores;
+            if (!(iscores)) iscores=itemv.scores={};
             if (iscores[itemkey])
                 iscores[itemkey]+=weight;
             else {
