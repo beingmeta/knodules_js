@@ -2,7 +2,7 @@
 
 /* ##################### dules/html.js ####################### */
 
-/* Copyright (C) 2009-2012 beingmeta, inc.
+/* Copyright (C) 2009-2013 beingmeta, inc.
    This file provides for HTML documents using KNODULES, including
    the extraction and processing of embedded KNODULE definitions
    or references and interaction with interactive parts of the
