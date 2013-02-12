@@ -41,7 +41,6 @@ var Knodule=(function(){
     var fdjtLog=fdjt.Log;
     var fdjtDOM=fdjt.DOM, fdjtID=fdjt.ID;
     var fdjtUI=fdjt.UI;
-    var fdjtKB=fdjt.KB;
     var RefDB=fdjt.RefDB;
     var Ref=fdjt.Ref;
     
@@ -60,9 +59,12 @@ var Knodule=(function(){
     function Knodule(id,inits) {
         // Using as a prototype
         if (arguments.length===0) return this;
+        if (!(inits)) inits={};
         if (inits.indices)
             inits.indices=inits.indices.concat(
                 ["terms","hooks","genls","specls","allgenls"]);
+        else inits.indices=["terms","hooks","genls","specls","allgenls"];
+        var lang=inits.language;
         var knodule=RefDB.call(this,id,inits);
         if ((lang)&&(knodule.language!==lang))
             throw { error: "language mismatch" };
@@ -103,7 +105,7 @@ var Knodule=(function(){
         // DRULES (disambiguation rules)
         knodule.drules={};
         return knodule;}
-    Knodule.prototype=new refDB();
+    Knodule.prototype=new RefDB();
 
     function KNode(string,knodule,lang){
         if (arguments.length===0) return this;
@@ -117,7 +119,7 @@ var Knodule=(function(){
                 if (prime>(knodule.primescores[string]))
                     knodule.primescores[string]=prime;
                 newprime=true;}}
-        if (string.search(langpat)===0) {
+        if (string.search(lang_pat)===0) {
             var dollar=string.indexOf('$');
             lang=string.slice(0,dollar).toUpperCase();
             string=string.slice(dollar+1);}
@@ -145,7 +147,7 @@ var Knodule=(function(){
                 // Should this do some kind of import?
                 return arg;
             else return arg;}
-        else return new KNode(string,this,inits);};
+        else return new KNode(arg,this,inits);};
     Knodule.prototype.cons=function(string,lang) {
         return new KNode(string,this,lang);};
     Knodule.prototype.probe=function(string,langid) {
@@ -155,14 +157,14 @@ var Knodule=(function(){
         return this.dterms[langid+"$"+string]||false;};
     
     KNode.prototype.add=function(prop,val){
-        if ((fdjtKB.Ref.prototype.add.call(this,prop,val))&&
+        if ((Ref.prototype.add.call(this,prop,val))&&
             (prop==='genls')) {
             this.allways.push(val);
-            this.allways=refDB.merge(this.allways,val.allways);
+            this.allways=RefDB.merge(this.allways,val.allways);
             return true;}
         else return false;}
     KNode.prototype.addTerm=function(val,field,inlang){
-        if ((typeof val === 'string')&&(val.search(langpat)===0)) {
+        if ((typeof val === 'string')&&(val.search(lang_pat)===0)) {
             var dollar=val.indexOf('$');
             var langspec=val.slice(0,dollar).toUpperCase();
             var term=val.slice(dollar+1);
@@ -403,168 +405,7 @@ var Knodule=(function(){
     return Knodule;})();
 
 var KNode=Knodule.KNode;
-
-
-var KnoduleIndex=(function(){
-    var fdjtString=fdjt.String;
-    var fdjtTime=fdjt.Time;
-    var fdjtLog=fdjt.Log;
-    var fdjtDOM=fdjt.DOM, fdjtID=fdjt.ID;
-    var fdjtUI=fdjt.UI;
-    var fdjtKB=fdjt.KB;
-
-    var isobject=fdjtKB.isobject;
-    var objectkey=fdjtKB.objectkey;
-    
-    function KnoduleIndex(knodule) {
-        if (knodule) this.knodule=knodule;
-        this.items={}; this.tags={}; this._alltags=[]; this._allitems=[];
-        this._ranked=false; this.ranks=false;
-        this.tagscores={}; this.tagfreqs={}; this.maxscore=0; this.maxfreq=0;
-        return this;}
-    
-    KnoduleIndex.prototype.add=function(item,tag,weight,kno){
-        var itemkey=((typeof item === 'object')?(objectkey(item)):(item));
-        if ((typeof tag === 'string')&&(kno)) tag=kno.probe(tag)||tag;
-        var tagkey=(((typeof tag === 'string')&&(tag))||
-                    ((tag.tagString)&&(tag.tagString()))||
-                    (objectkey(tag)));
-        var items=this.items, tags=this.tags;
-        var alltags=this._alltags, allitems=this._allitems;
-        var tagfreqs=this.tagfreqs;
-        var tagscores=this.tagscores;
-        var itemv=false, tagv=false, iscores=false, tscores=false;
-        if ((weight)&&(typeof weight !== 'number')) weight=1;
-        else if (!(weight)) weight=0;
-        // items maps tagkeys to arrays of items
-        if (items.hasOwnProperty(tagkey)) {
-            itemv=items[tagkey];
-            iscores=itemv.scores;
-            if (!(iscores)) iscores=itemv.scores={};
-            if (iscores[itemkey])
-                iscores[itemkey]+=weight;
-            else {
-                itemv.push(itemkey);
-                iscores[itemkey]=weight;}
-            var freq=tagfreqs[tagkey]+1;
-            if (freq>this.maxfreq) this.maxfreq=freq;
-            tagfreqs[tagkey]=freq;}
-        else {
-            items[tagkey]=itemv=[itemkey];
-            itemv.scores={};
-            itemv.scores[itemkey]=weight;
-            tagfreqs[tagkey]=1;
-            if (this.maxfreq===0) this.maxfreq=1;
-            alltags.push(tagkey);
-            if (tag!==tagkey) alltags[tagkey]=tag;}
-        // Initialize the scores property
-        // tags maps items to their tags
-        if (tags.hasOwnProperty(itemkey)) {
-            tagv=tags[itemkey];
-            tscores=tagv.scores;
-            if (tscores[tagkey])
-                tscores[tagkey]+=weight||1;
-            else {
-                tagv.push(tagkey);
-                tscores[tagkey]=weight||1;}}
-        else {
-            tags[itemkey]=tagv=[tagkey];
-            tagv.scores={tagkey:weight||1};
-            allitems.push(itemkey);}
-        if (weight) {
-            var tscores=tagv.scores;
-            if (!(tscores)) tagv.scores=tscores={};
-            var tagscore=(tagscores[tagkey]||0)+weight;
-            tagscores[tagkey]=tagscore;
-            if (tagscore>this.maxscore) this.maxscore=tagscore;
-            if (tscores[itemkey]) tscores[itemkey]+=weight;
-            else tscores[itemkey]=weight;}
-        if ((tag)&&(tag.allways)) {
-            var always=tag.allways;
-            var i=0; var len=always.length;
-            while (i<len) {
-                var genl=always[i++];
-                var gkey=(((typeof genl === 'string')&&(genl))||
-                          ((genl.tagString)&&(genl.tagString()))||
-                          (objectkey(genl)));
-                this.add(itemkey,gkey,((weight)&&(weight>i)&&(weight-i)));}}
-        // Invalidate ranks.  In the future, this might do something
-        // more incremental
-        this.ranks=false;};
-
-    var Set=fdjtKB.Set;
-
-    KnoduleIndex.prototype.freq=function(tag){
-        if (this.items.hasOwnProperty(tag)) {
-            var set=this.items[tag]=Set(this.items[tag]);
-            return set.length;}
-        else return 0;};
-    KnoduleIndex.prototype.find=function(tag){
-        if (this.items.hasOwnProperty(tag)) return this.items[tag];
-        else return [];};
-    
-    KnoduleIndex.prototype.rankTags=function(){
-        if (this.ranks) return this.ranks;
-        else {
-            var ranked=[].concat(this._alltags);
-            var ranks={};
-            var tagscores=this.tagscores, tagfreqs=this.tagfreqs;
-            ranked.sort(function(tag1,tag2){
-                var tscore1=tagscores[tag1], tscore2=tagscores[tag2];
-                if ((tscore1)&&(tscore2)) {
-                    if (tscore1>tscore2) return -1;
-                    else if (tscore1<tscore2) return 1;}
-                else if (tscore1) return -1;
-                else if (tscore2) return 1;
-                /* Nothing based on tagscores */
-                var freq1=tagfreqs[tag1], freq2=tagfreqs[tag2];
-                if (freq1>freq2) return -1;
-                else if (freq2>freq1) return 1;
-                else return 0;});
-            tagscores._maxscore=this.maxscore;
-            var i=0; var lim=ranked.length;
-            while (i<lim) {ranks[ranked[i]]=i; i++;}
-            this._ranked=ranked;
-            this.ranks=ranks;
-            return ranks;}};
-
-    // This takes an array of tags (with possible .scores)
-    //  and combines them into an array with unique elements
-    //  and combined scores
-    function combineTags(tagsets,weights){
-        var tags=[]; var scores={};
-        var tagscores=[];
-        var i=0; var lim=tagsets.length;
-        while (i<lim) {
-            if ((tagsets[i])&&(tagsets[i].scores))
-                tagscores.push(tagsets[i].scores);
-            i++;}
-        var i=0; var lim=tagsets.length;
-        while (i<lim) {
-            var taglist=tagsets[i++];
-            if (!(taglist)) continue;
-            var j=0; var jlim=taglist.length;
-            while (j<jlim) {
-                var tag=taglist[j]; var score=0;
-                if (typeof tag !== 'string') tag=tag._qid||tag;
-                if (!(scores[tag])) {
-                    tags.push(tag);
-                    var k=0; var klim=tagscores.length;
-                    while (k<klim) {
-                        var tscore=tagscores[k++][tag];
-                        if (tscore) score=score+tscore;}}
-                scores[tag]=(((weights)&&(weights[i]))||1)+score;
-                j++;}}
-        tags.scores=tagscores;
-        return tags;}
-    KnoduleIndex.combineTags=combineTags;
-    KnoduleIndex.prototype.combineTags=combineTags;
-    Knodule.combineTags=combineTags;
-
-    KnoduleIndex.Trace={clouds:false};
-
-    return KnoduleIndex;})();
-
+var Knode=Knodule.KNode;
 
 /* Emacs local variables
    ;;;  Local variables: ***
