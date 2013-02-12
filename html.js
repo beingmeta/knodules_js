@@ -112,11 +112,11 @@
         // Figure out the 'tag' which is a string reference to the
         //  value
         tag=((obj)&&(obj.tagString)&&(obj.tagString()))||
-            ((knode)&&(knode.knodule===knodule)&&(knode.dterm))||
-            ((knode)&&(knode.dterm+"@"+knode.knodule.name))||
+            ((knode)&&(knode._db===knodule)&&(knode.dterm))||
+            ((knode)&&(knode.dterm+"@"+knode._db.name))||
             (obj._qid)||(obj.oid)||(obj.uuid)||
-            ((obj._id)&&(obj.pool)&&
-             (obj._id+"@"+obj.pool.name));
+            ((obj._id)&&(obj._db.absrefs)&&(obj._id))||
+            ((obj._id)&&(obj._domain)&&(obj._id+"@"+obj._domain));
         if ((tag)&&(def)) tag=tag+def;
         if ((varname)&&(tag)) {
             checkbox=fdjtDOM(
@@ -156,8 +156,8 @@
             else {}
             if (tag) span.setAttribute('value',tag);}
         if (!(knode)) fdjtDOM.addClass(span,"rawterm");
-        var from=(((knode)&&(knode.pool.description))?
-                  (" (from "+knode.pool.description+")"):(""))
+        var from=(((knode)&&(knode._db.description))?
+                  (" (from "+knode._db.description+")"):(""))
         if ((knode)&&(knode.gloss)) title=knode.gloss+from;
         else if ((knode)&&(knode.about)) title=knode.about+from;
         else if ((obj)&&(obj.about)) title=obj.about+from;

@@ -183,9 +183,11 @@ var Knodule=(function(){
         else if (this.uuid) return this.uuid;
         else if (this._qid) return this._qid;
         if (!(kno)) kno=Knodule.current||false;
-        if (kno===this.knodule) return "@@"+this.dterm;
-        else return this.dterm+"@"+
-            (this.knodule.absref||this.knodule.name);};
+        if (kno===this.knodule) return this._id;
+        else if (this._db.absrefs) return this._id;
+        else if (this._domain)
+            return this._id+"@"+this._domain;
+        else return this._id+"@"+this._db.name;}
     
     /* Text processing utilities */
     function stdspace(string) {
