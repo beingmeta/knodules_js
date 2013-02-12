@@ -41,7 +41,8 @@
     var fdjtLog=fdjt.Log;
     var fdjtDOM=fdjt.DOM;
     var fdjtUI=fdjt.UI;
-    var fdjtKB=fdjt.KB, fdjtID=fdjt.ID;
+    var fdjtID=fdjt.ID;
+    var RefDB=fdjt.RefDB, Ref=fdjt.Ref;
 
     var addClass=fdjtDOM.addClass;
 
@@ -74,7 +75,7 @@
         var def=false, obj=false;
         // If needed, provide a default knodule based on the current
         // document
-        var default_knodule=knodule||Kindule.current||
+        var default_knodule=knodule||Knodule.current||
             (Knodule.current=(new Knodule(location.href)));
         if (typeof arg === 'string') {
             // Try to convert a string arg into a knode
@@ -87,7 +88,7 @@
             else knode=default_knodule.probe(arg);}
         else if (arg instanceof KNode) obj=knode=arg;
         else obj=arg;
-        if ((knode)&&(!(knode._init))) knode.load();
+        if ((knode)&&(!(knode._live))) knode.load();
         // A non-false language arg means generate a FDJT completion
         // node; if the language arg isn't a string, just use the
         // default knodule's default language to generate the text.
@@ -164,9 +165,9 @@
         else if ((knode)&&(knode.dterm)) title=knode.dterm+from;
         else if (tag) title=tag+from;
         else {}
-        if ((knode)&&(knode._always)) {
+        if ((knode)&&(knode.allways)) {
             var seen={};
-            var always=knode._always;
+            var always=knode.allways;
             var i=0, lim=always.length;
             while (i<lim) {
                 var a=always[i++];
