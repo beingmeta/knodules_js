@@ -35,6 +35,8 @@
 
 */
 
+/*
+
 KnoduleIndex.Query=
     (function(){
         var fdjtString=fdjt.String;
@@ -235,7 +237,7 @@ KnoduleIndex.Query=
 
         return Query;
     })();
-
+*/
 
 /* Emacs local variables
 ;;;  Local variables: ***
