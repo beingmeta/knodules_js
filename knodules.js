@@ -42,6 +42,8 @@ var Knodule=(function(){
     var fdjtDOM=fdjt.DOM, fdjtID=fdjt.ID;
     var fdjtUI=fdjt.UI;
     var fdjtKB=fdjt.KB;
+    var RefDB=fdjt.RefDB;
+    var Ref=fdjt.Ref;
     
     var knodules={};
     var all_knodules=[];
@@ -53,34 +55,32 @@ var Knodule=(function(){
     var kno_named_oidpat=/@[0-9A-Fa-f]+\/[0-9A-Fa-f]+(\x22([^\x22]+)\x22)*/;
     var kno_atbreak=/[^\\]@/g;
     
-    function Knodule(id,lang) {
-        // Raw cons
-        if (!(id)) return this;
-        // Do lookup
-        if (knodules[id])
-            if ((lang)&&(lang!==knodules[id].language))
-                throw { error: "language mismatch" };
-        else return knodules[id];
-        if (fdjtKB.Pool.probe(id))
-            throw { error: "pool/knodule conflict"};
-        if (this instanceof Knodule)
-            knodule=fdjtKB.Pool.call(this,id);
-        else knodule=fdjtKB.Pool.call((new Knodule()),id);
-        // The name of the knodule
-        knodule.name=id;
-        knodules[id]=knodule;
+    var lang_pat=/^(([A-Za-z]{2,3}\$)|([A-Za-z]{2,3}_[A-Za-z]{2,3}\$))/;
+
+    function Knodule(id,inits) {
+        // Using as a prototype
+        if (arguments.length===0) return this;
+        if (inits.indices)
+            inits.indices=inits.indices.concat(
+                ["terms","hooks","genls","specls","allgenls"]);
+        var knodule=RefDB.call(this,id,inits);
+        if ((lang)&&(knodule.language!==lang))
+            throw { error: "language mismatch" };
         // The default language for this knodule
-        if (lang) knodule.language=lang.toUpperCase();
+        if ((inits.language)&&(knodule.language)&&
+            (inits.language!==knodule.language))
+            throw { error: "language mismatch" };
+        else if (inits.language)
+            knodule.language=inits.language;
         else knodule.language='EN';
         // Mapping dterms (univocal references) to KNode objects
-        // (many-to-one)
+        // (many-to-one).  This redundantly combines refs and altrefs
+        // from the underlying ref objects.
         knodule.dterms={};
         // A vector of all dterms local to this knodule
         knodule.alldterms=[];
         // Prime (important) dterms
         knodule.prime=[]; knodule.primescores={};
-        // Inverse indices for relations, rules, etc.
-        knodule.index=fdjtKB.Index();
         // Whether to validate asserted relations
         knodule.validate=true;
         // Whether the knodule is 'strict'
@@ -95,11 +95,6 @@ var Knodule=(function(){
         knodule.xdterms={};
         // A vector of all foreign knode references
         knodule.allxdterms=[];
-        // Mapping natural language terms to arrays of of KNodes
-        // (ambiguous, many to many)
-        knodule.terms={};
-        // Mapping hook terms to arrays of of KNodes (ambiguous)
-        knodule.hooks={};
         // Inverted index for genls in particular (useful for
         // faster search, inferences, etc)
         knodule.genlsIndex={};
@@ -108,13 +103,13 @@ var Knodule=(function(){
         // DRULES (disambiguation rules)
         knodule.drules={};
         return knodule;}
-    Knodule.prototype=new fdjtKB.Pool();
+    Knodule.prototype=new refDB();
 
-    function KNode(knodule,string,lang){
-        if (!(knodule)) return this;
+    function KNode(string,knodule,lang){
+        if (arguments.length===0) return this;
         var weak=false; var prime=
             ((string[0]==='*')&&(string.search(/[^*]/)));
-        var newprime=false;
+        var newprime=false, knode=this;
         if (string[0]==='~') {weak=true; string=string.slice(1);}
         else if (prime) {
             string=string.slice(prime);
@@ -122,75 +117,65 @@ var Knodule=(function(){
                 if (prime>(knodule.primescores[string]))
                     knodule.primescores[string]=prime;
                 newprime=true;}}
-        if (string.search(/[a-zA-Z]\$/)===0) {
-            lang=string.slice(0,2).toUpperCase();
-            string=string.slice(3);}
+        if (string.search(langpat)===0) {
+            var dollar=string.indexOf('$');
+            lang=string.slice(0,dollar).toUpperCase();
+            string=string.slice(dollar+1);}
         else if (lang) lang=lang.toUpperCase();
         else lang=knodule.language;
-        var term=string; var absref=false;
-        var knode=((this instanceof KNode)?
-                   (knodule.ref(term,this)):
-                   (knodule.ref(term)));
-        if (!(knode._qid)) {
-            if (knodule.language!==lang) term=lang+"$"+string;
-            if (knodule.dterms.hasOwnProperty(term))
-                return knodule.dterms[term];
-            knode._qid=term+"@"+(knodule.absref||knodule.name);}
-        // It's already initialized
-        if (this!==knode) return knode;
-        knode.dterm=term;
-        knode._init=fdjtTime();
+        if (lang===knodule.language)
+            knode=Ref.call(this,string,knodule);
+        else knode=Ref.call(this,lang+"$"+string,knodule);
+        if (knode===this) knode.dterm=string;
+        knodule.dterms[string]=knode;
         if (weak) knode.weak=true;
         if (prime) knode.prime=prime;
         if ((prime)&&(newprime)) knodule.prime.push(knode);
-        knodule.dterms[knode.dterm]=knode;
-        knodule.dterms[term]=knode;
-        knodule.alldterms.push(knode);
         if ((lang)&&(lang!==knodule.language)) knode.language=lang;
-        knode._always=fdjtKB.Set();
-        knode.knodule=knodule;
-        knode.addTerm(string,lang);
+        knode.allways=fdjt.Set();
+        knode.add(lang,string);
         return knode;}
-    KNode.prototype=new fdjtKB.Ref();
+    KNode.prototype=new RefDB.Ref();
 
     Knodule.KNode=KNode;
-    Knodule.prototype.KNode=function(string,lang) {
-        if (string instanceof KNode) {
-            if (string.pool===this)
+    Knodule.Knode=KNode;
+    Knodule.prototype.KNode=Knodule.prototype.Knode=function(arg,inits) {
+        if (arg instanceof KNode) {
+            if (arg._db===this)
                 // Should this do some kind of import?
-                return string;
-            else return string;}
-        else return new KNode(this,string,lang);};
+                return arg;
+            else return arg;}
+        else return new KNode(string,this,inits);};
     Knodule.prototype.cons=function(string,lang) {
-        return new KNode(this,string,lang);};
+        return new KNode(string,this,lang);};
     Knodule.prototype.probe=function(string,langid) {
         if ((this.language===langid)||(!(langid)))
-            return this.dterms[string]||false;
-        else return this.dterms[langid+"$"+string]||false;};
+            return this.refs[string]||this.aliases[string]||false;
+        else string=langid.toUpperCase()+"$"+string;
+        return this.dterms[langid+"$"+string]||false;};
     
     KNode.prototype.add=function(prop,val){
         if ((fdjtKB.Ref.prototype.add.call(this,prop,val))&&
             (prop==='genls')) {
-            fdjtKB.add(this._always,val);
-            this._always=fdjtKB.merge(this._always,val._always);
+            this.allways.push(val);
+            this.allways=refDB.merge(this.allways,val.allways);
             return true;}
         else return false;}
-    KNode.prototype.addTerm=function(val,field){
-        if (typeof val === 'string') {
-            var langspec=val.search(/[a-zA-Z][a-zA-Z_]+[a-zA-Z]\$/);
+    KNode.prototype.addTerm=function(val,field,inlang){
+        if ((typeof val === 'string')&&(val.search(langpat)===0)) {
+            var dollar=val.indexOf('$');
+            var langspec=val.slice(0,dollar).toUpperCase();
+            var term=val.slice(dollar+1);
             var lang=this.knodule.language;
-            var term=false;
-            if (langspec===0) {
-                var dollar=val.indexOf('$');
-                lang=val.slice(0,dollar);
-                if (field) field=lang+"$"+field;
-                else field=lang;
-                term=val.slice(dollar+1);}
-            else if (field) term=val;
-            else {
-                field=lang; term=val;}
-            this.add(field,term);}
-        else this.add(field,val);}
+            if (langspec===this._db.language) 
+                this.add(field,term);
+            else this.add(field,langspec+"$"+term);}
+        else if (inlang) {
+            inlang=inlang.toUpperCase();
+            if (inlang===this._db.language)
+                this.add(field,val);
+            else this.add(field,inlang+"$"+val);}
+        else this.add(field,val);};
     KNode.prototype.tagString=function(kno) {
         if (this.oid) return this.oid;
         else if (this.uuid) return this.uuid;
@@ -494,8 +479,8 @@ var KnoduleIndex=(function(){
             if (tagscore>this.maxscore) this.maxscore=tagscore;
             if (tscores[itemkey]) tscores[itemkey]+=weight;
             else tscores[itemkey]=weight;}
-        if ((tag)&&(tag._always)) {
-            var always=tag._always;
+        if ((tag)&&(tag.allways)) {
+            var always=tag.allways;
             var i=0; var len=always.length;
             while (i<len) {
                 var genl=always[i++];
