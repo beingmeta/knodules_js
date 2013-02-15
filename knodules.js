@@ -136,6 +136,7 @@ var Knodule=(function(){
         if ((lang)&&(lang!==knodule.language)) knode.language=lang;
         knode.allways=fdjt.Set();
         knode.add(lang,string);
+        knode._live=fdjtTime();
         return knode;}
     KNode.prototype=new RefDB.Ref();
 
