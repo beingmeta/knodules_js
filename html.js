@@ -1,6 +1,6 @@
 /* -*- Mode: Javascript; Character-encoding: utf-8; -*- */
 
-/* ##################### dules/html.js ####################### */
+/* ##################### knodules/html.js ####################### */
 
 /* Copyright (C) 2009-2013 beingmeta, inc.
    This file provides for HTML documents using KNODULES, including
