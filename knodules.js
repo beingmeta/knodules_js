@@ -323,9 +323,6 @@ var Knodule=(function(){
         case '~': {
             var hook=clause.slice(1);
             subject.addTerm(hook,'hooks');
-            if (knodule.hooks[hook])
-                knodule.hooks[hook].push(subject);
-            else knodule.hooks[hook]=[subject];
             break;}
         default: {
             var brk=findBreak(clause,'=');
