@@ -124,19 +124,20 @@ var Knodule=(function(){
             lang=string.slice(0,dollar).toUpperCase();
             string=string.slice(dollar+1);}
         else if (lang) lang=lang.toUpperCase();
-        else lang=knodule.language;
-        if (lang===knodule.language)
-            knode=Ref.call(this,string,knodule);
-        else knode=Ref.call(this,lang+"$"+string,knodule);
-        if (knode===this) knode.dterm=string;
-        knodule.dterms[string]=knode;
+        else lang=knodule.language||"EN";
+        var refterm=(lang===knodule.language)?(string):lang+"$"+string;
+        knode=Ref.call(this,refterm,knodule);
+        if (knode===this) {
+            knode.dterm=string;
+            knode.dterm=refterm;
+            knodule.dterms[refterm]=knode;
+            knode.allways=fdjt.Set();
+            if (lang) knode.add(lang,string);
+            knode._live=fdjtTime();}
         if (weak) knode.weak=true;
         if (prime) knode.prime=prime;
         if ((prime)&&(newprime)) knodule.prime.push(knode);
         if ((lang)&&(lang!==knodule.language)) knode.language=lang;
-        knode.allways=fdjt.Set();
-        knode.add(lang,string);
-        knode._live=fdjtTime();
         return knode;}
     KNode.prototype=new RefDB.Ref();
 
