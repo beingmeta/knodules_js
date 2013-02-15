@@ -41,7 +41,10 @@
     var Ref=fdjt.Ref;
     var Query=RefDB.Query;
     var KNode=Knodule.KNode;
-    var warn=fdjt.Log.warn;
+    var fdjtLog=fdjt.Log;
+    var warn=fdjtLog.warn;
+
+    var getKeystring=RefDB.getKeystring;
 
     var tagslot_pats=["%","*%","**%","~%","~~%",
 		      "%*","*%*","**%*","~%*","~~%*",
@@ -144,13 +147,16 @@
 	else if (this.execute()) {
 	    if (!(results)) results=this.results;
 	    var r=0, n_results=results.length;
+            var weights=this.weights;
 	    var scores=this.scores;
 	    var tagscores=this.tagscores=(this.tagscores={});
+	    var tagfreqs=tagscores._freqs||(tagscores._freqs={});
 	    var base_slots=this.base_slots;
-	    var s=0, n_slots=base_slots.length;
+            var n_slots=base_slots.length;
 	    while (r<n_results) {
 		var result=results[r++];
-		s=0; while (i<n_slots) {
+                score=scores[result._id];
+		s=0; while (s<n_slots) {
 		    var slot=base_slots[s++];
 		    var ts=0, n_tagslots=tagslot_pats.length;
 		    while (ts<n_tagslots) {
@@ -162,8 +168,13 @@
 			    var v=0, n_tags=tags.length;
 			    while (v<n_tags) {
 				var tag=tags[v++];
-				if (tagscores[tag]) tagscores[tag]=+weight;
-				else tagscores[tag]=weight;}}}}}
+                                var tagstring=getKeystring(tag);
+				if (tagscores[tagstring]) {
+                                    tagfreqs[tagstring]++;
+                                    tagscores[tagstring]+=(weight*score);}
+				else {
+                                    tagfreqs[tagstring]=1;
+                                    tagscores[tagstring]=(weight*score);}}}}}}
 	    return tagscores;}
 	else return false;};
     
