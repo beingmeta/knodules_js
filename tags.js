@@ -44,7 +44,7 @@
     var fdjtLog=fdjt.Log;
     var warn=fdjtLog.warn;
 
-    var getKeystring=RefDB.getKeystring;
+    var getKeyString=RefDB.getKeyString;
 
     var tagslot_pats=["%","*%","**%","~%","~~%",
 		      "%*","*%*","**%*","~%*","~~%*",
