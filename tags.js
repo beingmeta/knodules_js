@@ -41,18 +41,17 @@
     var Ref=fdjt.Ref;
     var Query=RefDB.Query;
     var KNode=Knodule.KNode;
+    var warn=fdjt.Log.warn;
 
     var tagslot_pats=["*%s","**%s","~%s","~~%s",
 		      "%s*","*%s*","**%s*","~%s*","~~%s*",
 		      "%s**","*%s**","**%s**","~%s**","~~%s**"];
     var tagslot_weights=
-	{"%s": 1,"*%s" 3: ,"**%s": 5,"~%s": 0.5,"~~%s": 0.25,
-	 "%s*": 0.5,"*%s*": 1,"**%s*": 2,"~%s*": 0.25,"~~%s*" 0.15,
-	 "%s**": 0.25,"*%s**" 0.5: ,"**%s**": 1,"~%s**": 0.15,"~~%s**": 0.1};
-
-
-
-    Knodule.addTags=function addTag(refs,tags,refdb,tagdb,base_slot){
+	{"%s": 1,"*%s": 3,"**%s": 5,"~%s": 0.5,"~~%s": 0.25,
+	 "%s*": 0.5,"*%s*": 1,"**%s*": 2,"~%s*": 0.25,"~~%s*": 0.15,
+	 "%s**": 0.25,"*%s**": 0.5,"**%s**": 1,"~%s**": 0.15,"~~%s**": 0.1};
+    
+    Knodule.addTags=function addTags(refs,tags,refdb,tagdb,base_slot){
 	if (!(base_slot)) base_slot="tags";
 	if (typeof tags === "string") tags=[tags];
 	else if (tags instanceof Ref) tags=[tags];
@@ -61,8 +60,8 @@
 	else tags=[].concat(tags);
 	if (typeof refs === "string") refs=[refs];
 	else if (refs instanceof Ref) refs=[refs];
-	else if (!(refs.length)) refs=[refs];
 	else if (refs instanceof Array) {}
+	else if (!(refs.length)) refs=[refs];
 	else refs=[].concat(refs);
 	var slots=new Array(tags.length); var weak=new Array(tags.length);
 	var i=0, ntags=tags.length;
@@ -94,7 +93,7 @@
 	    else ref=RefDB.resolve(refstring);
 	    if (!(ref)) {
 		warn("Couldn't resolve %s to a reference",refstring);
-		continue;}
+		j++; continue;}
 	    refs[j++]=ref;}
 	i=0; while (i<ntags) {
 	    tag=tags[i], slot=slots[i], weak=(slot[0]=="~");
@@ -104,7 +103,10 @@
 		ref.add(slot,tag);
 		if ((tag instanceof Knode)&&(tag.always)) {
 		    ref.add(slot+"*",tag.always);
-		    ref.add(slot+"**",tag.allways);}}}};
+		    ref.add(slot+"**",tag.allways);}}
+            i++;}};
+
+    // Knodule.addTags=function addTags(){};
 
     function TagQuery(tags,dbs,weights,base_slots,base_query){
 	var i=0, n_slots, slot, weight, query={};
@@ -169,3 +171,10 @@
 
 })();
 	 
+
+/* Emacs local variables
+   ;;;  Local variables: ***
+   ;;;  compile-command: "cd ..; make" ***
+   ;;;  indent-tabs-mode: nil ***
+   ;;;  End: ***
+*/
