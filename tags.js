@@ -168,7 +168,9 @@
 			    var v=0, n_tags=tags.length;
 			    while (v<n_tags) {
 				var tag=tags[v++];
-                                var tagstring=getKeystring(tag);
+                                var tagstring=tag._qid||
+                                    ((tag.getQID)&&(tag.getQID()))||
+                                    (getKeyString(tag));
 				if (tagscores[tagstring]) {
                                     tagfreqs[tagstring]++;
                                     tagscores[tagstring]+=(weight*score);}
