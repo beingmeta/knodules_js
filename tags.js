@@ -43,13 +43,13 @@
     var KNode=Knodule.KNode;
     var warn=fdjt.Log.warn;
 
-    var tagslot_pats=["*%s","**%s","~%s","~~%s",
-		      "%s*","*%s*","**%s*","~%s*","~~%s*",
-		      "%s**","*%s**","**%s**","~%s**","~~%s**"];
+    var tagslot_pats=["%","*%","**%","~%","~~%",
+		      "%*","*%*","**%*","~%*","~~%*",
+		      "%**","*%**","**%**","~%**","~~%**"];
     var tagslot_weights=
-	{"%s": 1,"*%s": 3,"**%s": 5,"~%s": 0.5,"~~%s": 0.25,
-	 "%s*": 0.5,"*%s*": 1,"**%s*": 2,"~%s*": 0.25,"~~%s*": 0.15,
-	 "%s**": 0.25,"*%s**": 0.5,"**%s**": 1,"~%s**": 0.15,"~~%s**": 0.1};
+	{"%": 1,"*%": 3,"**%": 5,"~%": 0.5,"~~%": 0.25,
+	 "%*": 0.5,"*%*": 1,"**%*": 2,"~%*": 0.25,"~~%*": 0.15,
+	 "%**": 0.25,"*%**": 0.5,"**%**": 1,"~%**": 0.15,"~~%**": 0.1};
     
     Knodule.addTags=function addTags(refs,tags,refdb,tagdb,base_slot){
 	if (!(base_slot)) base_slot="tags";
@@ -109,6 +109,7 @@
     // Knodule.addTags=function addTags(){};
 
     function TagQuery(tags,dbs,weights,base_slots,base_query){
+        if (arguments.length===0) return this;
 	var i=0, n_slots, slot, weight, query={};
 	if (!(dbs)) dbs=TagQuery.default_dbs||false;
 	if (!(base_slots)) {
@@ -122,7 +123,7 @@
 	    for (var qslot in base_query) {
 		if (base_query.hasOwnProperty(qslot)) {
 		    query[qslot]=base_query[qslot];}}}
-	while (i<lim) {
+	while (i<n_slots) {
 	    slot=base_slots[i++]; weight=weights[slot]||1;
 	    var j=0, n_pats=tagslot_pats.length;
 	    while (j<n_pats) {
@@ -130,8 +131,7 @@
 		var tagslot=pat.replace("%",slot);
 		var dweight=weights[tagslot]||(weight*tagslot_weights[pat]);
 		if (!(query[tagslot])) query[tagslot]=tags;
-		if (!(weights[tagslot])) query[tagslot]=tags;
-		if (!(query[tagslot])) query[tagslot]=tags;}}
+		if (!(weights[tagslot])) weights[tagslot]=dweight;}}
 	
 	Query.call(this,dbs,query,weights);
 
