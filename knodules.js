@@ -338,6 +338,17 @@ var Knodule=(function(){
                 knodule.hooks[hook].push(subject);
             else knodule.hooks[hook]=[subject];
             break;}
+        case ':': {
+            var equals=findBreak(clause,'=');
+            if (equals>0) {
+                var field=clause.slice(1,equals);
+                var multi=(clause[equals+1]=='+');
+                var value=((multi)?(clause.slice(equals+2)):
+                           (clause.slice(equals+1)));
+                if (multi) subject.add(field,value);
+                else subject.store(field,value);}
+            subject.add(flags,clause.slice(1));
+            break;}
         default: {
             var brk=findBreak(clause,'=');
             if (brk>0) {
