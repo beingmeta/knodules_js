@@ -347,7 +347,7 @@ var Knodule=(function(){
                            (clause.slice(equals+1)));
                 if (multi) subject.add(field,value);
                 else subject.store(field,value);}
-            subject.add(flags,clause.slice(1));
+            subject.add('flags',clause.slice(1));
             break;}
         default: {
             var brk=findBreak(clause,'=');
