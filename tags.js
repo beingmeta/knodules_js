@@ -75,14 +75,14 @@
 		    var tagstart=tag.search(/[^*]/);
 		    slot=tag.slice(0,tagstart)+base_slot;
 		    tag=tag.slice(tagstart);}
-		else if (tag[1]==="~") {
+		else if (tag[0]==="~") {
 		    var tagstart=tag.search(/[^~]/);
 		    slot=tag.slice(0,tagstart)+base_slot;
 		    tag=tag.slice(tagstart);
 		    weak=true;}
 		else {}
 		if (tagdb) {
-		    if ((tag.indexOf('|'))&&
+		    if ((tag.indexOf('|')>0)&&
 			(tagdb)&&(tagdb.handleSubjectEntry))
 			tag=tagdb.handleSubjectEntry(tag);
 		    else if (weak) tag=tagdb.probe(tag)||tag;
