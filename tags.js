@@ -50,9 +50,9 @@
 		      "%*","*%*","**%*","~%*","~~%*",
 		      "%**","*%**","**%**","~%**","~~%**"];
     var tagslot_weights=
-	{"%": 1,"*%": 3,"**%": 5,"~%": 0.5,"~~%": 0.25,
-	 "%*": 0.5,"*%*": 1,"**%*": 2,"~%*": 0.25,"~~%*": 0.15,
-	 "%**": 0.25,"*%**": 0.5,"**%**": 1,"~%**": 0.15,"~~%**": 0.1};
+	{"%": 1,"*%": 3,"**%": 6,"~%": 0.5,"~~%": 0.25,
+	 "%*": 0.5,"*%*": 1,"**%*": 3,"~%*": 0.25,"~~%*": 0.10,
+	 "%**": 0.25,"*%**": 0.5,"**%**": 1,"~%**": 0.15,"~~%**": 0.05};
     
     Knodule.addTags=function addTags(refs,tags,refdb,tagdb,base_slot){
 	if (!(base_slot)) base_slot="tags";
@@ -136,26 +136,39 @@
 		if (!(query[tagslot])) query[tagslot]=tags;
 		if (!(weights[tagslot])) weights[tagslot]=dweight;}}
 	
-	Query.call(this,dbs,query,weights);
+        this.tags=tags;
+	this.base_slots=base_slots;
 
-	this.base_slots=base_slots;}
+	return Query.call(this,dbs,query,weights);}
 
     TagQuery.prototype=new Query();
+    TagQuery.prototype.execute=function TagQueryExecute(){
+        if (this.tags.length===0) {
+            var results=[];
+            var alldbs=this.dbs;
+            var i=0, lim=alldbs.length;
+            while (i<lim) results=results.concat(alldbs[i++].allrefs);
+            this.results=results;
+            return results;}
+        else return Query.prototype.execute.call(this);}
     
-    TagQuery.prototype.getTagScores=function getTagScores(results){
-	if (this.tagscores) return this.tagscores;
+    var TagMap=window.Map||fdjt.Map;
+
+    TagQuery.prototype.getCoTags=function getCoTags(results){
+	if (this.cotags) return this.cotags;
 	else if (this.execute()) {
 	    if (!(results)) results=this.results;
 	    var r=0, n_results=results.length;
             var weights=this.weights;
 	    var scores=this.scores;
-	    var tagscores=this.tagscores=(this.tagscores={});
-	    var tagfreqs=tagscores._freqs||(tagscores._freqs={});
+	    var alltags=this.cotags=[];
+	    var tagscores=this.tagscores={};
+	    var tagfreqs=this.tagfreqs={};
 	    var base_slots=this.base_slots;
             var n_slots=base_slots.length;
 	    while (r<n_results) {
 		var result=results[r++];
-                score=scores[result._id];
+                score=((scores)&&(scores[result._id]))||1;
 		s=0; while (s<n_slots) {
 		    var slot=base_slots[s++];
 		    var ts=0, n_tagslots=tagslot_pats.length;
@@ -175,10 +188,18 @@
                                     tagfreqs[tagstring]++;
                                     tagscores[tagstring]+=(weight*score);}
 				else {
+                                    alltags.push(tag);
                                     tagfreqs[tagstring]=1;
                                     tagscores[tagstring]=(weight*score);}}}}}}
-	    return tagscores;}
+	    return alltags;}
 	else return false;};
+    TagQuery.prototype.getString=function TagQueryString(){
+        var tags=fdjt.Set(this.tags); var qstring="";
+        var i=0, lim=tags.length;
+        while (i<lim) {
+            var tag=tags[i++];
+            qstring=qstring+((tag._qid)||(tag.getQID()));}
+        return qstring;}
     
     Knodule.TagQuery=TagQuery;
 
