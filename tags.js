@@ -105,9 +105,12 @@
 		if (!(ref)) continue;
 		ref.add(slot,tag);
                 if (tag instanceof Knode) ref.add('knodes',tag);
-		if ((tag instanceof Knode)&&(tag.always)) {
+		if ((tag instanceof Knode)&&(tag.allways))
+                    ref.add(slot+"**",tag.allways);
+		if ((tag instanceof Knode)&&(tag.always))
 		    ref.add(slot+"*",tag.always);
-		    ref.add(slot+"**",tag.allways);}}
+		if ((tag instanceof Knode)&&(tag.genls))
+		    ref.add(slot+"*",tag.genls);}
             i++;}};
 
     // Knodule.addTags=function addTags(){};
