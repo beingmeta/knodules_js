@@ -43,7 +43,8 @@ var Knodule=(function(){
     var fdjtUI=fdjt.UI;
     var RefDB=fdjt.RefDB;
     var Ref=fdjt.Ref;
-    
+    var warn=fdjtLog.warn;
+
     var knodules={};
     var all_knodules=[];
     var knodule=false;
