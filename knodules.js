@@ -111,7 +111,7 @@ var Knodule=(function(){
         if (arguments.length===0) return this;
         var weak=false; var prime=
             ((string[0]==='*')&&(string.search(/[^*]/)));
-        var newprime=false, knode=this;
+        var newprime=false, knode=this, notword=false;
         if (string[0]==='~') {weak=true; string=string.slice(1);}
         else if (prime) {
             string=string.slice(prime);
@@ -119,7 +119,16 @@ var Knodule=(function(){
                 if (prime>(knodule.primescores[string]))
                     knodule.primescores[string]=prime;
                 newprime=true;}}
-        if (string.search(lang_pat)===0) {
+        var atpos=string.indexOf('@');
+        if ((atpos==0)||((atpos===1)&&(string[0]===':'))) notword=true;
+        else if ((atpos>2)&&(string[atpos-1]!=='\\')) {
+            var domain=string.slice(atpos+1);
+            if ((domain!==knodule.name)&&
+                (knodule.aliases.indexOf(domain)<0))
+                warn("Reference %s is being handled by %s",string,knodule);
+            string=string.slice(0,atpos);}
+        if (notword) {}
+        else if (string.search(lang_pat)===0) {
             var dollar=string.indexOf('$');
             lang=string.slice(0,dollar).toUpperCase();
             string=string.slice(dollar+1);}
@@ -140,6 +149,7 @@ var Knodule=(function(){
         if ((lang)&&(lang!==knodule.language)) knode.language=lang;
         return knode;}
     KNode.prototype=new RefDB.Ref();
+    Knodule.refclass=Knodule.prototype.refclass=KNode;
 
     Knodule.KNode=KNode;
     Knodule.Knode=KNode;
