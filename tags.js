@@ -113,6 +113,23 @@
 		    ref.add(slot+"*",tag.genls);}
             i++;}};
 
+    function exportTagSlot(tags,slotid,exported){
+        if (!(tags instanceof Array)) tags=[tags];
+        var extags=((exported.tags)||(exported.tags=[]));
+        var start=slotid.search(/[^*~]+/);
+        var end=slotid.search(/[*]*$/);
+        var prefix=((start)&&(slotid.slice(0,start)));
+        if (end) slotid=slotid.slice(start,end);
+        else if (start) slotid=slotid.slice(start);
+        var i=0, lim=tags.length; while (i<lim) {
+            var tag=tags[i++];
+            if (!(tag)) continue;
+            var tagstring=tag._qid||tag.getQID();
+            if (start) extags.push(prefix+tagstring);
+            else extags.push(tagstring);}
+        return undefined;}
+    Knodule.exportTagSlot=exportTagSlot;
+            
     // Knodule.addTags=function addTags(){};
 
     function TagQuery(tags,dbs,weights,base_slots,base_query){
