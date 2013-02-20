@@ -124,7 +124,7 @@
         var i=0, lim=tags.length; while (i<lim) {
             var tag=tags[i++];
             if (!(tag)) continue;
-            var tagstring=tag._qid||tag.getQID();
+            var tagstring=((typeof tag === "string")?(tag):(tag._qid||tag.getQID()));
             if (start) extags.push(prefix+tagstring);
             else extags.push(tagstring);}
         return undefined;}
