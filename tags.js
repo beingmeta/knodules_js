@@ -130,6 +130,32 @@
         return undefined;}
     Knodule.exportTagSlot=exportTagSlot;
             
+    function importTagSlot(ref,slotid,tags,data,indexing){
+        var keep=[];
+        if (!(tags instanceof Array)) tags=[tags];
+        var i=0, lim=tags.length; while (i<lim) {
+            var tag=tags[i++];
+            if (!(tag)) continue;
+            else if (tag instanceof Ref) keep.push(tag);
+            else if ((typeof tag === "object")&&(tag._id)) 
+                keep.push(ref.resolve(tag));
+            else if (typeof tag === "string") {
+                var tag_start=tag.search(/[^*~]/);
+                var slot=slotid, tagstring=tag, tagref=false;
+                if (tag_start>0) {
+                    slot=tag.slice(0,tag_start)+slotid;
+                    tagstring=tag.slice(tag_start);}
+                if (tagstring.indexOf("|")<0)
+                    tagref=Knodule.handleSubjectEntry(tagstring);
+                else if (tagstring.indexOf('@')>=0)
+                    tagref=ref.resolve(tagstring);
+                else tagref=tagstring;
+                ref.add(slotid,tagref,indexing);}
+            else keep.push(tag);}
+        if (keep.length) return keep;
+        else return undefined;}
+    Knodule.importTagSlot=importTagSlot;
+
     // Knodule.addTags=function addTags(){};
 
     function TagQuery(tags,dbs,weights,base_slots,base_query){
