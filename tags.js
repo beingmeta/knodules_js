@@ -104,6 +104,8 @@
 		ref=refs[j++];
 		if (!(ref)) continue;
 		ref.add(slot,tag);
+                if (ref.alltags) ref.alltags.push(tag);
+                else ref.alltags=[tag];
                 if (tag instanceof Knode) ref.add('knodes',tag);
 		if ((tag instanceof Knode)&&(tag.allways))
                     ref.add(slot+"**",tag.allways);
@@ -131,7 +133,7 @@
     Knodule.exportTagSlot=exportTagSlot;
             
     function importTagSlot(ref,slotid,tags,data,indexing){
-        var keep=[];
+        var keep=[]; var alltags=[];
         if (!(tags instanceof Array)) tags=[tags];
         var i=0, lim=tags.length; while (i<lim) {
             var tag=tags[i++];
@@ -150,8 +152,11 @@
                 else if (tagstring.indexOf('@')>=0)
                     tagref=ref.resolve(tagstring);
                 else tagref=tagstring;
-                ref.add(slotid,tagref,indexing);}
+                alltags.push(tagref);
+                if (tagref instanceof KNode) ref.add('knodes',tagref,indexing);
+                ref.add(slot,tagref,indexing);}
             else keep.push(tag);}
+        ref["all"+slotid]=fdjtSet(alltags.concat[keep]);
         if (keep.length) return keep;
         else return undefined;}
     Knodule.importTagSlot=importTagSlot;
