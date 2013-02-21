@@ -44,6 +44,8 @@
     var fdjtLog=fdjt.Log;
     var warn=fdjtLog.warn;
 
+    var fdjtSet=fdjt.Set;
+
     var getKeyString=RefDB.getKeyString;
 
     var tagslot_pats=["%","*%","**%","~%","~~%",
@@ -92,8 +94,8 @@
 	while (j<nrefs) {
 	    var refstring=refs[j]; var ref=false;
 	    if ((refdb)&&(typeof ref === "string"))
-		ref=refdb.ref(refstring);
-	    else ref=RefDB.resolve(refstring);
+		ref=refdb.resolve(refstring,refdb,Knodule,true);
+	    else ref=RefDB.resolve(refstring,false,Knodule,true);
 	    if (!(ref)) {
 		warn("Couldn't resolve %s to a reference",refstring);
 		j++; continue;}
@@ -134,27 +136,35 @@
             
     function importTagSlot(ref,slotid,tags,data,indexing){
         var keep=[]; var alltags=[];
+        var knodule=ref.use_knodule||ref._db.use_knodule||Knodule.current;
         if (!(tags instanceof Array)) tags=[tags];
         var i=0, lim=tags.length; while (i<lim) {
             var tag=tags[i++];
             if (!(tag)) continue;
             else if (tag instanceof Ref) keep.push(tag);
-            else if ((typeof tag === "object")&&(tag._id)) 
-                keep.push(ref.resolve(tag));
+            else if ((typeof tag === "object")&&(tag._id)) {
+                var tagref=ref.resolve(tag,knodule,Knodule,true)||tag._id;
+                keep.push(tagref);}
             else if (typeof tag === "string") {
                 var tag_start=tag.search(/[^*~]/);
                 var slot=slotid, tagstring=tag, tagref=false;
                 if (tag_start>0) {
                     slot=tag.slice(0,tag_start)+slotid;
                     tagstring=tag.slice(tag_start);}
-                if (tagstring.indexOf("|")<0)
-                    tagref=Knodule.handleSubjectEntry(tagstring);
-                else if (tagstring.indexOf('@')>=0)
-                    tagref=ref.resolve(tagstring);
-                else tagref=tagstring;
+                var bar=tagstring.indexOf('|');
+                if (bar>0) tagterm=tagstring.slice(0,bar);
+                else tagterm=tagstring;
+                tagref=RefDB.resolve(tagterm,knodule,Knodule,false)||
+                    ((knodule)&&(knodule.ref(tagterm)))||
+                    tagterm;
+                if (bar>0) {
+                    if (tagref instanceof Knode) 
+                        tagref._db.handleEntry(tagstring);
+                    else warn("No knodule for %s",tagstring);}
                 alltags.push(tagref);
                 if (tagref instanceof KNode) ref.add('knodes',tagref,indexing);
-                ref.add(slot,tagref,indexing);}
+                if (slot!==slotid) ref.add(slot,tagref,indexing);
+                else keep.push(tagref);}
             else keep.push(tag);}
         ref["all"+slotid]=fdjtSet(alltags.concat[keep]);
         if (keep.length) return keep;

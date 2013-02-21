@@ -108,6 +108,9 @@ var Knodule=(function(){
         return knodule;}
     Knodule.prototype=new RefDB();
 
+    Knodule.prototype.toString=function(){
+        return "Knodule("+this.name+")";};
+
     function KNode(string,knodule,lang){
         if (arguments.length===0) return this;
         var weak=false; var prime=
@@ -387,9 +390,13 @@ var Knodule=(function(){
             var term=entry.slice(0,atsign);
             var knostring=((bar<0) ? (entry.slice(atsign+1)) :
                            (entry.slice(atsign+1,bar)));
-            var knodule=Knodule(knostring);
-            subject=((bar<0)?(knodule.KNode(term)):
-                     (knodule.handleEntry(term+entry.slice(bar))));}
+            var knodule=new Knodule(knostring);
+            if (knodule instanceof Knodule)
+                subject=((bar<0)?(knodule.KNode(term)):
+                         (knodule.handleEntry(term+entry.slice(bar))));
+            else {
+                warn("Resolved %s to non-knodule %o",entry,knodule);
+                subject=knodule.ref(term);}}
         else subject=this.handleSubjectEntry(entry);
         if (starpower) {
             var id=subject._id;
