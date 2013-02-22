@@ -228,6 +228,7 @@
 	    var tagfreqs=this.tagfreqs={};
 	    var base_slots=this.base_slots;
             var n_slots=base_slots.length;
+            var max_score=0, max_freq=0;
 	    while (r<n_results) {
 		var result=results[r++];
                 score=((scores)&&(scores[result._id]))||1;
@@ -242,17 +243,23 @@
 			    var tags=result[tagslot];
 			    var v=0, n_tags=tags.length;
 			    while (v<n_tags) {
-				var tag=tags[v++];
+				var tag=tags[v++]; var tagscore=0, tagfreq=0;
                                 var tagstring=tag._qid||
                                     ((tag.getQID)&&(tag.getQID()))||
                                     (getKeyString(tag));
-				if (tagscores[tagstring]) {
-                                    tagfreqs[tagstring]++;
-                                    tagscores[tagstring]+=(weight*score);}
-				else {
-                                    alltags.push(tag);
-                                    tagfreqs[tagstring]=1;
-                                    tagscores[tagstring]=(weight*score);}}}}}}
+                                var new_freq, new_score;
+				if (tagscores.hasOwnProperty(tagstring)) {
+                                    new_freq=tagfreqs[tagstring]+1;
+                                    new_score=tagscores[tagstring]+(weight*score);}
+                                else {
+                                    new_freq=1;
+                                    new_score=(weight*score);
+                                    alltags.push(tag);}
+                                tagfreqs[tagstring]=new_freq;
+                                tagscores[tagstring]=new_freq;
+                                if (new_freq>max_freq) max_freq=new_freq;
+                                if (new_score>max_score) max_score=new_score;}}}}}
+            this.max_freq=max_freq; this.max_score=max_score;
 	    return alltags;}
 	else return false;};
     TagQuery.prototype.getString=function TagQueryString(){
