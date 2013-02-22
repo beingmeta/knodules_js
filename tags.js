@@ -166,7 +166,7 @@
                 if (slot!==slotid) ref.add(slot,tagref,indexing);
                 else keep.push(tagref);}
             else keep.push(tag);}
-        ref["all"+slotid]=fdjtSet(alltags.concat[keep]);
+        ref["all"+slotid]=fdjtSet(alltags.concat(keep));
         if (keep.length) return keep;
         else return undefined;}
     Knodule.importTagSlot=importTagSlot;
@@ -237,7 +237,7 @@
 		    while (ts<n_tagslots) {
 			var pat=tagslot_pats[ts++];
 			var tagslot=pat.replace("%",slot);
-			if (result[tagslot]) {
+			if (result.hasOwnProperty(tagslot)) {
 			    var weight=weights[tagslot];
 			    var tags=result[tagslot];
 			    var v=0, n_tags=tags.length;
