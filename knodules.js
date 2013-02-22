@@ -167,8 +167,11 @@ var Knodule=(function(){
     Knodule.prototype.cons=function(string,lang) {
         return new KNode(string,this,lang);};
     Knodule.prototype.probe=function(string,langid) {
+        var refs=this.refs, aliases=this.aliases;
         if ((this.language===langid)||(!(langid)))
-            return this.refs[string]||this.aliases[string]||false;
+            return ((refs.hasOwnProperty(string))&&(refs[string]))||
+            ((aliases.hasOwnProperty(string))&&(aliases[string]))||
+            false;
         else string=langid.toUpperCase()+"$"+string;
         return this.dterms[langid+"$"+string]||false;};
     
