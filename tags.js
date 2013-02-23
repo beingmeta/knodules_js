@@ -267,7 +267,9 @@
         var i=0, lim=tags.length;
         while (i<lim) {
             var tag=tags[i++];
-            qstring=qstring+((tag._qid)||(tag.getQID()));}
+            if (typeof tag === "string")
+                qstring=qstring+";"+tag;
+            else qstring=qstring+";"+((tag._qid)||(tag.getQID()));}
         return qstring;}
     
     Knodule.TagQuery=TagQuery;
