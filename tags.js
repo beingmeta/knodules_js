@@ -39,6 +39,7 @@
 
     var RefDB=fdjt.RefDB;
     var Ref=fdjt.Ref;
+    var fdjtMap=fdjt.Map;
     var Query=RefDB.Query;
     var KNode=Knodule.KNode;
     var fdjtLog=fdjt.Log;
@@ -214,7 +215,8 @@
             return results;}
         else return Query.prototype.execute.call(this);}
     
-    var TagMap=window.Map||fdjt.Map;
+    var TagMap=window.Map||fdjt.RefMap;
+    var RefMap=fdjt.RefMap;
 
     TagQuery.prototype.getCoTags=function getCoTags(results){
 	if (this.cotags) return this.cotags;
@@ -224,8 +226,8 @@
             var weights=this.weights;
 	    var scores=this.scores;
 	    var alltags=this.cotags=[];
-	    var tagscores=this.tagscores={};
-	    var tagfreqs=this.tagfreqs={};
+	    var tagscores=this.tagscores=new RefMap();
+	    var tagfreqs=this.tagfreqs=new RefMap();
 	    var base_slots=this.base_slots;
             var n_slots=base_slots.length;
             var max_score=0, max_freq=0;
@@ -246,6 +248,7 @@
 				var tag=tags[v++]; var tagscore=0, tagfreq=0;
                                 var tagstring=tag._qid||
                                     ((tag.getQID)&&(tag.getQID()))||
+                                    ((typeof tag === "string")&&(tag))||
                                     (getKeyString(tag));
                                 var new_freq, new_score;
 				if (tagscores.hasOwnProperty(tagstring)) {
