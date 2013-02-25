@@ -215,7 +215,7 @@
             return results;}
         else return Query.prototype.execute.call(this);}
     
-    var TagMap=window.Map||fdjt.RefMap;
+    var TagMap=window.Map||fdjt.Map;
     var RefMap=fdjt.RefMap;
 
     TagQuery.prototype.getCoTags=function getCoTags(results){
@@ -226,8 +226,8 @@
             var weights=this.weights;
 	    var scores=this.scores;
 	    var alltags=this.cotags=[];
-	    var tagscores=this.tagscores=new RefMap();
-	    var tagfreqs=this.tagfreqs=new RefMap();
+	    var tagscores=this.tagscores=new TagMap();
+	    var tagfreqs=this.tagfreqs=new TagMap();
 	    var base_slots=this.base_slots;
             var n_slots=base_slots.length;
             var max_score=0, max_freq=0;
@@ -246,23 +246,13 @@
 			    var v=0, n_tags=tags.length;
 			    while (v<n_tags) {
 				var tag=tags[v++]; var tagscore=0, tagfreq=0;
-                                var tagstring=tag._qid||
-                                    ((tag.getQID)&&(tag.getQID()))||
-                                    ((typeof tag === "string")&&(tag))||
-                                    (getKeyString(tag));
                                 var new_freq, new_score;
-				if (tagscores.hasOwnProperty(tagstring)) {
-                                    new_freq=tagfreqs[tagstring]+1;
-                                    new_score=tagscores[tagstring]+(weight*score);}
-                                else {
-                                    new_freq=1;
-                                    new_score=(weight*score);
-                                    alltags.push(tag);}
-                                tagfreqs[tagstring]=new_freq;
-                                tagscores[tagstring]=new_freq;
+                                if (!(tagscores.get(tag))) alltags.push(tag);
+                                var new_freq=tagfreqs.increment(tag,1);
+                                var new_score=tagscores.increment(tag,weight*score);
                                 if (new_freq>max_freq) max_freq=new_freq;
                                 if (new_score>max_score) max_score=new_score;}}}}}
-            this.max_freq=max_freq; this.max_score=max_score;
+            this.max_tagfreq=max_freq; this.max_tagscore=max_score;
 	    return alltags;}
 	else return false;};
     TagQuery.prototype.getString=function TagQueryString(){
