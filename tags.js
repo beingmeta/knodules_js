@@ -49,13 +49,10 @@
 
     var getKeyString=RefDB.getKeyString;
 
-    var tagslot_pats=["%","*%","**%","~%","~~%",
-		      "%*","*%*","**%*","~%*","~~%*",
-		      "%**","*%**","**%**","~%**","~~%**"];
+    var tagslot_pats=["%","*%","**%","~%","%*","*%*","**%*","~%*"];
     var tagslot_weights=
-	{"%": 1,"*%": 3,"**%": 6,"~%": 0.5,"~~%": 0.25,
-	 "%*": 0.5,"*%*": 1,"**%*": 3,"~%*": 0.25,"~~%*": 0.10,
-	 "%**": 0.25,"*%**": 0.5,"**%**": 1,"~%**": 0.15,"~~%**": 0.05};
+	{"~%": 2,"~%*": 2,"%": 4,"%*": 4,
+         "*%": 8, "*%*": 6,"**%": 12, "**%*": 8};
     
     Knodule.addTags=function addTags(refs,tags,refdb,tagdb,base_slot){
 	if (!(base_slot)) base_slot="tags";
@@ -69,7 +66,7 @@
 	else if (refs instanceof Array) {}
 	else if (!(refs.length)) refs=[refs];
 	else refs=[].concat(refs);
-	var slots=new Array(tags.length); var weak=new Array(tags.length);
+	var slots=new Array(tags.length);
 	var i=0, ntags=tags.length;
 	while (i<ntags) {
 	    var tag=tags[i]; var slot=base_slot; var weak=false;
@@ -79,18 +76,21 @@
 		    slot=tag.slice(0,tagstart)+base_slot;
 		    tag=tag.slice(tagstart);}
 		else if (tag[0]==="~") {
-		    var tagstart=tag.search(/[^~]/);
-		    slot=tag.slice(0,tagstart)+base_slot;
-		    tag=tag.slice(tagstart);
+		    slot="~"+base_slot;
+		    tag=tag.slice(1);
 		    weak=true;}
 		else {}
-		if (tagdb) {
-		    if ((tag.indexOf('|')>0)&&
-			(tagdb)&&(tagdb.handleSubjectEntry))
-			tag=tagdb.handleSubjectEntry(tag);
-		    else if (weak) tag=tagdb.probe(tag)||tag;
-		    else tag=tagdb.ref(tag)||tag;}}
-	    slots[i]=slot; tags[i++]=tag;}
+                if (tag.indexOf('|')>0) {
+                    if (tagdb) tag=tagdb.handleEntry(tag);
+                    else if (Knodule.current)
+                        tag=Knodule.current.handleEntry(tag);
+                    else {}}
+                else if ((weak)&&(tagdb))
+                    tag=tagdb.probe(tag)||tag;
+                else if (weak) {}
+                else if (tagdb) tag=tagdb.ref(tag);
+                else {}}
+	    slots[i]=slot; tags[i]=tag; i++;}
 	var j=0, nrefs=refs.length;
 	while (j<nrefs) {
 	    var refstring=refs[j]; var ref=false;
@@ -102,20 +102,18 @@
 		j++; continue;}
 	    refs[j++]=ref;}
 	i=0; while (i<ntags) {
-	    tag=tags[i], slot=slots[i], weak=(slot[0]=="~");
+	    tag=tags[i], slot=slots[i];
 	    j=0; while (j<nrefs) {
 		ref=refs[j++];
 		if (!(ref)) continue;
 		ref.add(slot,tag);
                 if (ref.alltags) ref.alltags.push(tag);
                 else ref.alltags=[tag];
-                if (tag instanceof Knode) ref.add('knodes',tag);
-		if ((tag instanceof Knode)&&(tag.allways))
-                    ref.add(slot+"**",tag.allways);
-		if ((tag instanceof Knode)&&(tag.always))
-		    ref.add(slot+"*",tag.always);
-		if ((tag instanceof Knode)&&(tag.genls))
-		    ref.add(slot+"*",tag.genls);}
+                if (tag instanceof Knode) {
+                    ref.add('knodes',tag);
+                    ref.add(slot+"*",tag);}
+		if ((tag instanceof Knode)&&(tag.allways)) 
+                    ref.add(slot+"*",tag.allways);}
             i++;}};
 
     function exportTagSlot(tags,slotid,exported){
@@ -178,12 +176,14 @@
         if (arguments.length===0) return this;
 	var i=0, n_slots, slot, weight, query={};
 	if (!(dbs)) dbs=TagQuery.default_dbs||false;
+        if (!(base_slots)) base_slots=this.base_slots;
 	if (!(base_slots)) {
 	    base_slots=["tags"]; n_slots=1;
 	    if (!(weights)) weights={tags: 12};}
 	else if (typeof base_slots === "string") {
 	    base_slots=[base_slots]; n_slots=1;}
 	else n_slots=base_slots.length;
+        if (!(weights)) weights=this.weights;
 	if (!(weights)) weights={};
 	if (base_query) {
 	    for (var qslot in base_query) {
