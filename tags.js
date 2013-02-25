@@ -94,8 +94,8 @@
 	var j=0, nrefs=refs.length;
 	while (j<nrefs) {
 	    var refstring=refs[j]; var ref=false;
-	    if ((refdb)&&(typeof ref === "string"))
-		ref=refdb.resolve(refstring,refdb,Knodule,true);
+	    if ((refdb)&&(typeof refstring === "string"))
+		ref=refdb.ref(refstring);
 	    else ref=RefDB.resolve(refstring,false,Knodule,true);
 	    if (!(ref)) {
 		warn("Couldn't resolve %s to a reference",refstring);
