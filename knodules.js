@@ -406,9 +406,13 @@ var Knodule=(function(){
             var prime=this.prime; var scores=this.primescores;
             var score;
             if (score=scores[id]) {
-                if (starpower>score) scores[id]=starpower;}
+                if (starpower>score) {
+                    scores[id]=starpower;
+                    subject.prime=starpower;}}
             else {
-                prime.push(id); scores[id]=starpower;}}
+                prime.push(id);
+                scores[id]=starpower;
+                subject.prime=starpower;}}
         return subject;}
     Knodule.prototype.handleEntry=handleEntry;
 
