@@ -101,14 +101,14 @@
 	    j=0; while (j<nrefs) {
 		ref=refs[j++];
 		if (!(ref)) continue;
-		ref.add(slot,tag);
+		ref.add(slot,tag,true);
                 if (ref.alltags) ref.alltags.push(tag);
                 else ref.alltags=[tag];
                 if (tag instanceof Knode) {
                     ref.add('knodes',tag);
-                    ref.add(slot+"*",tag);}
+                    ref.add(slot+"*",tag,true);}
 		if ((tag instanceof Knode)&&(tag.allways)) 
-                    ref.add(slot+"*",tag.allways);}
+                    ref.add(slot+"*",tag.allways,true);}
             i++;}};
 
     function exportTagSlot(tags,slotid,exported){
@@ -167,45 +167,36 @@
 
     // Knodule.addTags=function addTags(){};
 
-    var tagslot_pats=["%","*%","**%","~%","%*","*%*","**%*","~%*"];
-    var tagslot_weights=
+    var slotpats=["%","*%","**%","~%","%*","*%*","**%*","~%*"];
+    var slotpat_weights=
 	{"~%": 2,"~%*": 2,"%": 4,"%*": 4,
          "*%": 8, "*%*": 6,"**%": 12, "**%*": 8};
 
-    function TagQuery(tags,dbs,slot_weights){
+    function TagQuery(tags,dbs,base_weights){
         if (arguments.length===0) return this;
-        var clauses=[], slots=[];
+        var clauses=[], slots=this.slots=[];
 	if (!(dbs)) dbs=TagQuery.default_dbs||false;
-        if (!(slot_weights)) slot_weights=this.slots||{"tags": 1};
+        if (!(base_weights)) base_weights=this.weights||{"tags": 1};
         if (!(tags instanceof Array)) tags=[tags];
-        for (var slot in slot_weights)
-            if (slot_weights.hasOwnProperty(slot)) {
-                var i_pat=0, n_pats=tagslot_pats.length;
+        var weights=this._weights={};
+        for (var slot in base_weights)
+            if (base_weights.hasOwnProperty(slot)) {
+                var i_pat=0, n_pats=slotpats.length;
                 while (i_pat<n_pats) {
-                    var pat=tagslot_pats[i_pat++];
+                    var pat=slotpats[i_pat++];
                     var dslot=pat.replace("%",slot);
                     slots.push(dslot);
-                    slot_weights[dslot]=
-                        (tagslot_weights[pat])*(slot_weights[slot]);}}
+                    weights[dslot]=
+                        (slotpat_weights[pat]||1)*(base_weights[slot]);}}
         var i_tag=0, n_tags=tags.length;
         while (i_tag<n_tags) {
             clauses.push({fields: slots,values: [tags[i_tag++]]});}
         
         this.tags=tags;
-        this.weights=slot_weights;
 
-        return Query.call(this,dbs,clauses,slot_weights);}
+        return Query.call(this,dbs,clauses,base_weights);}
 
     TagQuery.prototype=new Query();
-    TagQuery.prototype.execute=function TagQueryExecute(){
-        if (this.tags.length===0) {
-            var results=[];
-            var alldbs=this.dbs;
-            var i=0, lim=alldbs.length;
-            while (i<lim) results=results.concat(alldbs[i++].allrefs);
-            this.results=results;
-            return results;}
-        else return Query.prototype.execute.call(this);}
     
     var TagMap=window.Map||fdjt.Map;
     var RefMap=fdjt.RefMap;
@@ -214,36 +205,39 @@
 	if (this.cotags) return this.cotags;
 	else if (this.execute()) {
 	    if (!(results)) results=this.results;
-            var slot_weights=this.weights;
 	    var scores=this.scores;
 	    var alltags=this.cotags=[];
 	    var tagscores=this.tagscores=new TagMap();
 	    var tagfreqs=this.tagfreqs=new TagMap();
-	    var slots=[], weights=[];
-            for (var slot in slot_weights)
-                if (slot_weights.hasOwnProperty(slot)) {
-                    slots.push(slot); weights.push(slot_weights[slot]);}
-            var n_slots=slots.length;
+	    var slots=this.slots, weights=this._weights||this.weights;
+            var clauses=this.clauses, n_clauses=clauses.length;
             var max_score=0, max_freq=0;
 	    var r=0, n_results=results.length;
 	    while (r<n_results) {
 		var result=results[r++];
                 score=((scores)&&(scores[result._id]))||1;
-		var i=0; while (i<n_slots) {
-		    var slot=slots[i], weight=weights[i];
-                    if (result.hasOwnProperty(slot)) {
-			var tags=result[slot];
-			var v=0, n_tags=tags.length;
-			while (v<n_tags) {
-			    var tag=tags[v++]; var tagscore=0, tagfreq=0;
-                            var new_freq, new_score;
-                            if (!(tagscores.get(tag))) alltags.push(tag);
-                            var new_freq=tagfreqs.increment(tag,1);
-                            var new_score=tagscores.increment(tag,weight*score);
-                            if (new_freq>max_freq) max_freq=new_freq;
-                            if (new_score>max_score) max_score=new_score;}}
-                    i++;}}
-            this.max_tagfreq=max_freq; this.max_tagscore=max_score;
+                var c=0; while (c<n_clauses) {
+                    var clause=clauses[c++];
+                    var fields=clause.fields, n_fields=fields.length;
+                    var f=0; while (f<n_fields) {
+                        var field=fields[f++];
+                        if (result.hasOwnProperty(slot)) {
+			    var tags=result[slot];
+                            var weight=weights[field]||1;
+			    var v=0, n_tags=tags.length;
+			    while (v<n_tags) {
+			        var tag=tags[v++];
+                                if (!(tagscores.get(tag)))
+                                    alltags.push(tag);
+                                var new_freq=tagfreqs.increment(tag,1);
+                                var new_score=
+                                    tagscores.increment(tag,weight*score);
+                                if (new_freq>max_freq) max_freq=new_freq;
+                                if (new_score>max_score)
+                                    max_score=new_score;}}
+                        f++;}}}
+            this.max_tagfreq=max_freq;
+            this.max_tagscore=max_score;
 	    return alltags;}
 	else return false;};
     TagQuery.prototype.getString=function TagQueryString(){
