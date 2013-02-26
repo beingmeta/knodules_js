@@ -206,6 +206,7 @@
 	else if (this.execute()) {
 	    if (!(results)) results=this.results;
 	    var scores=this.scores;
+            var slots=this.slots, n_slots=slots.length;
 	    var alltags=this.cotags=[];
 	    var tagscores=this.tagscores=new TagMap();
 	    var tagfreqs=this.tagfreqs=new TagMap();
@@ -215,27 +216,25 @@
 	    var r=0, n_results=results.length;
 	    while (r<n_results) {
 		var result=results[r++];
-                score=((scores)&&(scores[result._id]))||1;
-                var c=0; while (c<n_clauses) {
-                    var clause=clauses[c++];
-                    var fields=clause.fields, n_fields=fields.length;
-                    var f=0; while (f<n_fields) {
-                        var field=fields[f++];
-                        if (result.hasOwnProperty(slot)) {
-			    var tags=result[slot];
-                            var weight=weights[field]||1;
-			    var v=0, n_tags=tags.length;
-			    while (v<n_tags) {
-			        var tag=tags[v++];
-                                if (!(tagscores.get(tag)))
-                                    alltags.push(tag);
-                                var new_freq=tagfreqs.increment(tag,1);
-                                var new_score=
-                                    tagscores.increment(tag,weight*score);
-                                if (new_freq>max_freq) max_freq=new_freq;
-                                if (new_score>max_score)
-                                    max_score=new_score;}}
-                        f++;}}}
+                var score=((scores)&&(scores[result._id]))||1;
+                var s=0; while (s<n_slots) {
+                    var slot=slots[s++];
+                    if (result.hasOwnProperty(slot)) {
+			var tags=result[slot];
+                        var weight=weights[slot]||1;
+                        if (!(tags instanceof Array)) tags=[tags];
+			var v=0, n_tags=tags.length;
+			while (v<n_tags) {
+			    var tag=tags[v++];
+                            if (!(tagscores.get(tag)))
+                                alltags.push(tag);
+                            var new_freq=tagfreqs.increment(tag,1);
+                            var new_score=
+                                tagscores.increment(tag,weight*score);
+                            if (new_freq>max_freq) max_freq=new_freq;
+                            if (new_score>max_score)
+                                max_score=new_score;}}
+                    s++;}}
             this.max_tagfreq=max_freq;
             this.max_tagscore=max_score;
 	    return alltags;}
