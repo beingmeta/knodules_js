@@ -169,7 +169,7 @@
 
     var slotpats=["%","*%","**%","~%","%*","*%*","**%*","~%*"];
     var slotpat_weights=
-	{"~%": 2,"~%*": 2,"%": 4,"%*": 4,
+	{"~%": 1,"~%*": 1,"%": 4,"%*": 4,
          "*%": 8, "*%*": 6,"**%": 12, "**%*": 8};
 
     function TagQuery(tags,dbs,base_weights){
@@ -218,7 +218,7 @@
 		var result=results[r++];
                 var score=((scores)&&(scores[result._id]))||1;
                 var s=0; while (s<n_slots) {
-                    var slot=slots[s++];
+                    var slot=slots[s];
                     if (result.hasOwnProperty(slot)) {
 			var tags=result[slot];
                         var weight=weights[slot]||1;
@@ -259,4 +259,5 @@
    ;;;  compile-command: "cd ..; make" ***
    ;;;  indent-tabs-mode: nil ***
    ;;;  End: ***
-*/
+*
+/
