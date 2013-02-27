@@ -35,22 +35,25 @@
 
 */
 
+var fdjt=((window)?((window.fdjt)||(window.fdjt={})):({}));
+var Knodule=window.Knodule;
+
 (function(){
+
+    "use strict";
 
     var fdjtString=fdjt.String;
     var fdjtLog=fdjt.Log;
     var fdjtDOM=fdjt.DOM;
-    var fdjtUI=fdjt.UI;
-    var fdjtID=fdjt.ID;
-    var RefDB=fdjt.RefDB, Ref=fdjt.Ref;
-
+    var fdjtAjax=fdjt.Ajax;
+    
     var addClass=fdjtDOM.addClass;
 
     /* Getting knowdes into HTML */
 
     var KNode=Knodule.KNode;
     Knodule.KNode.prototype.toDOM=
-        Knodule.KNode.prototype.toHTML=function(lang){
+        Knodule.KNode.prototype.toHTML=function(){
             var spec=((this.prime)?("span.dterm.prime"):
                       (this.weak)?("span.dterm.weak"):
                       "span.dterm");
@@ -61,13 +64,6 @@
             return span;};
     
     /* Making DTERM descriptions */
-
-    function html2dom(html){
-        if (!(html)) return false;
-        else if (typeof html === 'string') {
-            if (html[0]==='<') return fdjtDOM(html);
-            else fdjtDOM("span",html);}
-        else return html;}
 
     function KNode2HTML(arg,knodule,varname,cloud,lang){
         if (cloud===true) {
@@ -81,17 +77,16 @@
             ((arg.getQID)&&(arg.getQID()))||(arg.toString());
         var checkbox=((varname)&&
                       (fdjtDOM({tagName: "INPUT",type: "CHECKBOX",
-                                name: varname,value: tag})));
+                                name: varname,value: valstring})));
         var text=((typeof arg === "string")&&(arg))||
             fdjtDOM("span.term",valstring);
         var variations=((arg instanceof KNode)&&(fdjtDOM("span.variations")));
         var span=fdjtDOM(((typeof arg === "string")?("span.rawterm"):("span.dterm")),
                          checkbox," ",variations,text);
         if ((lang)||(cloud)) {
-            addClass(span,"completion")
+            addClass(span,"completion");
             span.setAttribute("value",valstring);}
         function init(){
-            var db=arg._db; var title="";
             if (arg instanceof KNode) {
                 var knode=arg, dterm=knode.dterm;
                 text.innerHTML=dterm;
@@ -128,18 +123,9 @@
     Knodule.Knode2HTML=KNode2HTML;
     Knodule.knode2HTML=KNode2HTML;
 
-    Knodule.prototype.HTML=function(dterm){
-        var args=new Array(arguments.length+1);
-        args[0]=arguments[0]; args[1]=this;
-        var i=1; var lim=arguments.length; while (i<lim) {
-            args[i+1]=arguments[i]; i++;}
-        return knoduleHTML.apply(this,args);};
-
     /* Getting Knodules out of HTML */
 
-    var _knodulesHTML_done=false;
-
-    function KnoduleLoad(elt,knodule){
+    function knoduleLoad(elt,knodule){
         var src=((typeof elt === 'string')?(elt):(elt.src));
         var text=fdjtAjax.getText(src);
         var knowdes=knodule.handleEntries(text);
@@ -147,30 +133,29 @@
             fdjtLog("Parsed %d entries from %s",knowdes.length,elt.src);}
 
     function knoduleSetupHTML(knodule){
-        if (!(knodule)) knodule=Knodule(document.location.href);
-        var doing_the_whole_thing=false;
+        if (!(knodule)) knodule=new Knodule(document.location.href);
         var start=new Date();
         var links=fdjtDOM.getLinks("SBOOK.knodule",true,true).
             concat(fdjtDOM.getLink("knodule",true,true));
-        var i=0; while (i<links.length) KnoduleLoad(links[i++],knodule);
-        var elts=fdjtDOM.getMeta("SBOOK.knowdef");
-        var i=0; while (i<elts.length) {
-            var elt=elts[i++];
+        var i=0; while (i<links.length) knoduleLoad(links[i++],knodule);
+        var elts=fdjtDOM.getMeta("SBOOK.knowdef"), elt;
+        i=0; while (i<elts.length) {
+            elt=elts[i++];
             if (elt.name==="KNOWDEF") knodule.handleEntry(elt.content);}
         elts=document.getElementsByTagName("META");
-        var i=0; while (i<elts.length) {
-            var elt=elts[i++];
+        i=0; while (i<elts.length) {
+            elt=elts[i++];
             if (elt.name==="KNOWDEF") knodule.handleEntry(elt.content);}
         elts=document.getElementsByTagName("SCRIPT");
         i=0; while (i<elts.length) {
-            var elt=elts[i++];
+            elt=elts[i++];
             var lang=elt.getAttribute("language");
             var type=elt.type;
             if ((type==="text/knodule")||(type==="application/knodule")||
                 ((lang) &&
                  ((lang==="knodule") ||(lang==="KNODULE")||
                   (lang==="knowlet"||(lang==="KNOWLET"))))) {
-                if (elt.src) KnoduleLoad(elt,knodule);
+                if (elt.src) knoduleLoad(elt,knodule);
                 else if (elt.text) {
                     var txt=elt.text;
                     var cdata=txt.search("<!\\[CDATA\\[");

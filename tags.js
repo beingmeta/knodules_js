@@ -35,11 +35,15 @@
 
 */
 
+var fdjt=((window)?((window.fdjt)||(window.fdjt={})):({}));
+var Knodule=window.Knodule;
+
 (function(){
+
+    "use strict";
 
     var RefDB=fdjt.RefDB;
     var Ref=fdjt.Ref;
-    var fdjtMap=fdjt.Map;
     var Query=RefDB.Query;
     var KNode=Knodule.KNode;
     var fdjtLog=fdjt.Log;
@@ -47,34 +51,32 @@
 
     var fdjtSet=fdjt.Set;
 
-    var getKeyString=RefDB.getKeyString;
-
     Knodule.addTags=function addTags(refs,tags,refdb,tagdb,base_slot){
-	if (!(base_slot)) base_slot="tags";
-	if (typeof tags === "string") tags=[tags];
-	else if (tags instanceof Ref) tags=[tags];
-	else if (!(tags.length)) tags=[tags];
-	else if (tags instanceof Array) {}
-	else tags=[].concat(tags);
-	if (typeof refs === "string") refs=[refs];
-	else if (refs instanceof Ref) refs=[refs];
-	else if (refs instanceof Array) {}
-	else if (!(refs.length)) refs=[refs];
-	else refs=[].concat(refs);
-	var slots=new Array(tags.length);
-	var i=0, ntags=tags.length;
-	while (i<ntags) {
-	    var tag=tags[i]; var slot=base_slot; var weak=false;
-	    if (typeof tag === "string") {
-		if (tag[0]==="*") {
-		    var tagstart=tag.search(/[^*]/);
-		    slot=tag.slice(0,tagstart)+base_slot;
-		    tag=tag.slice(tagstart);}
-		else if (tag[0]==="~") {
-		    slot="~"+base_slot;
-		    tag=tag.slice(1);
-		    weak=true;}
-		else {}
+        if (!(base_slot)) base_slot="tags";
+        if (typeof tags === "string") tags=[tags];
+        else if (tags instanceof Ref) tags=[tags];
+        else if (!(tags.length)) tags=[tags];
+        else if (tags instanceof Array) {}
+        else tags=[].concat(tags);
+        if (typeof refs === "string") refs=[refs];
+        else if (refs instanceof Ref) refs=[refs];
+        else if (refs instanceof Array) {}
+        else if (!(refs.length)) refs=[refs];
+        else refs=[].concat(refs);
+        var slots=new Array(tags.length);
+        var i=0, ntags=tags.length, tag, slot, ref;
+        while (i<ntags) {
+            tag=tags[i]; slot=base_slot; var weak=false;
+            if (typeof tag === "string") {
+                if (tag[0]==="*") {
+                    var tagstart=tag.search(/[^*]/);
+                    slot=tag.slice(0,tagstart)+base_slot;
+                    tag=tag.slice(tagstart);}
+                else if (tag[0]==="~") {
+                    slot="~"+base_slot;
+                    tag=tag.slice(1);
+                    weak=true;}
+                else {}
                 if (tag.indexOf('|')>0) {
                     if (tagdb) tag=tagdb.handleEntry(tag);
                     else if (Knodule.current)
@@ -85,29 +87,29 @@
                 else if (weak) {}
                 else if (tagdb) tag=tagdb.ref(tag);
                 else {}}
-	    slots[i]=slot; tags[i]=tag; i++;}
-	var j=0, nrefs=refs.length;
-	while (j<nrefs) {
-	    var refstring=refs[j]; var ref=false;
-	    if ((refdb)&&(typeof refstring === "string"))
-		ref=refdb.ref(refstring);
-	    else ref=RefDB.resolve(refstring,false,Knodule,true);
-	    if (!(ref)) {
-		warn("Couldn't resolve %s to a reference",refstring);
-		j++; continue;}
-	    refs[j++]=ref;}
-	i=0; while (i<ntags) {
-	    tag=tags[i], slot=slots[i];
-	    j=0; while (j<nrefs) {
-		ref=refs[j++];
-		if (!(ref)) continue;
-		ref.add(slot,tag,true);
+            slots[i]=slot; tags[i]=tag; i++;}
+        var j=0, nrefs=refs.length;
+        while (j<nrefs) {
+            var refstring=refs[j]; ref=false;
+            if ((refdb)&&(typeof refstring === "string"))
+                ref=refdb.ref(refstring);
+            else ref=RefDB.resolve(refstring,false,Knodule,true);
+            if (!(ref)) {
+                warn("Couldn't resolve %s to a reference",refstring);
+                j++; continue;}
+            refs[j++]=ref;}
+        i=0; while (i<ntags) {
+            tag=tags[i], slot=slots[i];
+            j=0; while (j<nrefs) {
+                ref=refs[j++];
+                if (!(ref)) continue;
+                ref.add(slot,tag,true);
                 if (ref.alltags) ref.alltags.push(tag);
                 else ref.alltags=[tag];
-                if (tag instanceof Knode) {
+                if (tag instanceof KNode) {
                     ref.add('knodes',tag);
                     ref.add(slot+"*",tag,true);}
-		if ((tag instanceof Knode)&&(tag.allways)) 
+                if ((tag instanceof KNode)&&(tag.allways)) 
                     ref.add(slot+"*",tag.allways,true);}
             i++;}};
 
@@ -129,7 +131,7 @@
     Knodule.exportTagSlot=exportTagSlot;
             
     function importTagSlot(ref,slotid,tags,data,indexing){
-        var keep=[]; var alltags=[];
+        var keep=[]; var alltags=[], tagref;
         var knodule=ref.use_knodule||ref._db.use_knodule||Knodule.current;
         if (!(tags instanceof Array)) tags=[tags];
         var i=0, lim=tags.length; while (i<lim) {
@@ -137,11 +139,11 @@
             if (!(tag)) continue;
             else if (tag instanceof Ref) keep.push(tag);
             else if ((typeof tag === "object")&&(tag._id)) {
-                var tagref=ref.resolve(tag,knodule,Knodule,true)||tag._id;
+                tagref=ref.resolve(tag,knodule,Knodule,true)||tag._id;
                 keep.push(tagref);}
             else if (typeof tag === "string") {
                 var tag_start=tag.search(/[^*~]/);
-                var slot=slotid, tagstring=tag, tagref=false;
+                var tagstring=tag, slot=slotid, tagterm=tag;
                 if (tag_start>0) {
                     slot=tag.slice(0,tag_start)+slotid;
                     tagstring=tag.slice(tag_start);}
@@ -152,7 +154,7 @@
                     ((knodule)&&(knodule.ref(tagterm)))||
                     tagterm;
                 if (bar>0) {
-                    if (tagref instanceof Knode) 
+                    if (tagref instanceof KNode) 
                         tagref._db.handleEntry(tagstring);
                     else warn("No knodule for %s",tagstring);}
                 alltags.push(tagref);
@@ -169,13 +171,13 @@
 
     var slotpats=["%","*%","**%","~%","%*","*%*","**%*","~%*"];
     var slotpat_weights=
-	{"~%": 1,"~%*": 1,"%": 4,"%*": 4,
+        {"~%": 1,"~%*": 1,"%": 4,"%*": 4,
          "*%": 8, "*%*": 6,"**%": 12, "**%*": 8};
 
     function TagQuery(tags,dbs,base_weights){
         if (arguments.length===0) return this;
         var clauses=[], slots=this.slots=[];
-	if (!(dbs)) dbs=TagQuery.default_dbs||false;
+        if (!(dbs)) dbs=TagQuery.default_dbs||false;
         if (!(base_weights)) base_weights=this.weights||{"tags": 1};
         if (!(tags instanceof Array)) tags=[tags];
         var weights=this._weights={};
@@ -199,33 +201,31 @@
     TagQuery.prototype=new Query();
     
     var TagMap=window.Map||fdjt.Map;
-    var RefMap=fdjt.RefMap;
-
+    
     TagQuery.prototype.getCoTags=function getCoTags(results){
-	if (this.cotags) return this.cotags;
-	else if (this.execute()) {
-	    if (!(results)) results=this.results;
-	    var scores=this.scores;
+        if (this.cotags) return this.cotags;
+        else if (this.execute()) {
+            if (!(results)) results=this.results;
+            var scores=this.scores;
             var slots=this.slots, n_slots=slots.length;
-	    var alltags=this.cotags=[];
-	    var tagscores=this.tagscores=new TagMap();
-	    var tagfreqs=this.tagfreqs=new TagMap();
-	    var slots=this.slots, weights=this._weights||this.weights;
-            var clauses=this.clauses, n_clauses=clauses.length;
+            var alltags=this.cotags=[];
+            var tagscores=this.tagscores=new TagMap();
+            var tagfreqs=this.tagfreqs=new TagMap();
+            var weights=this._weights||this.weights;
             var max_score=0, max_freq=0;
-	    var r=0, n_results=results.length;
-	    while (r<n_results) {
-		var result=results[r++];
+            var r=0, n_results=results.length;
+            while (r<n_results) {
+                var result=results[r++];
                 var score=((scores)&&(scores[result._id]))||1;
                 var s=0; while (s<n_slots) {
                     var slot=slots[s];
                     if (result.hasOwnProperty(slot)) {
-			var tags=result[slot];
+                        var tags=result[slot];
                         var weight=weights[slot]||1;
                         if (!(tags instanceof Array)) tags=[tags];
-			var v=0, n_tags=tags.length;
-			while (v<n_tags) {
-			    var tag=tags[v++];
+                        var v=0, n_tags=tags.length;
+                        while (v<n_tags) {
+                            var tag=tags[v++];
                             if (!(tagscores.get(tag)))
                                 alltags.push(tag);
                             var new_freq=tagfreqs.increment(tag,1);
@@ -237,8 +237,8 @@
                     s++;}}
             this.max_tagfreq=max_freq;
             this.max_tagscore=max_score;
-	    return alltags;}
-	else return false;};
+            return alltags;}
+        else return false;};
     TagQuery.prototype.getString=function TagQueryString(){
         var tags=fdjt.Set(this.tags); var qstring="";
         var i=0, lim=tags.length;
@@ -247,17 +247,16 @@
             if (typeof tag === "string")
                 qstring=qstring+";"+tag;
             else qstring=qstring+";"+((tag._qid)||(tag.getQID()));}
-        return qstring;}
+        return qstring;};
     
     Knodule.TagQuery=TagQuery;
 
 })();
-	 
+         
 
 /* Emacs local variables
    ;;;  Local variables: ***
    ;;;  compile-command: "cd ..; make" ***
    ;;;  indent-tabs-mode: nil ***
    ;;;  End: ***
-*
-/
+*/

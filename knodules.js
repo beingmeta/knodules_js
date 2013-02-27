@@ -35,26 +35,19 @@
 
 */
 
+var fdjt=((window)?((window.fdjt)||(window.fdjt={})):({}));
+
 var Knodule=(function(){
+    "use strict";
     var fdjtString=fdjt.String;
     var fdjtTime=fdjt.Time;
     var fdjtLog=fdjt.Log;
-    var fdjtDOM=fdjt.DOM, fdjtID=fdjt.ID;
-    var fdjtUI=fdjt.UI;
     var RefDB=fdjt.RefDB;
     var Ref=fdjt.Ref;
     var warn=fdjtLog.warn;
 
-    var knodules={};
-    var all_knodules=[];
-    var knodule=false;
     var trace_parsing=0;
-    var trace_edits=false;
 
-    var kno_simple_oidpat=/@[0-9A-Fa-f]+\/[0-9A-Fa-f]+/;
-    var kno_named_oidpat=/@[0-9A-Fa-f]+\/[0-9A-Fa-f]+(\x22([^\x22]+)\x22)*/;
-    var kno_atbreak=/[^\\]@/g;
-    
     var lang_pat=/^(([A-Za-z]{2,3}\$)|([A-Za-z]{2,3}_[A-Za-z]{2,3}\$))/;
 
     function Knodule(id,inits) {
@@ -124,7 +117,7 @@ var Knodule=(function(){
                     knodule.primescores[string]=prime;
                 newprime=true;}}
         var atpos=string.indexOf('@');
-        if ((atpos==0)||((atpos===1)&&(string[0]===':'))) notword=true;
+        if ((atpos===0)||((atpos===1)&&(string[0]===':'))) notword=true;
         else if ((atpos>2)&&(string[atpos-1]!=='\\')) {
             var domain=string.slice(atpos+1);
             if ((domain!==knodule.name)&&
@@ -181,13 +174,12 @@ var Knodule=(function(){
             this.allways.push(val);
             this.allways=RefDB.merge(this.allways,val.allways);
             return true;}
-        else return false;}
+        else return false;};
     KNode.prototype.addTerm=function(val,field,inlang){
         if ((typeof val === 'string')&&(val.search(lang_pat)===0)) {
             var dollar=val.indexOf('$');
             var langspec=val.slice(0,dollar).toUpperCase();
             var term=val.slice(dollar+1);
-            var lang=this.knodule.language;
             if (langspec===this._db.language) 
                 this.add(field,term);
             else this.add(field,langspec+"$"+term);}
@@ -206,7 +198,7 @@ var Knodule=(function(){
         else if (this._db.absrefs) return this._id;
         else if (this._domain)
             return this._id+"@"+this._domain;
-        else return this._id+"@"+this._db.name;}
+        else return this._id+"@"+this._db.name;};
     
     /* Text processing utilities */
     function stdspace(string) {
@@ -219,7 +211,7 @@ var Knodule=(function(){
     function findBreak(string,brk,start) {
         var pos=string.indexOf(brk,start||0);
         while (pos>0)
-            if (string[pos-1]!="\\")
+            if (string[pos-1]!=="\\")
                 return pos;
         else pos=string.indexOf(brk,pos+1);
         return pos;}
@@ -234,7 +226,7 @@ var Knodule=(function(){
         else if (string.search(_knodule_oddpat)<0)
             return string.split(brk);
         else {}
-        var result=[]; var i=0, pos=start||0;
+        var result=[]; var pos=start||0;
         var nextpos=findBreak(string,brk,pos);
         while (nextpos>=0) {
             var item=((keepspace) ? (string.slice(pos,nextpos)) :
@@ -249,7 +241,8 @@ var Knodule=(function(){
             replace(/^\s*\/\/.*$/g,"");}
 
     /* Processing the PLAINTEXT microformat */
-    function handleClause(clause,subject) {
+    Knodule.prototype.handleClause=function handleClause(clause,subject) {
+        var object=false, role=false, value=false;
         if (clause.indexOf('\\')>=0) clause=fdjtString.unEscape(clause);
         if (trace_parsing>2)
             fdjtLog("Handling clause '%s' for %o",clause,subject);
@@ -270,27 +263,27 @@ var Knodule=(function(){
                             "Invalid Knodule clause '%s' for %o (%s)",
                             clause,subject,subject.dterm);}
                     else {
-                        var role=this.KNode(clause.slice(1,pstart));
-                        var object=this.KNode(clause.slice(pstart+1,pend));
+                        role=this.KNode(clause.slice(1,pstart));
+                        object=this.KNode(clause.slice(pstart+1,pend));
                         object.add(role.dterm,subject);
                         subject.add('genls',role);}}
                 else subject.add('genls',this.KNode(clause.slice(1)));}
             break;
         case '_': {
-            var object=this.KNode(clause.slice(1));
+            object=this.KNode(clause.slice(1));
             subject.add('examples',object);
-            object.add('genls',subject);
-            break;}
+            object.add('genls',subject);}
+            break;
         case '-':
             subject.add('never',this.KNode(clause.slice(1)));
             break;
         case '&': {
-            var value=clause.slice((clause[1]==="-") ? (2) : (1));
+            value=clause.slice((clause[1]==="-") ? (2) : (1));
             var assoc=this.KNode(value);
             if (clause[1]==="-")
                 subject.add('antiassocs',assoc);
-            else subject.add('assocs',assoc);
-            break;}
+            else subject.add('assocs',assoc);}
+            break;
         case '@': 
             if (clause[1]==="#") 
                 subject.add('tags',clause.slice(2));
@@ -308,18 +301,20 @@ var Knodule=(function(){
             break;
         case '+': {
             if (clause[1]==="*") {
-                subject.gloss=gloss.slice(2);
+                subject.gloss=clause.slice(2);
                 subject.addTerm(subject.gloss,'glosses');}
             else if (clause[1]==="~") {
+                subject.gloss=clause.slice(2);
                 subject.addTerm(subject.gloss,'glosses');}
             else {
-                subject.addTerm(gloss,"glosses");}
-            break;}
+                subject.gloss=clause.slice(2);
+                subject.addTerm(subject.gloss,"glosses");}}
+            break;
         case '%': {
-            var mirror=this.KNode(clause.slice(1));
+            var mirror=this.KNode(clause.slice(1)), omirror;
             if (subject.mirror===mirror) break;
             else {
-                var omirror=subject.mirror;
+                omirror=subject.mirror;
                 fdjtLog.warn("Inconsistent mirrors for %s: +%s and -%s",
                              subject,mirror,omirror);
                 omirror.mirror=false;}
@@ -328,44 +323,43 @@ var Knodule=(function(){
                 fdjtLog.warn("Inconsistent mirrors for %s: +%s and -%s",
                              mirror,subject,oinvmirror);
                 omirror.mirror=false;}
-            subject.mirror=mirror; mirror.mirror=subject;
-            break;}
+            subject.mirror=mirror; mirror.mirror=subject;}
+            break;
         case '.': {
             var brk=findBreak(clause,'=');
             if (!(brk))
                 throw {name: 'InvalidClause', irritant: clause};
-            var role=this.KNode(clause.slice(1,brk));
-            var object=this.KNode(clause.slice(brk+1));
+            role=this.KNode(clause.slice(1,brk));
+            object=this.KNode(clause.slice(brk+1));
             this.add(role.dterm,object);
-            object.add('genls',role);
-            break;}
+            object.add('genls',role);}
+            break;
         case '~': {
             var hook=clause.slice(1);
-            subject.addTerm(hook,'hooks');
-            break;}
+            subject.addTerm(hook,'hooks');}
+            break;
         case ':': {
             var equals=findBreak(clause,'=');
             if (equals>0) {
                 var field=clause.slice(1,equals);
-                var multi=(clause[equals+1]=='+');
-                var value=((multi)?(clause.slice(equals+2)):
-                           (clause.slice(equals+1)));
+                var multi=(clause[equals+1]==='+');
+                value=((multi)?(clause.slice(equals+2)):
+                       (clause.slice(equals+1)));
                 if (multi) subject.add(field,value);
                 else subject.store(field,value);}
-            subject.add('flags',clause.slice(1));
-            break;}
+            subject.add('flags',clause.slice(1));}
+            break;
         default: {
-            var brk=findBreak(clause,'=');
-            if (brk>0) {
-                var role=this.KNode(clause.slice(0,brk));
-                var object=this.KNode(clause.slice(brk+1));
+            var eqbrk=findBreak(clause,'=');
+            if (eqbrk>0) {
+                role=this.KNode(clause.slice(0,eqbrk));
+                object=this.KNode(clause.slice(eqbrk+1));
                 subject.add(role.dterm,object);
                 object.add('genls',role);}
             else subject.addTerm(clause);}}
-        return subject;}
-    Knodule.prototype.handleClause=handleClause;
+        return subject;};
 
-    function handleSubjectEntry(entry){
+    Knodule.prototype.handleSubjectEntry=function handleSubjectEntry(entry){
         var clauses=segmentString(entry,"|");
         var subject=this.KNode(clauses[0]);
         if (this.trace_parsing>2)
@@ -375,11 +369,9 @@ var Knodule=(function(){
             this.handleClause(clauses[i++],subject);
         if (this.trace_parsing>2)
             fdjtLog("Processed subject entry %o",subject);
-        return subject;}
-    Knodule.prototype.handleSubjectEntry=handleSubjectEntry;
+        return subject;};
 
-    function handleEntry(entry){
-        var weak=false;
+    Knodule.prototype.handleEntry=function handleEntry(entry){
         entry=trimspace(entry);
         if (entry.length===0) return false;
         var starpower=entry.search(/[^*]/);
@@ -404,8 +396,8 @@ var Knodule=(function(){
         if (starpower) {
             var id=subject._id;
             var prime=this.prime; var scores=this.primescores;
-            var score;
-            if (score=scores[id]) {
+            var score=scores[id];
+            if (score) {
                 if (starpower>score) {
                     scores[id]=starpower;
                     subject.prime=starpower;}}
@@ -413,10 +405,9 @@ var Knodule=(function(){
                 prime.push(id);
                 scores[id]=starpower;
                 subject.prime=starpower;}}
-        return subject;}
-    Knodule.prototype.handleEntry=handleEntry;
+        return subject;};
 
-    function handleEntries(block){
+    Knodule.prototype.handleEntries=function handleEntries(block){
         if (typeof block === "string") {
             var nocomment=stripComments(block);
             var segmented=segmentString(nocomment,';');
@@ -428,10 +419,9 @@ var Knodule=(function(){
             var i=0; while (i<block.length) {
                 results[i]=this.handleEntry(block[i]); i++;}
             return results;}
-        else throw {name: 'TypeError', irritant: block};}
-    Knodule.prototype.handleEntries=handleEntries;
+        else throw {name: 'TypeError', irritant: block};};
 
-    Knodule.prototype.def=handleSubjectEntry;
+    Knodule.prototype.def=Knodule.prototype.handleSubjectEntry;
 
     Knodule.def=function(string,kno){
         if (!(kno)) kno=Knodule.knodule;
