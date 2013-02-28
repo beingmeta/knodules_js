@@ -43,7 +43,7 @@ KnoduleIndex.Query=
         var fdjtLog=fdjt.Log;
         var fdjtDOM=fdjt.DOM;
         var fdjtUI=fdjt.UI;
-        var fdjtKB=fdjt.KB, fdjtID=fdjt.ID;
+        var RefDB=fdjt.RefDB, fdjtID=fdjt.ID;
         
         function Query(index,query) {
             if (!(index)) return this;
@@ -143,7 +143,7 @@ KnoduleIndex.Query=
                     fdjtLog("Query element '%s' matches %d items",
                             term,items.length);
                 i++;}
-            if (query.length===1) allitems=fdjtKB.Set(matches[0]);
+            if (query.length===1) allitems=RefDB.Set(matches[0]);
             else {
                 var i=0, lim=counted.length;
                 while (i<lim) {
@@ -199,7 +199,7 @@ KnoduleIndex.Query=
                         var tag=tags[j++]; var freq, score;
                         // If the tag is already part of the query, we
                         // ignore it.
-                        if (fdjtKB.contains(qterms,tag)) {}
+                        if (RefDB.contains(qterms,tag)) {}
                         // If the tag has already been seen, we
                         // increase its frequency and its general
                         // score
