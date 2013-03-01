@@ -200,7 +200,7 @@ var Knodule=window.Knodule;
 
     TagQuery.prototype=new Query();
     
-    var TagMap=window.Map||fdjt.Map;
+    var TagMap=fdjt.Map;
     
     TagQuery.prototype.getCoTags=function getCoTags(results){
         if (this.cotags) return this.cotags;
