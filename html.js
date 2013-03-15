@@ -34,12 +34,13 @@
    Enjoy!
 
 */
+/* jshint browser: true */
+/* global Knodule: false */
 
-var fdjt=((window)?((window.fdjt)||(window.fdjt={})):({}));
-var Knodule=window.Knodule;
+//var fdjt=((window)?((window.fdjt)||(window.fdjt={})):({}));
+//var Knodule=window.Knodule;
 
 (function(){
-
     "use strict";
 
     var fdjtString=fdjt.String;

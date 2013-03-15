@@ -35,7 +35,7 @@
 
 */
 
-var fdjt=((window)?((window.fdjt)||(window.fdjt={})):({}));
+//var fdjt=((window)?((window.fdjt)||(window.fdjt={})):({}));
 
 var Knodule=(function(){
     "use strict";
@@ -432,7 +432,9 @@ var Knodule=(function(){
     return Knodule;})();
 
 var KNode=Knodule.KNode;
-var Knode=Knodule.KNode;
+var Knode=KNode;
+// Suppress never-used warning
+if (KNode!==Knode) fdjt.Log("Weird stuff");
 
 /* Emacs local variables
    ;;;  Local variables: ***
