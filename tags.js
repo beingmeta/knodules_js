@@ -132,7 +132,8 @@
             
     function importTagSlot(ref,slotid,tags,data,indexing){
         var keep=[]; var alltags=[], tagref;
-        var knodule=ref.use_knodule||ref._db.use_knodule||Knodule.current;
+        var knodule=ref.tag_knodule||ref._db.tag_knodule||
+            Knodule.tag_knodule||Knodule.current;
         if (!(tags instanceof Array)) tags=[tags];
         var i=0, lim=tags.length; while (i<lim) {
             var tag=tags[i++];
@@ -150,7 +151,7 @@
                 var bar=tagstring.indexOf('|');
                 if (bar>0) tagterm=tagstring.slice(0,bar);
                 else tagterm=tagstring;
-                tagref=RefDB.resolve(tagterm,knodule,Knodule,false)||
+                tagref=RefDB.resolve(tagterm,knodule,Knodule,true)||
                     ((knodule)&&(knodule.ref(tagterm)))||
                     tagterm;
                 if (bar>0) {
