@@ -136,19 +136,23 @@
     function knoduleSetupHTML(knodule){
         if (!(knodule)) knodule=new Knodule(document.location.href);
         var start=new Date();
-        var links=fdjtDOM.getLinks("SBOOK.knodule",true,true).
-            concat(fdjtDOM.getLink("knodule",true,true));
-        var i=0; while (i<links.length) knoduleLoad(links[i++],knodule);
-        var elts=fdjtDOM.getMeta("SBOOK.knowdef"), elt;
-        i=0; while (i<elts.length) {
+        var elts=fdjtDOM.getLinks("{http://knodules.org/}knodule",true,true);
+        var i=0, lim, elt;
+        if (!((elts)&&(elts.length)))
+            elts=fdjtDOM.getLinks("knodule",true,true);
+        if (!((elts)&&(elts.length)))
+            elts=fdjtDOM.getLinks("*.knodule",true,true);
+        i=0, lim=elts.length; while (i<lim) knoduleLoad(elts[i++],knodule);
+        elts=fdjtDOM.getMeta("SBOOK.knodef");
+        i=0; lim=elts.length; while (i<elts.length) {
             elt=elts[i++];
-            if (elt.name==="KNOWDEF") knodule.handleEntry(elt.content);}
+            if (elt.name==="KNODEF") knodule.handleEntry(elt.content);}
         elts=document.getElementsByTagName("META");
-        i=0; while (i<elts.length) {
+        i=0; lim=elts.length; while (i<lim) {
             elt=elts[i++];
-            if (elt.name==="KNOWDEF") knodule.handleEntry(elt.content);}
+            if (elt.name==="KNODEF") knodule.handleEntry(elt.content);}
         elts=document.getElementsByTagName("SCRIPT");
-        i=0; while (i<elts.length) {
+        i=0, lim=elts.length; while (i<lim) {
             elt=elts[i++];
             var lang=elt.getAttribute("language");
             var type=elt.type;
