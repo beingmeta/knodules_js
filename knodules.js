@@ -331,7 +331,7 @@ var Knodule=(function(){
                 throw {name: 'InvalidClause', irritant: clause};
             role=this.KNode(clause.slice(1,brk));
             object=this.KNode(clause.slice(brk+1));
-            this.add(role.dterm,object);
+            subject.add(role.dterm,object);
             object.add('genls',role);}
             break;
         case '~': {
