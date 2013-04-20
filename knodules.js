@@ -134,9 +134,11 @@ var Knodule=(function(){
         var refterm=(lang===knodule.language)?(string):lang+"$"+string;
         knode=Ref.call(this,refterm,knodule);
         if (knode===this) {
-            knode.dterm=string;
-            knode.dterm=refterm;
-            knodule.dterms[refterm]=knode;
+            if (!(knode.dterm)) knode.dterm=refterm;
+            knode.add('dterms',refterm);
+            if (!(knodule.dterms.hasOwnProperty(refterm))) {
+                knodule.dterms[refterm]=knode;
+                knodule.alldterms.push(refterm);}
             knode.allways=fdjt.Set();
             if (lang) knode.add(lang,string);
             knode._live=fdjtTime();}
@@ -180,15 +182,20 @@ var Knodule=(function(){
             var dollar=val.indexOf('$');
             var langspec=val.slice(0,dollar).toUpperCase();
             var term=val.slice(dollar+1);
-            if (langspec===this._db.language) 
-                this.add(field,term);
-            else this.add(field,langspec+"$"+term);}
+            if (langspec===this._db.language) {
+                if (field) this.add(field,term);
+                else this.add(langspec,term);}
+            else if (field)
+                this.add(field,langspec+"$"+term);
+            else this.add(langspec,term);}
         else if (inlang) {
             inlang=inlang.toUpperCase();
             if (inlang===this._db.language)
                 this.add(field,val);
             else this.add(field,inlang+"$"+val);}
-        else this.add(field,val);};
+        else if (field)
+            this.add(field,val);
+        else this.add(this._db.language,val);};
     KNode.prototype.tagString=function(kno) {
         if (this.oid) return this.oid;
         else if (this.uuid) return this.uuid;
@@ -236,9 +243,6 @@ var Knodule=(function(){
             nextpos=findBreak(string,brk,pos);}
         result.push(string.slice(pos));
         return result;}
-    function stripComments(string) {
-        return string.replace(/^\s*#.*$/g,"").
-            replace(/^\s*\/\/.*$/g,"");}
 
     /* Processing the PLAINTEXT microformat */
     Knodule.prototype.handleClause=function handleClause(clause,subject) {
@@ -296,8 +300,14 @@ var Knodule=(function(){
                 subject.add('equiv',this.KNode(clause.slice(2)));
             else if (clause[1]==='~')
                 subject.add('kinda',this.KNode(clause.slice(2)));
-            else 
+            else if (clause[1]==='=')
                 subject.add('identical',this.KNode(clause.slice(1)));
+            else {
+                var term=clause.slice(1), db=subject._db;
+                if (!(db.dterms.hasOwnProperty(term))) {
+                    subject.add('dterms',term);
+                    db.alldterms.push(term);
+                    db.dterms[term]=subject;}}
             break;
         case '+': {
             if (clause[1]==="*") {
@@ -407,17 +417,44 @@ var Knodule=(function(){
                 subject.prime=starpower;}}
         return subject;};
 
+    function splitEntries(block) {
+        var segmented=segmentString(block,'\n');
+        var i=0, lim=segmented.length;
+        var merged=[], cur=false;
+        while (i<lim) {
+            var s=segmented[i++], len=s.length;
+            if (len===0) {
+                if (cur) {merged.push(cur); cur=false;}
+                continue;}
+            else if (!(cur)) cur=s;
+            else if ((s.search(/\s/)===0)||(s[len-1]==='\\')) {
+                var start=s.search(/\S/);
+                if (start<0) {
+                    merged.push(cur); cur=false;
+                    continue;}
+                if (start===0)
+                    cur=cur+s.slice(start);
+                else cur=cur+" "+s.slice(start);}
+            else {merged.push(cur); cur=s;}}
+        if (cur) merged.push(cur);
+        return merged;}
+    function stripComments(string) {
+        return string.replace(/^\s*#.*$/g,"").
+            replace(/^\s*\/\/.*$/g,"");}
+    
     Knodule.prototype.handleEntries=function handleEntries(block){
         if (typeof block === "string") {
             var nocomment=stripComments(block);
-            var segmented=segmentString(nocomment,';');
+            var segmented=splitEntries(nocomment);
             if (this.trace_parsing>1)
                 fdjtLog("Handling %d entries",segmented.length);
             return this.handleEntries(segmented);}
         else if (block instanceof Array) {
             var results=[];
             var i=0; while (i<block.length) {
-                results[i]=this.handleEntry(block[i]); i++;}
+                var entry=block[i++]; var len=entry.length;
+                if (entry[len-1]===';') entry=entry.slice(0,len-1);
+                results[i]=this.handleEntry(entry);}
             return results;}
         else throw {name: 'TypeError', irritant: block};};
 
