@@ -369,9 +369,20 @@ var Knodule=(function(){
             else subject.addTerm(clause);}}
         return subject;};
 
+    function getSubject(knodule,clauses){
+        var probe=knodule.probe(clauses[0]);
+        if (probe) return probe;
+        else {
+            var i=1, lim=clauses.length; while (i<lim) {
+                var clause=clauses[i++];
+                if (clause[0]==='=') {
+                    probe=knodule.probe(clause.slice(1));
+                    if (probe) return probe;}}
+            return knodule.KNode(clauses[0]);}}
+
     Knodule.prototype.handleSubjectEntry=function handleSubjectEntry(entry){
         var clauses=segmentString(entry,"|");
-        var subject=this.KNode(clauses[0]);
+        var subject=getSubject(this,clauses);
         if (this.trace_parsing>2)
             fdjtLog("Processing subject entry %s %o %o",
                     entry,subject,clauses);
