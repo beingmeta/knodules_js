@@ -317,7 +317,7 @@ var Knodule=(function(){
                 subject.gloss=clause.slice(2);
                 subject.addTerm(subject.gloss,'glosses');}
             else {
-                subject.gloss=clause.slice(2);
+                subject.gloss=clause.slice(1);
                 subject.addTerm(subject.gloss,"glosses");}}
             break;
         case '%': {
