@@ -474,6 +474,7 @@ var Knodule=(function(){
     Knodule.def=function(string,kno){
         if (!(kno)) kno=Knodule.knodule;
         return kno.def(string);};
+    Knodule.ref=RefDB.ref;
 
     Knodule.prototype.trace_parsing=0;
 
