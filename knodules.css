@@ -41,7 +41,7 @@ div.richtip .relcode {
   font-weight: bold; color: red;}
 
 span.dterm {
-    padding-right: 0.35em; padding-left: 1ex;
+    padding-right: 0.35ex; padding-left: 0.5ex;
     padding-top: 0px; padding-bottom: 0px;
     border-top-left-radius: 1ex; border-bottom-left-radius: 1ex;
     color: darkblue; background-color: gold;
