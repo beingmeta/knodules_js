@@ -143,7 +143,7 @@
         if (!((elts)&&(elts.length)))
             elts=fdjtDOM.getLinks("*.knodule",true,true);
         i=0, lim=elts.length; while (i<lim) knoduleLoad(elts[i++],knodule);
-        elts=fdjtDOM.getMeta("SBOOK.knodef");
+        elts=fdjtDOM.getMeta("SBOOKS.knodef");
         i=0; lim=elts.length; while (i<elts.length) {
             elt=elts[i++];
             if (elt.name==="KNODEF") knodule.handleEntry(elt.content);}
