@@ -142,7 +142,7 @@
             elts=fdjtDOM.getLinks("knodule",true,true);
         if (!((elts)&&(elts.length)))
             elts=fdjtDOM.getLinks("*.knodule",true,true);
-        i=0, lim=elts.length; while (i<lim) knoduleLoad(elts[i++],knodule);
+        i=0; lim=elts.length; while (i<lim) knoduleLoad(elts[i++],knodule);
         elts=fdjtDOM.getMeta("SBOOKS.knodef");
         i=0; lim=elts.length; while (i<elts.length) {
             elt=elts[i++];
@@ -152,7 +152,7 @@
             elt=elts[i++];
             if (elt.name==="KNODEF") knodule.handleEntry(elt.content);}
         elts=document.getElementsByTagName("SCRIPT");
-        i=0, lim=elts.length; while (i<lim) {
+        i=0; lim=elts.length; while (i<lim) {
             elt=elts[i++];
             var lang=elt.getAttribute("language");
             var type=elt.type;

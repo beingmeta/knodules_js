@@ -99,8 +99,7 @@
                 j++; continue;}
             refs[j++]=ref;}
         i=0; while (i<ntags) {
-            tag=tags[i], slot=slots[i];
-            j=0; while (j<nrefs) {
+            tag=tags[i]; slot=slots[i]; j=0; while (j<nrefs) {
                 ref=refs[j++];
                 if (!(ref)) continue;
                 ref.add(slot,tag,true);
