@@ -429,7 +429,7 @@ var Knodule=(function(){
         return subject;};
 
     function splitEntries(block) {
-        var segmented=segmentString(block,'\n');
+        var segmented=segmentString(block,';');
         var i=0, lim=segmented.length;
         var merged=[], cur=false;
         while (i<lim) {
