@@ -92,6 +92,7 @@
                 var knode=arg, dterm=knode.dterm;
                 text.innerHTML=dterm;
                 span.setAttribute("key",dterm);
+                span.setAttribute("data-dterm",knode);
                 if ((lang)||(cloud)) {
                     var synonyms=knode[lang];
                     if ((synonyms)&&(typeof synonyms === 'string'))
