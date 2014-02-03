@@ -201,12 +201,30 @@ var Knodule=(function(){
         else if (this.uuid) return this.uuid;
         else if (this._qid) return this._qid;
         if (!(kno)) kno=Knodule.current||false;
-        if (kno===this.knodule) return this._id;
+        if (kno===this._db) return this._id;
         else if (this._db.absrefs) return this._id;
         else if (this._domain)
             return this._id+"@"+this._domain;
         else return this._id+"@"+this._db.name;};
     
+    KNode.prototype.toPlaintext=function() {
+        var result="";
+        var variants=this[this._db.language||'EN']; var n=0;
+        if (typeof variants==="string") variants=[variants];
+        var i=0; while (i<variants.length) {
+            result=result+((n>0)?"|":"")+variants[i++]; n++;}
+        var genls=this.genls;
+        if (typeof genls==="string") genls=[genls];
+        if ((genls)&&(genls.length)) {
+            i=0; while (i<genls.length) {
+                result=result+((n>0)?"|^":"^")+genls[i++].dterm; n++;}}
+        var specls=this.specls;
+        if (typeof specls==="string") specls=[specls];
+        if ((specls)&&(specls.length)) {
+            i=0; while (i<specls.length) {
+                result=result+((n>0)?"|_":"_")+specls[i++].dterm; n++;}}
+        return result;}
+
     /* Text processing utilities */
     function stdspace(string) {
         return string.replace(/\s+/," ").
