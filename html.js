@@ -86,12 +86,12 @@
                          checkbox," ",variations,text);
         if ((lang)||(cloud)) {
             addClass(span,"completion");
-            span.setAttribute("value",valstring);}
+            span.setAttribute("data-value",valstring);}
         function init(){
             if (arg instanceof KNode) {
                 var knode=arg, dterm=knode.dterm;
                 text.innerHTML=dterm;
-                span.setAttribute("key",dterm);
+                span.setAttribute("data-key",dterm);
                 span.setAttribute("data-dterm",knode);
                 if ((lang)||(cloud)) {
                     var synonyms=knode[lang];
@@ -102,19 +102,19 @@
                             var synonym=synonyms[i++];
                             if (synonym===dterm) continue;
                             var variation=fdjtDOM("span.variation",synonym,"=");
-                            variation.setAttribute("key",synonym);
+                            variation.setAttribute("data-key",synonym);
                             variations.appendChild(variation);}}
                     if (knode.about) span.title=knode.about;
                     // This should try to get a dterm in the right language
-                    span.setAttribute("key",knode.dterm);}
-                else span.setAttribute("key",knode.dterm);}
+                    span.setAttribute("data-key",knode.dterm);}
+                else span.setAttribute("data-key",knode.dterm);}
             else {
                 if (arg.name) {
-                    span.setAttribute("key",arg.name);
+                    span.setAttribute("data-key",arg.name);
                     span.innerHTML=arg.name;}}
             if (cloud) cloud.addCompletion(span);}
         if (typeof arg === "string") {
-            span.setAttribute("key",arg);
+            span.setAttribute("data-key",arg);
             if (cloud) cloud.addCompletion(span);
             return span;}
         else if (arg._live) {init(); return span;}
