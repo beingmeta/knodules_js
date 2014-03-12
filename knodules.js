@@ -2,7 +2,7 @@
 
 /* ##################### knodules/knodules.js ####################### */
 
-/* Copyright (C) 2009-2013 beingmeta, inc.
+/* Copyright (C) 2009-2014 beingmeta, inc.
    This file provides a Javascript/ECMAScript of KNODULES, 
    a lightweight knowledge representation facility.
 
@@ -223,7 +223,7 @@ var Knodule=(function(){
         if ((specls)&&(specls.length)) {
             i=0; while (i<specls.length) {
                 result=result+((n>0)?"|_":"_")+specls[i++].dterm; n++;}}
-        return result;}
+        return result;};
 
     /* Text processing utilities */
     function stdspace(string) {

@@ -2,7 +2,7 @@
 
 /* ##################### knodules/knodules.js ####################### */
 
-/* Copyright (C) 2009-2013 beingmeta, inc.
+/* Copyright (C) 2009-2014 beingmeta, inc.
    This file provides a Javascript/ECMAScript of KNODULES, 
    a lightweight knowledge representation facility.
 
