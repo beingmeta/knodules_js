@@ -104,6 +104,8 @@ var Knodule=(function(){
     Knodule.prototype.toString=function(){
         return "Knodule("+this.name+")";};
 
+    var stdcap=fdjtString.stdcap;
+
     function KNode(string,knodule,lang){
         if (arguments.length===0) return this;
         var weak=false; var prime=
@@ -122,7 +124,8 @@ var Knodule=(function(){
             var domain=string.slice(atpos+1);
             if ((domain!==knodule.name)&&
                 (knodule.aliases.indexOf(domain)<0))
-                warn("Reference %s is being handled by %s",string,knodule);
+                warn("Reference %s in %s is being handled by %s",
+                     string,domain,knodule);
             string=string.slice(0,atpos);}
         if (notword) {}
         else if (string.search(lang_pat)===0) {
@@ -131,6 +134,8 @@ var Knodule=(function(){
             string=string.slice(dollar+1);}
         else if (lang) lang=lang.toUpperCase();
         else lang=knodule.language||"EN";
+        // Normalize capitalization
+        string=stdcap(string);
         var refterm=(lang===knodule.language)?(string):lang+"$"+string;
         knode=Ref.call(this,refterm,knodule);
         if (knode===this) {
@@ -163,6 +168,8 @@ var Knodule=(function(){
         return new KNode(string,this,lang);};
     Knodule.prototype.probe=function(string,langid) {
         var refs=this.refs, aliases=this.aliases;
+        // Normalize string for knodules
+        string=stdcap(string);
         if ((this.language===langid)||(!(langid)))
             return ((refs.hasOwnProperty(string))&&(refs[string]))||
             ((aliases.hasOwnProperty(string))&&(aliases[string]))||
@@ -388,13 +395,14 @@ var Knodule=(function(){
         return subject;};
 
     function getSubject(knodule,clauses){
-        var probe=knodule.probe(clauses[0]);
+        var ref=stdcap(clauses[0]);
+        var probe=knodule.probe(ref);
         if (probe) return probe;
         else {
             var i=1, lim=clauses.length; while (i<lim) {
                 var clause=clauses[i++];
                 if (clause[0]==='=') {
-                    probe=knodule.probe(clause.slice(1));
+                    probe=knodule.probe(stdcap(clause.slice(1)));
                     if (probe) return probe;}}
             return knodule.KNode(clauses[0]);}}
 
@@ -447,24 +455,22 @@ var Knodule=(function(){
         return subject;};
 
     function splitEntries(block) {
-        var segmented=segmentString(block,';');
+        var segmented=segmentString(block,/;|\n/g,false,true);
         var i=0, lim=segmented.length;
         var merged=[], cur=false;
         while (i<lim) {
             var s=segmented[i++], len=s.length;
+            var start=s.search(/\S/); if (start<0) start=0;
             if (len===0) {
-                if (cur) {merged.push(cur); cur=false;}
-                continue;}
-            else if (!(cur)) cur=s;
-            else if ((s.search(/\s/)===0)||(s[len-1]==='\\')) {
-                var start=s.search(/\S/);
-                if (start<0) {
-                    merged.push(cur); cur=false;
-                    continue;}
-                if (start===0)
-                    cur=cur+s.slice(start);
-                else cur=cur+" "+s.slice(start);}
-            else {merged.push(cur); cur=s;}}
+                if (cur) {merged.push(cur); cur=false;}}
+            else if (s[len-2]==='\\') {
+                if (cur) {
+                    cur=cur+s.slice(start,-2)+s.slice(-1);}
+                else cur=s.slice(start,-2)+s.slice(-1);}
+            else if (cur) {
+                merged.push(cur+s.slice(start));
+                cur=false;}
+            else merged.push(s);}
         if (cur) merged.push(cur);
         return merged;}
     function stripComments(string) {
