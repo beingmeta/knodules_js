@@ -50,12 +50,6 @@ span.dterm.weak {
     border: solid yellow 2px;
     opacity: 0.85;}
 
-span.rawterm:before {
-    font-weight: bold; content: '“'; color: black;}
-span.rawterm:after {
-    font-weight: bold; content: '”'; color: black;}
-
-
 /* Emacs local variables
 ;;;  Local variables: ***
 ;;;  compile-command: "cd ..; make" ***

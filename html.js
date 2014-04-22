@@ -82,8 +82,10 @@
         var text=((typeof arg === "string")&&(arg))||
             fdjtDOM("span.term",valstring);
         var variations=((arg instanceof KNode)&&(fdjtDOM("span.variations")));
-        var span=fdjtDOM(((typeof arg === "string")?("span.rawterm"):("span.dterm")),
-                         checkbox," ",variations,text);
+        var israw=(typeof arg === "string");
+        var span=fdjtDOM(((israw)?("span.rawterm"):("span.dterm")),
+                         checkbox," ",variations,
+                         ((israw)?("\u201c"+text+"\u201d"):(text)));
         if ((lang)||(cloud)) {
             addClass(span,"completion");
             span.setAttribute("data-value",valstring);}
