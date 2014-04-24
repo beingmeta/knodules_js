@@ -380,6 +380,12 @@ var Knodule=(function(){
                 var multi=(clause[equals+1]==='+');
                 value=((multi)?(clause.slice(equals+2)):
                        (clause.slice(equals+1)));
+                if (value[0]==='\\') value=value.slice(1);
+                else if (/\d/.exec(value[0])) {
+                    var parsed=parseFloat(value[0]);
+                    if ((typeof parsed === "number")&&(!(Number.isNaN(parsed))))
+                        value=parsed;}
+                else {}
                 if (multi) subject.add(field,value);
                 else subject.store(field,value);}
             subject.add('flags',clause.slice(1));}
