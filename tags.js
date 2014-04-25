@@ -51,7 +51,7 @@
 
     var fdjtSet=fdjt.Set;
 
-    Knodule.addTags=function addTags(refs,tags,refdb,tagdb,base_slot){
+    Knodule.addTags=function addTags(refs,tags,refdb,tagdb,base_slot,tagscores){
         if (!(base_slot)) base_slot="tags";
         if (typeof tags === "string") tags=[tags];
         else if (tags instanceof Ref) tags=[tags];
@@ -99,7 +99,13 @@
                 j++; continue;}
             refs[j++]=ref;}
         i=0; while (i<ntags) {
-            tag=tags[i]; slot=slots[i]; j=0; while (j<nrefs) {
+            tag=tags[i]; slot=slots[i];
+            if (tagscores) {
+                var slotpat=slot.replace(base_slot,"%");
+                var slotweight=slotpat_weights[slotpat];
+                if (!(slotweight)) slotweight=3;
+                tagscores.increment(tag,nrefs*slotweight);}
+            j=0; while (j<nrefs) {
                 ref=refs[j++];
                 if (!(ref)) continue;
                 ref.add(slot,tag,true);
@@ -169,9 +175,9 @@
 
     // Knodule.addTags=function addTags(){};
 
-    var slotpats=["%","*%","**%","~%","%*","*%*","**%*","~%*"];
+    var slotpats=["%","*%","**%","~%","%*","*%*","**%*","~%*","^%","^%*"];
     var slotpat_weights=
-        {"~%": 1,"~%*": 1,"%": 4,"%*": 4,
+        {"~%": 1,"~%*": 1,"%": 4,"%*": 4,"^%": 2,"^%*": 2,
          "*%": 8, "*%*": 6,"**%": 12, "**%*": 8};
 
     function TagQuery(tags,dbs,base_weights){
