@@ -382,9 +382,9 @@ var Knodule=(function(){
                        (clause.slice(equals+1)));
                 if (value[0]==='\\') value=value.slice(1);
                 else if (/\d/.exec(value[0])) {
-                    var parsed=parseFloat(value[0]);
-                    if ((typeof parsed === "number")&&(!(Number.isNaN(parsed))))
-                        value=parsed;}
+                    var number=parseFloat(value[0]);
+                    if ((typeof number === "number")&&((number)||(number===0)))
+                        value=number;}
                 else {}
                 if (multi) subject.add(field,value);
                 else subject.store(field,value);}
