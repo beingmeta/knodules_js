@@ -232,14 +232,6 @@ var Knodule=(function(){
                 result=result+((n>0)?"|_":"_")+specls[i++].dterm; n++;}}
         return result;};
 
-    /* Text processing utilities */
-    function stdspace(string) {
-        return string.replace(/\s+/," ").
-            replace(/^\s/,"").replace(/\s$/,"");}
-    
-    function trimspace(string) {
-        return string.replace(/^\s/,"").replace(/\s$/,"");}
-
     function findBreak(string,brk,start) {
         var pos=string.indexOf(brk,start||0);
         while (pos>0)
@@ -248,30 +240,7 @@ var Knodule=(function(){
         else pos=string.indexOf(brk,pos+1);
         return pos;}
 
-    function segmentString(string,brk,start,keepspace) {
-        if (start) string=string.slice(start);
-        var brk_source=((typeof brk === "string")?(brk):(brk.source));
-        var brk_flags=((typeof brk === "string")?(""):
-                       ((brk.ignoreCase)?("i"):("")));
-        var brkpat=new RegExp("("+brk_source+")",brk_flags);
-        var results=[], segs=string.split(brkpat);
-        var i=0, lim=segs.length, merged=false; while (i<lim) {
-            var seg=segs[i++], sep=segs[i++];
-            if ((seg.length)&&(seg.slice(-1)==="\\")&&
-                ((seg.length<2)||(seg.slice(-2,-1)!=="\\"))) {
-                var unescaped=seg.slice(0,-1)+sep;
-                if (merged) merged=merged+unescaped;
-                else merged=unescaped;}
-            else if (merged) {
-                if (keepspace)
-                    results.push(merged+seg);
-                else results.push(stdspace(merged+seg));
-                merged=false;}
-            else if (keepspace)
-                results.push(seg);
-            else results.push(stdspace(seg));}
-        return results;}
-    Knodule.segmentString=segmentString;
+    var segment=fdjtString.segment;
 
     /* Processing the PLAINTEXT microformat */
     Knodule.prototype.handleClause=function handleClause(clause,subject) {
@@ -417,7 +386,7 @@ var Knodule=(function(){
             return knodule.KNode(clauses[0]);}}
 
     Knodule.prototype.handleSubjectEntry=function handleSubjectEntry(entry){
-        var clauses=segmentString(entry,"|");
+        var clauses=segment(entry,/[|]/g);
         var subject=getSubject(this,clauses);
         if (this.trace_parsing>2)
             fdjtLog("Processing subject entry %s %o %o",
@@ -429,7 +398,7 @@ var Knodule=(function(){
         return subject;};
 
     Knodule.prototype.handleEntry=function handleEntry(entry){
-        entry=trimspace(entry);
+        entry=entry.trim();
         if (entry.length===0) return false;
         var starpower=entry.search(/[^*]/);
         if (starpower>0) entry=entry.slice(starpower);
@@ -471,7 +440,7 @@ var Knodule=(function(){
     Knodule.prototype.handleEntries=function handleEntries(block){
         if (typeof block === "string") {
             var nocomment=stripComments(block);
-            var segmented=segmentString(nocomment,/;|\n|(;\n)/g);
+            var segmented=segment(nocomment,/(?:\s*[\n;]\s*)+/g);
             if (this.trace_parsing>1)
                 fdjtLog("Handling %d entries",segmented.length);
             return this.handleEntries(segmented);}
