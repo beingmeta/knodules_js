@@ -127,6 +127,23 @@
     Knodule.Knode2HTML=KNode2HTML;
     Knodule.knode2HTML=KNode2HTML;
 
+    /* Adding Kodes to datalists */
+    function knodeToOption(arg){
+        var option;
+        if (typeof arg === "string") {
+            var option=fdjtDOM("OPTION",arg);
+            option.setAttribute("value",arg);
+            return option;}
+        var dterm=arg.dterm;
+        var valstring=((typeof arg === "string")&&(arg))||(arg._qid)||
+            ((arg.getQID)&&(arg.getQID()))||(arg.toString());
+        var options=document.createDocumentFragment();
+        option=fdjtDOM("option",dterm);
+        option.setAttribute("value",valstring);
+        options.appendChild(option);
+        return options;}
+    Knodule.knodeToOption=knodeToOption;
+
     /* Getting Knodules out of HTML */
 
     function knoduleLoad(elt,knodule){
