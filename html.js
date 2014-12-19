@@ -131,7 +131,7 @@
     function knodeToOption(arg){
         var option;
         if (typeof arg === "string") {
-            var option=fdjtDOM("OPTION",arg);
+            option=fdjtDOM("OPTION",arg);
             option.setAttribute("value",arg);
             return option;}
         var dterm=arg.dterm;
