@@ -198,7 +198,10 @@
                         (slotpat_weights[pat]||1)*(base_weights[slot]);}}
         var i_tag=0, n_tags=tags.length;
         while (i_tag<n_tags) {
-            clauses.push({fields: slots,values: [tags[i_tag++]]});}
+            var tagval=tags[i_tag++];
+            if (typeof tagval === "string")
+                clauses.push({fields: 'strings',values: [tagval]});
+            else clauses.push({fields: slots,values: [tagval]});}
         
         this.tags=tags;
 
