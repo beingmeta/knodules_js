@@ -191,18 +191,27 @@ var Knodule=(function(){
             var term=val.slice(dollar+1);
             if (langspec===this._db.language) {
                 if (field) this.add(field,term);
-                else this.add(langspec,term);}
+                else {
+                    this.add(langspec,term);
+                    this.add('terms',term);}}
             else if (field)
                 this.add(field,langspec+"$"+term);
-            else this.add(langspec,term);}
+            else {
+                this.add(langspec,term);
+                this.add('terms',val);}}
         else if (inlang) {
             inlang=inlang.toUpperCase();
-            if (inlang===this._db.language)
-                this.add(field,val);
-            else this.add(field,inlang+"$"+val);}
+            if (inlang===this._db.language) {
+                if (field) this.add(field,val);
+                else this.add('terms',val);}
+            else if (field) 
+                this.add(field,inlang+"$"+val);
+            else this.add('terms',inlang+"$"+val);}
         else if (field)
             this.add(field,val);
-        else this.add(this._db.language,val);};
+        else {
+            this.add(this._db.language,val);
+            this.add('terms',val);}};
     KNode.prototype.tagString=function(kno) {
         if (this.oid) return this.oid;
         else if (this.uuid) return this.uuid;
