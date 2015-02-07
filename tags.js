@@ -180,32 +180,26 @@
         {"~%": 1,"~%*": 1,"%": 4,"%*": 4,"^%": 2,"^%*": 2,
          "*%": 8, "*%*": 6,"**%": 12, "**%*": 8};
 
-    function TagQuery(tags,dbs,base_weights){
+    function TagQuery(tags,dbs,weights){
         if (arguments.length===0) return this;
         var clauses=[], slots=this.slots=[];
         if (!(dbs)) dbs=TagQuery.default_dbs||false;
-        if (!(base_weights)) base_weights=this.weights||{"tags": 1};
+        if (!(weights)) weights=this.weights||{"tags": 1};
         if (!(tags instanceof Array)) tags=[tags];
-        var weights=this._weights={};
-        for (var slot in base_weights)
-            if (base_weights.hasOwnProperty(slot)) {
-                var i_pat=0, n_pats=slotpats.length;
-                while (i_pat<n_pats) {
-                    var pat=slotpats[i_pat++];
-                    var dslot=pat.replace("%",slot);
-                    slots.push(dslot);
-                    weights[dslot]=
-                        (slotpat_weights[pat]||1)*(base_weights[slot]);}}
+        for (var sl in weights) {
+            if (weights.hasOwnProperty(sl)) slots.push(sl);}
         var i_tag=0, n_tags=tags.length;
         while (i_tag<n_tags) {
             var tagval=tags[i_tag++];
             if (typeof tagval === "string")
                 clauses.push({fields: 'strings',values: [tagval]});
+            else if ((tagval._db)&&(tagval._db.slots)) 
+                clauses.push({fields: tagval._db.slots,values: [tagval]});
             else clauses.push({fields: slots,values: [tagval]});}
         
         this.tags=tags;
 
-        return Query.call(this,dbs,clauses,base_weights);}
+        return Query.call(this,dbs,clauses,weights);}
 
     TagQuery.prototype=new Query();
     
@@ -224,7 +218,7 @@
             var max_score=0, max_freq=0;
             var r=0, n_results=results.length;
             while (r<n_results) {
-                var result=results[r++];
+                var result=results[r++], seen={};
                 var score=((scores)&&(scores[result._id]))||1;
                 var s=0; while (s<n_slots) {
                     var slot=slots[s];
@@ -237,10 +231,12 @@
                             var tag=tags[v++];
                             if (!(tagscores.get(tag)))
                                 alltags.push(tag);
-                            var new_freq=tagfreqs.increment(tag,1);
+                            if (!(seen[tag])) {
+                                var new_freq=tagfreqs.increment(tag,1);
+                                if (new_freq>max_freq) max_freq=new_freq;
+                                seen[tag]=true;}
                             var new_score=
                                 tagscores.increment(tag,weight*score);
-                            if (new_freq>max_freq) max_freq=new_freq;
                             if (new_score>max_score)
                                 max_score=new_score;}}
                     s++;}}
