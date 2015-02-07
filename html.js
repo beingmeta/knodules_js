@@ -85,7 +85,9 @@
         var israw=(typeof arg === "string");
         var span=fdjtDOM(((israw)?("span.rawterm"):("span.dterm")),
                          checkbox," ",variations,
-                         ((israw)?("\u201c"+text+"\u201d"):(text)));
+                         ((israw)?
+                          (fdjtDOM("span.text","\u201c"+text+"\u201d")):
+                          (text)));
         if ((lang)||(cloud)) {
             addClass(span,"completion");
             span.setAttribute("data-value",valstring);}
