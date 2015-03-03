@@ -51,6 +51,10 @@
 
     var fdjtSet=fdjt.Set;
 
+    var slotpat_weights=
+        {"~%": 1,"~%*": 1,"%": 4,"%*": 4,"^%": 2,"^%*": 2,
+         "*%": 8, "*%*": 6,"**%": 12, "**%*": 8};
+
     Knodule.addTags=function addTags(refs,tags,refdb,tagdb,base_slot,tagscores){
         if (!(base_slot)) base_slot="tags";
         if (typeof tags === "string") tags=[tags];
@@ -174,11 +178,6 @@
     Knodule.importTagSlot=importTagSlot;
 
     // Knodule.addTags=function addTags(){};
-
-    var slotpats=["%","*%","**%","~%","%*","*%*","**%*","~%*","^%","^%*"];
-    var slotpat_weights=
-        {"~%": 1,"~%*": 1,"%": 4,"%*": 4,"^%": 2,"^%*": 2,
-         "*%": 8, "*%*": 6,"**%": 12, "**%*": 8};
 
     function TagQuery(tags,dbs,weights){
         if (arguments.length===0) return this;
