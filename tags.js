@@ -224,7 +224,9 @@
                     if (result.hasOwnProperty(slot)) {
                         var tags=result[slot];
                         var weight=weights[slot]||1;
-                        if (!(tags instanceof Array)) tags=[tags];
+                        if (!(tags)) tags=[];
+                        else if (!(tags instanceof Array)) tags=[tags];
+                        else {}
                         var v=0, n_tags=tags.length;
                         while (v<n_tags) {
                             var tag=tags[v++];
