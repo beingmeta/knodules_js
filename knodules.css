@@ -46,7 +46,7 @@ span.dterm {
     border-top-left-radius: 0.5ex; border-bottom-left-radius: 0.5ex;
     color: darkblue; background-color: gold;
     border: solid blue 2px;}
-span.dterm.weak {
+.dterm.weak {
     border: solid yellow 2px;
     opacity: 0.85;}
 
