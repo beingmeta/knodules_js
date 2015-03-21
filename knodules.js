@@ -364,7 +364,7 @@ var Knodule=(function(){
                        (clause.slice(equals+1)));
                 if (value[0]==='\\') value=value.slice(1);
                 else if (/\d/.exec(value[0])) {
-                    var number=parseFloat(value[0]);
+                    var number=parseFloat(value);
                     if ((typeof number === "number")&&((number)||(number===0)))
                         value=number;}
                 else {}
