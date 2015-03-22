@@ -249,10 +249,11 @@
         var tags=fdjt.Set(this.tags); var qstring="";
         var i=0, lim=tags.length;
         while (i<lim) {
+            if (i>0) qstring=qstring+";";
             var tag=tags[i++];
             if (typeof tag === "string")
-                qstring=qstring+";"+tag;
-            else qstring=qstring+";"+((tag._qid)||(tag.getQID()));}
+                qstring=qstring+tag;
+            else qstring=qstring+((tag._qid)||(tag.getQID()));}
         return qstring;};
     
     Knodule.TagQuery=TagQuery;
