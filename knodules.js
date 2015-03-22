@@ -46,6 +46,8 @@ var Knodule=(function(){
     var Ref=fdjt.Ref;
     var warn=fdjtLog.warn;
 
+    var ObjectMap=RefDB.ObjectMap;
+
     var trace_parsing=0;
 
     var lang_pat=/^(([A-Za-z]{2,3}\$)|([A-Za-z]{2,3}_[A-Za-z]{2,3}\$))/;
@@ -93,7 +95,7 @@ var Knodule=(function(){
         knodule.allxdterms=[];
         // Inverted index for genls in particular (useful for
         // faster search, inferences, etc)
-        knodule.genlsIndex={};
+        knodule.allwaysIndex=new ObjectMap();
         // This maps external OIDs to knodes
         knodule.oidmap={};
         // DRULES (disambiguation rules)
@@ -178,10 +180,21 @@ var Knodule=(function(){
         return this.dterms[langid+"$"+string]||false;};
     
     KNode.prototype.add=function(prop,val){
+        var ai=this._db.allwaysIndex;
         if ((Ref.prototype.add.call(this,prop,val))&&
             (prop==='genls')) {
             this.allways.push(val);
             this.allways=RefDB.merge(this.allways,val.allways);
+            var allways=this.allways, i=0, lim=allways.length;
+            while (i<lim) ai.add(allways[i++],this);
+            var examples=ai.get(this);
+            if (examples) {
+                var e=0, n_examples=examples.length;
+                while (e<n_examples) {
+                    var example=examples[e++];
+                    example.allways=RefDB.merge(example.allways,this.allways);
+                    var j=0, jlim=allways.length;
+                    while (j<jlim) ai.add(allways[j++],example);}}
             return true;}
         else return false;};
     KNode.prototype.addTerm=function(val,field,inlang){
