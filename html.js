@@ -165,10 +165,9 @@
         if (!((elts)&&(elts.length)))
             elts=fdjtDOM.getLinks("*.knodule",true,true);
         i=0; lim=elts.length; while (i<lim) knoduleLoad(elts[i++],knodule);
-        elts=fdjtDOM.getMeta("SBOOKS.knodef");
+        elts=fdjtDOM.getMeta("knodef");
         i=0; lim=elts.length; while (i<elts.length) {
-            elt=elts[i++];
-            if (elt.name==="KNODEF") knodule.handleEntry(elt.content);}
+            knodule.handleEntry(elts[i++].content);}
         elts=document.getElementsByTagName("META");
         i=0; lim=elts.length; while (i<lim) {
             elt=elts[i++];
