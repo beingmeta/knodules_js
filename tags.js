@@ -177,8 +177,6 @@
         else return undefined;}
     Knodule.importTagSlot=importTagSlot;
 
-    // Knodule.addTags=function addTags(){};
-
     function TagQuery(tags,dbs,weights){
         if (arguments.length===0) return this;
         var clauses=[], slots=this.slots=[];
