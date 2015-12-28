@@ -86,7 +86,7 @@
         var span=fdjtDOM(((israw)?("span.rawterm"):("span.dterm")),
                          checkbox," ",variations,
                          ((israw)?
-                          (fdjtDOM("span.text","\u201c"+text+"\u201d")):
+                          (fdjtDOM("span.termtext","\u201c"+text+"\u201d")):
                           (text)));
         if ((lang)||(cloud)) {
             addClass(span,"completion");
