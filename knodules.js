@@ -102,7 +102,15 @@ var Knodule=(function(){
         knodule.drules={};
         return knodule;}
     Knodule.prototype=new RefDB();
-
+    Knodule.prototype.language=
+        Knodule.prototype.dterms=Knodule.prototype.alldterms=
+        Knodule.prototype.prime=Knodule.prototype.primescores=
+        Knodule.prototype.validate=Knodule.prototype.strict=
+        Knodule.prototype.finished=Knodule.prototype.assumed_dterms=
+        Knodule.prototype.xdterms=Knodule.prototype.allxdterms=
+        Knodule.prototype.allwaysIndex=Knodule.prototype.oidmap=
+        Knodule.prototype.drules=false;
+    
     Knodule.prototype.toString=function(){
         return "Knodule("+this.name+")";};
 
@@ -155,6 +163,7 @@ var Knodule=(function(){
         if ((lang)&&(lang!==knodule.language)) knode.language=lang;
         return knode;}
     KNode.prototype=new RefDB.Ref();
+    KNode.prototype.dterms=false;
     Knodule.refclass=Knodule.prototype.refclass=KNode;
 
     Knodule.KNode=KNode;
